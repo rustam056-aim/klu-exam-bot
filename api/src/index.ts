@@ -67,11 +67,15 @@ export default {
     }
 
     // GET /api/question/next?session=1&difficulty=easy&exclude=S1-01,S1-02
+    // Optional: only=S1-03,S2-10 limits the pool to these questions ("practise these again").
     if (path === '/api/question/next' && req.method === 'GET') {
       const session = url.searchParams.get('session');
       const difficulty = url.searchParams.get('difficulty');
-      const exclude = new Set((url.searchParams.get('exclude') ?? '').split(',').filter(Boolean));
+      const list = (name: string) => (url.searchParams.get(name) ?? '').split(',').filter(Boolean);
+      const exclude = new Set(list('exclude'));
+      const only = new Set(list('only'));
       let pool = qs.filter((q) => !exclude.has(q.id));
+      if (only.size > 0) pool = pool.filter((q) => only.has(q.id));
       if (session) pool = pool.filter((q) => String(q.session) === session);
       if (difficulty) pool = pool.filter((q) => q.difficulty === difficulty);
       if (pool.length === 0) return json({ done: true });

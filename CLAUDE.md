@@ -18,6 +18,7 @@ Later, only if agreed: B = session summary + admin page for uploads/approval; C 
 Keep A extensible: questions in data (later a database), voice behind `transcribe()` / `speak()`, an empty presenter slot in the layout.
 
 ## Structure
+- Root: `npm run setup` once (installs everything), then `npm run dev` starts backend + frontend in one terminal.
 - `web/`  React + TypeScript + Vite (what students see). `npm run dev` -> http://localhost:5173. `/api` is proxied to the backend.
 - `api/`  Cloudflare Worker in TypeScript. `npm run dev` -> http://localhost:8787
 - `api/data/questions_s1_s2_2026.json`  question bank, Sessions 1-2 of 2026 (57 questions, all `draft`)
@@ -25,7 +26,7 @@ Keep A extensible: questions in data (later a database), voice behind `transcrib
 ## API (api/src/index.ts)
 - `GET  /api/health`
 - `GET  /api/sessions`  -> question count per session
-- `GET  /api/question/next?session=1&difficulty=easy&exclude=S1-01,S1-02`  -> a question without the answer
+- `GET  /api/question/next?session=1&difficulty=easy&exclude=S1-01,S1-02&only=...`  -> a question without the answer (`only` = practise these again)
 - `GET  /api/hint?id=S1-03&level=1|2`
 - `POST /api/answer {id, answer}`  -> MC: verdict + explanation + source. Open: `not_graded_yet` (Claude grading is the next step)
 
@@ -39,7 +40,7 @@ question, options {A..D} | null, correct | null, key_points[], model_answer, hin
 - Course sessions continue until 3 Dec; add questions for each new deck as it arrives.
 
 ## Next steps
-1. Quiz page in `web/`: pick session, show question, MC buttons / text box, feedback card, hints, review list at the end.
+1. DONE: quiz page in `web/` (start screen, route-line progress, MC + open answers, hints, feedback, review list, practise again). Open answers use a key-point self-check until step 2.
 2. Claude grading for open answers in `/api/answer` (verdict correct/partly/wrong, points hit, points missed, max 3 sentences).
 3. Voice: ElevenLabs speech-to-text for answers, text-to-speech for feedback (sentence by sentence).
 4. Access code + daily cap per student; deploy to Cloudflare.

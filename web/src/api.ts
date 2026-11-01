@@ -1,0 +1,33 @@
+import type { AnswerResult, NextResponse } from './types'
+
+async function get<T>(path: string): Promise<T> {
+  const res = await fetch(path)
+  if (!res.ok) throw new Error(`Request failed (${res.status})`)
+  return res.json() as Promise<T>
+}
+
+export const api = {
+  sessions: () => get<{ session: number; count: number }[]>('/api/sessions'),
+
+  next: (p: { session?: string; difficulty?: string; exclude: string[]; only?: string[] }) => {
+    const params = new URLSearchParams()
+    if (p.session) params.set('session', p.session)
+    if (p.difficulty) params.set('difficulty', p.difficulty)
+    if (p.exclude.length) params.set('exclude', p.exclude.join(','))
+    if (p.only?.length) params.set('only', p.only.join(','))
+    return get<NextResponse>(`/api/question/next?${params}`)
+  },
+
+  hint: (id: string, level: 1 | 2) =>
+    get<{ hint: string }>(`/api/hint?id=${encodeURIComponent(id)}&level=${level}`),
+
+  answer: async (id: string, answer: string): Promise<AnswerResult> => {
+    const res = await fetch('/api/answer', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id, answer }),
+    })
+    if (!res.ok) throw new Error(`Request failed (${res.status})`)
+    return res.json() as Promise<AnswerResult>
+  },
+}
