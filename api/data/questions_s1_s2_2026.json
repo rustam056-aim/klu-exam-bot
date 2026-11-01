@@ -1,0 +1,1299 @@
+{
+  "course": "Sustainable Logistics",
+  "year": 2026,
+  "questions": [
+    {
+      "id": "S1-01",
+      "session": 1,
+      "year": 2026,
+      "topic": "Footprint of logistics",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "Roughly what share of global CO2 emissions does logistics cause?",
+      "options": {
+        "A": "About 3%",
+        "B": "About 11%",
+        "C": "About 25%",
+        "D": "About 40%"
+      },
+      "correct": "B",
+      "key_points": [
+        "Logistics causes approx. 11% of global CO2 emissions."
+      ],
+      "model_answer": "Logistics causes approx. 11% of global CO2 emissions.",
+      "hint1": "Think of a share in the low double digits.",
+      "hint2": "Freight transport alone is 9-10% of it.",
+      "source_pages": "S1 p28",
+      "status": "draft"
+    },
+    {
+      "id": "S1-02",
+      "session": 1,
+      "year": 2026,
+      "topic": "Footprint of logistics",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "Which part of logistics causes most of its CO2 emissions?",
+      "options": {
+        "A": "Warehousing and terminals",
+        "B": "Freight transport",
+        "C": "Administration and IT",
+        "D": "Packaging"
+      },
+      "correct": "B",
+      "key_points": [
+        "Freight transport causes approx. 9-10% of global CO2; warehousing and terminals approx. 1-2%; administration and IT is unknown."
+      ],
+      "model_answer": "Freight transport causes approx. 9-10% of global CO2; warehousing and terminals approx. 1-2%; administration and IT is unknown.",
+      "hint1": "Think about where fuel is burned.",
+      "hint2": "It moves goods between places.",
+      "source_pages": "S1 p28",
+      "status": "draft"
+    },
+    {
+      "id": "S1-03",
+      "session": 1,
+      "year": 2026,
+      "topic": "Footprint of logistics",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Why is logistics a particularly hard sector to decarbonize? Name the four reasons from the lecture.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "High dependence on fossil fuel",
+        "Long life of freight assets (slow replacement rate)",
+        "Systemically relevant for almost all economic activities",
+        "Very high forecasted growth rate"
+      ],
+      "model_answer": "Logistics depends heavily on fossil fuel, its freight assets (trucks, ships, planes) have a long life so they are replaced slowly, it is systemically relevant for almost all economic activity, and its growth is forecast to be very high.",
+      "hint1": "One reason is about fuel, one about vehicles.",
+      "hint2": "The other two are about the economy and about growth.",
+      "source_pages": "S1 p28",
+      "status": "draft"
+    },
+    {
+      "id": "S1-04",
+      "session": 1,
+      "year": 2026,
+      "topic": "Footprint of logistics",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "At the current pace, what happens to logistics emissions by 2050?",
+      "options": {
+        "A": "They halve",
+        "B": "They stay flat",
+        "C": "They double",
+        "D": "They grow tenfold"
+      },
+      "correct": "C",
+      "key_points": [
+        "At the current pace, logistics emissions will double by 2050, driven by forecast growth in freight movements (tonne-km)."
+      ],
+      "model_answer": "At the current pace, logistics emissions will double by 2050, driven by forecast growth in freight movements (tonne-km).",
+      "hint1": "Freight volumes are forecast to keep growing.",
+      "hint2": "Think 'times two'.",
+      "source_pages": "S1 p32",
+      "status": "draft"
+    },
+    {
+      "id": "S1-05",
+      "session": 1,
+      "year": 2026,
+      "topic": "Sustainable development",
+      "type": "Open",
+      "difficulty": "easy",
+      "question": "How did the Brundtland Report (1987) define sustainable development?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Development that meets the needs of the present",
+        "without compromising the ability of future generations to meet their own needs"
+      ],
+      "model_answer": "Sustainable development is development that meets the needs of the present without compromising the ability of future generations to meet their own needs.",
+      "hint1": "The definition compares two groups of people.",
+      "hint2": "Present generation versus future generations.",
+      "source_pages": "S1 p13",
+      "status": "draft"
+    },
+    {
+      "id": "S1-06",
+      "session": 1,
+      "year": 2026,
+      "topic": "Sustainable development",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "Who introduced the Triple Bottom Line (People, Planet, Profit), and when?",
+      "options": {
+        "A": "Gro Brundtland, 1987",
+        "B": "John Elkington, 1997",
+        "C": "Dennis Meadows, 1972",
+        "D": "UN General Assembly, 2015"
+      },
+      "correct": "B",
+      "key_points": [
+        "The Triple Bottom Line comes from John Elkington's 1997 book 'Cannibals With Forks'."
+      ],
+      "model_answer": "The Triple Bottom Line comes from John Elkington's 1997 book 'Cannibals With Forks'.",
+      "hint1": "It came ten years after the Brundtland Report.",
+      "hint2": "The book is called 'Cannibals With Forks'.",
+      "source_pages": "S1 p14",
+      "status": "draft"
+    },
+    {
+      "id": "S1-07",
+      "session": 1,
+      "year": 2026,
+      "topic": "Sustainable development",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "What was the central message of 'Limits to Growth' (1972), and why is it still relevant?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Based on MIT system dynamics models (Meadows et al.)",
+        "Global ecological constraints significantly influence global development",
+        "Warns of the risks of unchecked growth; the need for sustainable development is still highly relevant",
+        "Closely related to sufficiency rather than wealth maximization"
+      ],
+      "model_answer": "Using MIT system dynamics models, Meadows et al. showed that global ecological constraints strongly shape development. Its message, the risks of unchecked growth and the need for sustainable development, is still highly relevant, and it links to the idea of sufficiency rather than wealth maximization.",
+      "hint1": "Think about what happens when growth meets natural limits.",
+      "hint2": "The slide links it to 'sufficiency'.",
+      "source_pages": "S1 p12",
+      "status": "draft"
+    },
+    {
+      "id": "S1-08",
+      "session": 1,
+      "year": 2026,
+      "topic": "SDGs",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "The 2030 Agenda adopted in 2015 contains how many goals and targets?",
+      "options": {
+        "A": "8 goals, 21 targets",
+        "B": "17 goals, 169 targets",
+        "C": "17 goals, 230 targets",
+        "D": "12 goals, 100 targets"
+      },
+      "correct": "B",
+      "key_points": [
+        "The 2030 Agenda for Sustainable Development (2015) has 17 goals with 169 targets."
+      ],
+      "model_answer": "The 2030 Agenda for Sustainable Development (2015) has 17 goals with 169 targets.",
+      "hint1": "The MDGs had 8 goals; the SDGs have more than twice as many.",
+      "hint2": "The number of goals is 17.",
+      "source_pages": "S1 p15, p17",
+      "status": "draft"
+    },
+    {
+      "id": "S1-09",
+      "session": 1,
+      "year": 2026,
+      "topic": "SDGs",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "Describe how the world moved from the Millennium Development Goals to the SDGs.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "2000 Millennium Summit: 8 MDGs for 2000-2015",
+        "2013 (Rio): decision to evolve the MDGs into SDGs; High-level Political Forum set up",
+        "2013-2014: a 30-member Open Working Group drafted the SDG proposal",
+        "2015: UN General Assembly adopted the 2030 Agenda with 17 goals and 169 targets"
+      ],
+      "model_answer": "The 2000 Millennium Summit set 8 MDGs to be reached by 2015. In 2013 in Rio it was decided to evolve the MDGs into SDGs and a High-level Political Forum was created. A 30-member Open Working Group drafted the proposal in 2013-14, and in 2015 the UN General Assembly adopted the 2030 Agenda with 17 goals and 169 targets.",
+      "hint1": "Start with the Millennium Summit in 2000.",
+      "hint2": "Mention the Open Working Group and the 2015 adoption.",
+      "source_pages": "S1 p17",
+      "status": "draft"
+    },
+    {
+      "id": "S1-10",
+      "session": 1,
+      "year": 2026,
+      "topic": "Planetary boundaries",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "According to the lecture, which of these planetary boundaries is NOT among the four already crossed?",
+      "options": {
+        "A": "Climate change",
+        "B": "Biosphere integrity",
+        "C": "Land-system change",
+        "D": "Ocean acidification"
+      },
+      "correct": "D",
+      "key_points": [
+        "The four crossed boundaries named are climate change, biosphere integrity, land-system change and biogeochemical flows."
+      ],
+      "model_answer": "The four crossed boundaries named are climate change, biosphere integrity, land-system change and biogeochemical flows.",
+      "hint1": "Four of nine boundaries are crossed.",
+      "hint2": "The fourth crossed one is about nutrient flows (biogeochemical flows).",
+      "source_pages": "S1 p18",
+      "status": "draft"
+    },
+    {
+      "id": "S1-11",
+      "session": 1,
+      "year": 2026,
+      "topic": "Planetary boundaries",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Explain the concept of planetary boundaries.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Earth System processes that define a safe operating space for humanity",
+        "When boundaries are transgressed, risks for humanity increase",
+        "9 boundaries; 4 already crossed: climate change, biosphere integrity, land-system change, biogeochemical flows"
+      ],
+      "model_answer": "Planetary boundaries (2009) are Earth System processes that define the safe operating space for humanity. Crossing them increases risks for humanity. Of nine boundaries, four have been crossed: climate change, biosphere integrity, land-system change and biogeochemical flows.",
+      "hint1": "Think of a 'safe operating space'.",
+      "hint2": "How many boundaries are there, and how many are crossed?",
+      "source_pages": "S1 p18",
+      "status": "draft"
+    },
+    {
+      "id": "S1-12",
+      "session": 1,
+      "year": 2026,
+      "topic": "Climate science",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Of the roughly 36 Gt of CO2 emitted by industry each year, about how much stays in the atmosphere?",
+      "options": {
+        "A": "About 10%",
+        "B": "About 25%",
+        "C": "About 46%",
+        "D": "About 80%"
+      },
+      "correct": "C",
+      "key_points": [
+        "About 54% is absorbed by forests (31%) and oceans (23%); about 46% stays in the atmosphere."
+      ],
+      "model_answer": "About 54% is absorbed by forests (31%) and oceans (23%); about 46% stays in the atmosphere.",
+      "hint1": "Forests and oceans absorb a bit more than half.",
+      "hint2": "100% minus 54%.",
+      "source_pages": "S1 p9",
+      "status": "draft"
+    },
+    {
+      "id": "S1-13",
+      "session": 1,
+      "year": 2026,
+      "topic": "Climate science",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "Compare the four RCP scenarios shown in the lecture. What temperature rise does each lead to?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "RCP 8.5, business-as-usual: about 3.2-5.4 °C",
+        "RCP 6.0, some mitigation: about 2.0-3.7 °C",
+        "RCP 4.5, strong mitigation: about 1.7-3.2 °C",
+        "RCP 2.6, aggressive mitigation: about 0.9-2.3 °C, needing net-negative emissions later in the century",
+        "Warming is relative to 1850-1900"
+      ],
+      "model_answer": "Relative to 1850-1900: business-as-usual (RCP 8.5) leads to about 3.2-5.4 °C, some mitigation (RCP 6.0) 2.0-3.7 °C, strong mitigation (RCP 4.5) 1.7-3.2 °C, and aggressive mitigation (RCP 2.6) 0.9-2.3 °C, which requires net-negative global emissions.",
+      "hint1": "The higher the RCP number, the higher the warming.",
+      "hint2": "Only RCP 2.6 stays mostly below about 2 °C.",
+      "source_pages": "S1 p10",
+      "status": "draft"
+    },
+    {
+      "id": "S1-14",
+      "session": 1,
+      "year": 2026,
+      "topic": "SDGs",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Which of these is NOT one of the six transformations to achieve the SDGs?",
+      "options": {
+        "A": "Digital revolution for sustainable development",
+        "B": "Sustainable cities and communities",
+        "C": "Energy decarbonization and sustainable industry",
+        "D": "Free trade and deregulation"
+      },
+      "correct": "D",
+      "key_points": [
+        "The six transformations: education, gender, inequality; health and well-being; energy decarbonization and sustainable industry; sustainable food, land, ocean, water; sustainable cities and communities; digital revolution for sustainable development."
+      ],
+      "model_answer": "The six transformations: education, gender, inequality; health and well-being; energy decarbonization and sustainable industry; sustainable food, land, ocean, water; sustainable cities and communities; digital revolution for sustainable development.",
+      "hint1": "Five of these appear on the 'six transformations' slide.",
+      "hint2": "The odd one out is an economic policy, not a transformation.",
+      "source_pages": "S1 p24",
+      "status": "draft"
+    },
+    {
+      "id": "S1-15",
+      "session": 1,
+      "year": 2026,
+      "topic": "Supply chain emissions",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "On average, how much more CO2 comes from a company's supply chain than from its own operations (McKinsey)?",
+      "options": {
+        "A": "2 times",
+        "B": "5.5 times",
+        "C": "11.4 times",
+        "D": "20 times"
+      },
+      "correct": "C",
+      "key_points": [
+        "On average, 11.4 times more CO2 comes from a company's supply chain (Scope 3) than from internal operations (Scope 1 and 2)."
+      ],
+      "model_answer": "On average, 11.4 times more CO2 comes from a company's supply chain (Scope 3) than from internal operations (Scope 1 and 2).",
+      "hint1": "It's more than ten times.",
+      "hint2": "The number has a decimal: 11.?",
+      "source_pages": "S1 p29",
+      "status": "draft"
+    },
+    {
+      "id": "S1-16",
+      "session": 1,
+      "year": 2026,
+      "topic": "Supply chain emissions",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Why do supply chain (Scope 3) emissions matter so much for companies, and which levers can reduce them?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Scope 3 is on average 11.4x Scope 1 and 2 (McKinsey)",
+        "The Scope 3 share varies by industry: low in cement, around 80% in electronics, automotive and food (WEF 2023)",
+        "Levers: digitalization (data sharing, blockchain), supply chain transparency, collaboration with suppliers"
+      ],
+      "model_answer": "Supply chain emissions are on average 11.4 times a company's own emissions, and in sectors such as electronics, automotive and food they make up around 80% of the total (WEF 2023). Companies can reduce them through digitalization, supply chain transparency and collaboration that upgrades suppliers' environmental performance.",
+      "hint1": "Compare Scope 3 with Scope 1 and 2.",
+      "hint2": "The slide names three levers: digital, transparency, collaboration.",
+      "source_pages": "S1 p29",
+      "status": "draft"
+    },
+    {
+      "id": "S1-17",
+      "session": 1,
+      "year": 2026,
+      "topic": "Transport emissions",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Which transport modes increased their emissions most between 2000 and 2018, and which one decreased?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Passenger road vehicles +43% (largest growth)",
+        "Road freight vehicles +39%",
+        "Aviation +38% and shipping +38%",
+        "Rail was the only mode that decreased (-2%)"
+      ],
+      "model_answer": "Passenger road vehicles grew most (+43%), followed by road freight (+39%), aviation and shipping (+38% each). Rail was the only mode whose emissions fell (-2%).",
+      "hint1": "Road transport dominates the growth.",
+      "hint2": "Only one mode shows a minus sign.",
+      "source_pages": "S1 p33",
+      "status": "draft"
+    },
+    {
+      "id": "S1-18",
+      "session": 1,
+      "year": 2026,
+      "topic": "Transport emissions",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Which region had the highest growth in transport CO2 emissions from 2000 to 2019?",
+      "options": {
+        "A": "Europe",
+        "B": "North America",
+        "C": "Asia",
+        "D": "Oceania"
+      },
+      "correct": "C",
+      "key_points": [
+        "Asia grew +117%, ahead of Africa (+105%); Europe +7% and North America +5%."
+      ],
+      "model_answer": "Asia grew +117%, ahead of Africa (+105%); Europe +7% and North America +5%.",
+      "hint1": "Think of fast-growing economies.",
+      "hint2": "Its growth was more than 100%.",
+      "source_pages": "S1 p34",
+      "status": "draft"
+    },
+    {
+      "id": "S1-19",
+      "session": 1,
+      "year": 2026,
+      "topic": "Transport emissions",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "In the EU, how have transport emissions developed since 1990 compared to other sectors?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Other sectors and national total GHG emissions decreased below 1990 levels",
+        "Transport emissions kept rising above 1990 levels",
+        "International aviation grew the most, roughly doubling"
+      ],
+      "model_answer": "Since 1990, total EU GHG emissions and other sectors have fallen, while transport emissions kept rising above 1990 levels. International aviation grew the most, to about twice its 1990 level.",
+      "hint1": "The slide title says it: 'while other sectors decrease...'",
+      "hint2": "Look at international aviation in particular.",
+      "source_pages": "S1 p35",
+      "status": "draft"
+    },
+    {
+      "id": "S1-20",
+      "session": 1,
+      "year": 2026,
+      "topic": "Transport emissions",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "According to Axsen et al. (2020), current transport policies are:",
+      "options": {
+        "A": "Enough to reach 1.5 °C",
+        "B": "Enough for 2 °C but not 1.5 °C",
+        "C": "Insufficient for 2 °C and way off track for 1.5 °C",
+        "D": "Not relevant for emissions"
+      },
+      "correct": "C",
+      "key_points": [
+        "Current transport policies are insufficient to stay below 2 °C warming, and way off track for 1.5 °C."
+      ],
+      "model_answer": "Current transport policies are insufficient to stay below 2 °C warming, and way off track for 1.5 °C.",
+      "hint1": "The message is pessimistic.",
+      "hint2": "They miss both targets.",
+      "source_pages": "S1 p36",
+      "status": "draft"
+    },
+    {
+      "id": "S1-21",
+      "session": 1,
+      "year": 2026,
+      "topic": "Transport emissions",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "What is the twofold challenge for transport in a 1.5 °C scenario?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Decarbonize the long-established, high-emitting transport sector in industrialized countries",
+        "Grow the transport system in developing regions for improved access, in a low-carbon way"
+      ],
+      "model_answer": "Industrialized countries must decarbonize their long-established, high-emitting transport sector, while developing regions must grow their transport systems for better access, but in a low-carbon way.",
+      "hint1": "One part is about industrialized countries, one about developing regions.",
+      "hint2": "One must shrink emissions, the other must grow access without adding emissions.",
+      "source_pages": "S1 p38",
+      "status": "draft"
+    },
+    {
+      "id": "S1-22",
+      "session": 1,
+      "year": 2026,
+      "topic": "Transport emissions",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "Which period does the UN Decade of Sustainable Transport cover?",
+      "options": {
+        "A": "2015-2025",
+        "B": "2020-2030",
+        "C": "2026-2035",
+        "D": "2030-2040"
+      },
+      "correct": "C",
+      "key_points": [
+        "The United Nations Decade of Sustainable Transport runs from 2026 to 2035."
+      ],
+      "model_answer": "The United Nations Decade of Sustainable Transport runs from 2026 to 2035.",
+      "hint1": "It started this year.",
+      "hint2": "It ends in 2035.",
+      "source_pages": "S1 p39",
+      "status": "draft"
+    },
+    {
+      "id": "S1-23",
+      "session": 1,
+      "year": 2026,
+      "topic": "Definitions",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "How does the lecture define sustainable logistics, and what benefits can companies gain from it?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Conducting logistics in an environmentally and socially responsible manner",
+        "Minimize negative impacts on environment, society and economy while optimizing supply chain efficiency",
+        "Reduce carbon emissions, resource consumption and waste across the supply chain",
+        "Benefits: smaller footprint, better efficiency, lower costs, stronger brand image"
+      ],
+      "model_answer": "Sustainable logistics means running logistics in an environmentally and socially responsible way: minimizing negative impacts on the environment, society and economy while optimizing supply chain efficiency, and reducing emissions, resource use and waste. Benefits include a smaller footprint, better efficiency, lower costs and a stronger brand image.",
+      "hint1": "It goes beyond the environment.",
+      "hint2": "Name at least two business benefits.",
+      "source_pages": "S1 p27, p30",
+      "status": "draft"
+    },
+    {
+      "id": "S1-24",
+      "session": 1,
+      "year": 2026,
+      "topic": "Solutions and skills",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Which of these is NOT one of the four solution categories in sustainable logistics (GSLS 2026)?",
+      "options": {
+        "A": "Low-carbon technologies and supporting infrastructure",
+        "B": "Operational and supply chain solutions",
+        "C": "Market and corporate governance solutions",
+        "D": "Consumer awareness campaigns"
+      },
+      "correct": "D",
+      "key_points": [
+        "The four solution categories: low-carbon technologies and supporting infrastructure; operational and supply chain solutions; sustainable supply chain management solutions; market and corporate governance solutions."
+      ],
+      "model_answer": "The four solution categories: low-carbon technologies and supporting infrastructure; operational and supply chain solutions; sustainable supply chain management solutions; market and corporate governance solutions.",
+      "hint1": "Three options appear on the 'Solutions and skills' slide.",
+      "hint2": "The fourth real category is sustainable supply chain management.",
+      "source_pages": "S1 p40",
+      "status": "draft"
+    },
+    {
+      "id": "S1-25",
+      "session": 1,
+      "year": 2026,
+      "topic": "Nature and economy",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "How dependent is the economy on nature, according to the lecture?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "US$44 trillion of economic value (more than half of world GDP) is moderately or highly dependent on nature (2020)",
+        "Most dependent sectors: construction ($4T), agriculture ($2.5T), food and beverages ($1.4T)",
+        "The EU economy is 49% dependent on nature; higher for China, India and Africa"
+      ],
+      "model_answer": "In 2020, US$44 trillion of economic value, more than half of world GDP, was moderately or highly dependent on nature, especially construction, agriculture and food and beverages. The EU economy is 49% dependent, and China, India and Africa even more.",
+      "hint1": "More than half of world GDP.",
+      "hint2": "Name the three most dependent sectors.",
+      "source_pages": "S1 p25",
+      "status": "draft"
+    },
+    {
+      "id": "S1-26",
+      "session": 1,
+      "year": 2026,
+      "topic": "History",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "What does the lecture show about what the oil industry knew about climate change, and what was the purpose of BP's 'carbon footprint' campaign?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "ExxonMobil predicted climate change in the 1970s, better than NASA scientists",
+        "The American Petroleum Institute had a secret 'CO2 and Climate Task Force' in the 1970s",
+        "BP (2005) promoted the carbon footprint to push the idea that individuals, not oil companies, cause climate change"
+      ],
+      "model_answer": "The oil industry knew early: ExxonMobil predicted climate change in the 1970s better than NASA scientists, and the American Petroleum Institute ran a secret CO2 and Climate Task Force. In 2005 BP promoted the 'carbon footprint' to shift responsibility to individuals rather than oil companies.",
+      "hint1": "Think about Exxon and the API in the 1970s.",
+      "hint2": "BP's campaign shifted responsibility to someone else.",
+      "source_pages": "S1 p11",
+      "status": "draft"
+    },
+    {
+      "id": "S2-01",
+      "session": 2,
+      "year": 2026,
+      "topic": "Role of business",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Compare shareholder theory (Friedman) and stakeholder theory (Freeman).",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Friedman: the only social responsibility of business is to increase profits",
+        "Managers should maximize shareholder value; social engagement wastes wealth; social development belongs to governments",
+        "Freeman: business should create value for customers, suppliers, employees, communities and financiers",
+        "Managers balance shareholder interests against other stakeholders; value for stakeholders creates value for shareholders"
+      ],
+      "model_answer": "Friedman argues the only social responsibility of business is to increase profits: managers maximize shareholder value, and social engagement wastes wealth that governments should handle. Freeman argues business should create value for all stakeholders; managers balance shareholders against other stakeholders, and creating stakeholder value also creates shareholder value.",
+      "hint1": "One theory focuses on owners, the other on everyone affected.",
+      "hint2": "Friedman: profits. Freeman: customers, suppliers, employees, communities, financiers.",
+      "source_pages": "S2 p6",
+      "status": "draft"
+    },
+    {
+      "id": "S2-02",
+      "session": 2,
+      "year": 2026,
+      "topic": "Role of business",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "Who said: 'There is one and only one social responsibility of business, to use its resources and engage in activities designed to increase its profits'?",
+      "options": {
+        "A": "Edward Freeman",
+        "B": "Milton Friedman",
+        "C": "John Elkington",
+        "D": "Gro Brundtland"
+      },
+      "correct": "B",
+      "key_points": [
+        "Milton Friedman, the voice of shareholder theory."
+      ],
+      "model_answer": "Milton Friedman, the voice of shareholder theory.",
+      "hint1": "This view is called shareholder theory.",
+      "hint2": "His last name starts with F, but it's not Freeman.",
+      "source_pages": "S2 p6",
+      "status": "draft"
+    },
+    {
+      "id": "S2-03",
+      "session": 2,
+      "year": 2026,
+      "topic": "Role of business",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Why are companies highly relevant for sustainability, and why is it hard to change how they operate?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Relevant: large footprint, important source of innovation, good at improving efficiency, scale up what is profitable",
+        "Hard: interdisciplinarity needed, decisions based on values not facts, trade-offs between objectives, inertia/resistance to change"
+      ],
+      "model_answer": "Companies matter because of their large footprint, innovation, efficiency and ability to scale what is profitable. Changing them is hard because it needs interdisciplinary expertise, decisions are often based on values rather than facts, multiple objectives must be traded off, and there is strong inertia.",
+      "hint1": "The slide has two columns: 'highly relevant' and 'significant challenge'.",
+      "hint2": "Four words each: footprint, innovation, efficiency, scale vs interdisciplinarity, values, trade-offs, inertia.",
+      "source_pages": "S2 p7",
+      "status": "draft"
+    },
+    {
+      "id": "S2-04",
+      "session": 2,
+      "year": 2026,
+      "topic": "Corporate sustainability",
+      "type": "Open",
+      "difficulty": "easy",
+      "question": "How does the lecture define corporate sustainability?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "A management paradigm under which companies engage in activities consistent with sustainable development",
+        "To survive long-term, companies need activities that create competitive advantage",
+        "Goal: maximize the intersection of the two"
+      ],
+      "model_answer": "Corporate sustainability is a management paradigm in which companies engage in activities consistent with sustainable development. Since companies also need competitive advantage to survive, the goal is to maximize the overlap between the two.",
+      "hint1": "Two circles on the slide.",
+      "hint2": "The goal is to maximize their intersection.",
+      "source_pages": "S2 p8",
+      "status": "draft"
+    },
+    {
+      "id": "S2-05",
+      "session": 2,
+      "year": 2026,
+      "topic": "Corporate sustainability",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Companies that mediate risks, lower costs and develop competitive advantages through sustainability belong to which wave?",
+      "options": {
+        "A": "First wave: rejection and non-responsiveness",
+        "B": "Second wave: compliance, efficiency and strategic pro-activity",
+        "C": "Third wave: the sustaining corporation",
+        "D": "None, this is greenwashing"
+      },
+      "correct": "B",
+      "key_points": [
+        "The second wave: compliance, efficiency and strategic pro-activity, with increasing integration of commercial and sustainable activities."
+      ],
+      "model_answer": "The second wave: compliance, efficiency and strategic pro-activity, with increasing integration of commercial and sustainable activities.",
+      "hint1": "It's the middle wave.",
+      "hint2": "In the third wave, companies transform economies and societies.",
+      "source_pages": "S2 p9",
+      "status": "draft"
+    },
+    {
+      "id": "S2-06",
+      "session": 2,
+      "year": 2026,
+      "topic": "Corporate sustainability",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "Describe the three waves of corporate sustainability and how integration changes across them.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "First wave: rejection and non-responsiveness; companies oppose or ignore sustainability; no integration",
+        "Second wave: compliance, efficiency, strategic pro-activity; mediate risks, lower costs, competitive advantage; increasing integration",
+        "Third wave: the sustaining corporation; companies transform economies and societies; complete integration of commercial and sustainable activities"
+      ],
+      "model_answer": "In the first wave companies reject or ignore sustainability, with no integration. In the second they use compliance, efficiency and strategic pro-activity to reduce risk and costs and build advantage, with growing integration. In the third, the sustaining corporation transforms economies and societies, fully integrating commercial and sustainable activities.",
+      "hint1": "Go from 'ignore' to 'transform'.",
+      "hint2": "Mention how integration grows: none, increasing, complete.",
+      "source_pages": "S2 p9",
+      "status": "draft"
+    },
+    {
+      "id": "S2-07",
+      "session": 2,
+      "year": 2026,
+      "topic": "Reporting standards",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "What mainly distinguishes SASB from GRI?",
+      "options": {
+        "A": "SASB targets investors; GRI aims to keep companies accountable to all stakeholders",
+        "B": "SASB is mandatory in the EU; GRI is voluntary",
+        "C": "SASB only covers emissions; GRI covers finance",
+        "D": "There is no difference"
+      },
+      "correct": "A",
+      "key_points": [
+        "SASB Standards help companies disclose sustainability information relevant to investors, while GRI aims to keep companies accountable to all stakeholders."
+      ],
+      "model_answer": "SASB Standards help companies disclose sustainability information relevant to investors, while GRI aims to keep companies accountable to all stakeholders.",
+      "hint1": "Think about the audience of each standard.",
+      "hint2": "One is investor-focused.",
+      "source_pages": "S2 p13",
+      "status": "draft"
+    },
+    {
+      "id": "S2-08",
+      "session": 2,
+      "year": 2026,
+      "topic": "Reporting standards",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Since August 2022, who is responsible for the SASB Standards?",
+      "options": {
+        "A": "The European Commission",
+        "B": "The ISSB of the IFRS Foundation",
+        "C": "The Global Reporting Initiative",
+        "D": "The UN Global Compact"
+      },
+      "correct": "B",
+      "key_points": [
+        "As of August 2022, the International Sustainability Standards Board (ISSB) of the IFRS Foundation took over the SASB Standards. They are available for 77 industries."
+      ],
+      "model_answer": "As of August 2022, the International Sustainability Standards Board (ISSB) of the IFRS Foundation took over the SASB Standards. They are available for 77 industries.",
+      "hint1": "It's linked to financial reporting standards.",
+      "hint2": "IFRS Foundation.",
+      "source_pages": "S2 p13",
+      "status": "draft"
+    },
+    {
+      "id": "S2-09",
+      "session": 2,
+      "year": 2026,
+      "topic": "JetBlue case",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Name at least three material sustainability topics SASB lists for the airline industry.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "GHG emissions",
+        "Fuel management",
+        "Labor relations",
+        "Accident and safety management",
+        "Competitive behavior"
+      ],
+      "model_answer": "SASB's material topics for airlines are GHG emissions, fuel management, labor relations, accident and safety management, and competitive behavior.",
+      "hint1": "One is about emissions, one about fuel.",
+      "hint2": "Others relate to workers, safety and competition law.",
+      "source_pages": "S2 p14",
+      "status": "draft"
+    },
+    {
+      "id": "S2-10",
+      "session": 2,
+      "year": 2026,
+      "topic": "JetBlue case",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "How did JetBlue drive organizational change towards sustainability? Describe the four elements.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Quick wins: start small with low-risk, short-term improvements to build a track record",
+        "Bottom-up approach: engage every department (e.g. Sales, Investor Relations)",
+        "Understanding firm culture: work with it; analytical 'identify risk, solve problem' mindset; flat hierarchy for speed",
+        "Changing the discussion: reframe sustainability as value creation, not 'care or don't care'",
+        "Together they create momentum for more improvements"
+      ],
+      "model_answer": "JetBlue started with quick wins to build credibility, engaged every department bottom-up, worked with its analytical, flat culture to move fast, and reframed sustainability as value creation rather than a binary 'care or don't care'. Together these built momentum for bigger projects.",
+      "hint1": "The slide shows a cycle of four elements leading to momentum.",
+      "hint2": "Quick wins, bottom-up, culture, changing the discussion.",
+      "source_pages": "S2 p17, p18",
+      "status": "draft"
+    },
+    {
+      "id": "S2-11",
+      "session": 2,
+      "year": 2026,
+      "topic": "JetBlue case",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "According to the JetBlue takeaways, materiality is:",
+      "options": {
+        "A": "The same for all companies",
+        "B": "Industry-specific",
+        "C": "Decided by each CEO",
+        "D": "Only about financial losses"
+      },
+      "correct": "B",
+      "key_points": [
+        "Industry context is everything: sustainability risks and opportunities only make sense within a specific sector, so materiality is industry-specific."
+      ],
+      "model_answer": "Industry context is everything: sustainability risks and opportunities only make sense within a specific sector, so materiality is industry-specific.",
+      "hint1": "Think about why SASB has standards for 77 industries.",
+      "hint2": "It depends on the sector.",
+      "source_pages": "S2 p19",
+      "status": "draft"
+    },
+    {
+      "id": "S2-12",
+      "session": 2,
+      "year": 2026,
+      "topic": "JetBlue case",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Why is 'disclosure is not performance' an important lesson from the JetBlue case?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Reporting without improving can backfire by exposing negative news",
+        "Actual performance must keep pace with disclosure"
+      ],
+      "model_answer": "Disclosing more does not make a company more sustainable. Reporting without real improvement can backfire by exposing negative news, so actual performance has to keep pace with disclosure.",
+      "hint1": "What happens if you report bad numbers?",
+      "hint2": "Performance must keep up with reporting.",
+      "source_pages": "S2 p19",
+      "status": "draft"
+    },
+    {
+      "id": "S2-13",
+      "session": 2,
+      "year": 2026,
+      "topic": "Reporting history",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Summarize the history of corporate sustainability reporting from the 1970s onwards.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "1970s: first social reports on how firms add value to stakeholders",
+        "1980s/1990s: shift from social to environmental issues; environmental reports",
+        "Mid-1990s: multi-issue reports (e.g. Shell's Triple P Report)",
+        "Since 2000: continuous increase of non-financial reporting; IIRC Integrated Reporting Framework (2013)"
+      ],
+      "model_answer": "In the 1970s companies published social reports. In the 1980s and 1990s attention shifted to environmental issues, then mid-1990s multi-issue reports appeared, such as Shell's Triple P Report. Since 2000 non-financial reporting has grown steadily, with the IIRC's Integrated Reporting Framework in 2013.",
+      "hint1": "Start with social reports in the 1970s.",
+      "hint2": "Then environment, then multi-issue, then integrated.",
+      "source_pages": "S2 p21",
+      "status": "draft"
+    },
+    {
+      "id": "S2-14",
+      "session": 2,
+      "year": 2026,
+      "topic": "Reporting standards",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Which framework (1998) provides standards for measuring, managing and reporting GHG emissions?",
+      "options": {
+        "A": "Global Reporting Initiative",
+        "B": "Greenhouse Gas Protocol",
+        "C": "AccountAbility Standards",
+        "D": "UN Global Compact"
+      },
+      "correct": "B",
+      "key_points": [
+        "The Greenhouse Gas Protocol (1998) covers reporting content (indicators) and standards for measuring, managing and reporting GHG emissions."
+      ],
+      "model_answer": "The Greenhouse Gas Protocol (1998) covers reporting content (indicators) and standards for measuring, managing and reporting GHG emissions.",
+      "hint1": "The name says it.",
+      "hint2": "It defines Scope 1, 2 and 3.",
+      "source_pages": "S2 p22",
+      "status": "draft"
+    },
+    {
+      "id": "S2-15",
+      "session": 2,
+      "year": 2026,
+      "topic": "Reporting standards",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Which framework measures the stocks and flows of 'six capitals'?",
+      "options": {
+        "A": "Integrated Reporting Council (IIRC)",
+        "B": "Carbon Disclosure Project",
+        "C": "SASB",
+        "D": "GHG Protocol"
+      },
+      "correct": "A",
+      "key_points": [
+        "The Integrated Reporting Council (2010) measures stocks and flows of six capitals and covers strategy, governance, performance, business model, risks and opportunities, and is forward-looking."
+      ],
+      "model_answer": "The Integrated Reporting Council (2010) measures stocks and flows of six capitals and covers strategy, governance, performance, business model, risks and opportunities, and is forward-looking.",
+      "hint1": "It's about integrated reporting.",
+      "hint2": "Founded in 2010.",
+      "source_pages": "S2 p22",
+      "status": "draft"
+    },
+    {
+      "id": "S2-16",
+      "session": 2,
+      "year": 2026,
+      "topic": "Reporting history",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "Describe the four phases in the evolution of sustainability reports, as presented by Prof. Meuer.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Phase 1 (approx. 1990-2005): few pressures, little strategic importance, simple or no measures, nice pictures for stakeholders",
+        "Phase 2 (2005-2010): increasing pressure, strategically important for market leaders in developed countries, internal measurement",
+        "Phase 3 (2015-2023): global frameworks, links between macro frameworks and micro actions, transparency (e.g. science-based targets)",
+        "Phase 4 (2023-): mandatory reporting, forward-looking and comprehensive, new tools (double materiality), geopolitical differences"
+      ],
+      "model_answer": "Phase 1 (about 1990-2005) had little pressure, few measures and mostly nice pictures. Phase 2 (2005-2010) brought rising pressure and strategic importance for market leaders, with internal measurement. Phase 3 (2015-2023) linked global frameworks to company actions with more transparency, such as science-based targets. Phase 4 (from 2023) is mandatory, forward-looking reporting with tools like double materiality, amid geopolitical differences.",
+      "hint1": "Four phases from 'nice pictures' to 'mandatory'.",
+      "hint2": "Phase 4 starts in 2023.",
+      "source_pages": "S2 p24",
+      "status": "draft"
+    },
+    {
+      "id": "S2-17",
+      "session": 2,
+      "year": 2026,
+      "topic": "Reporting challenges",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "What is the difference between greenwashing and greenhushing?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Greenwashing: misleading statements that inflate a company's sustainable image",
+        "Greenhushing: under-reporting or hiding sustainability activities to evade scrutiny or accountability"
+      ],
+      "model_answer": "Greenwashing means misleading statements that inflate a company's sustainable image. Greenhushing is the opposite: under-reporting or hiding sustainability activities to avoid scrutiny and accountability.",
+      "hint1": "One exaggerates, the other stays quiet.",
+      "hint2": "Greenhushing hides activities from public view.",
+      "source_pages": "S2 p25",
+      "status": "draft"
+    },
+    {
+      "id": "S2-18",
+      "session": 2,
+      "year": 2026,
+      "topic": "Reporting challenges",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "What is 'shadow reporting'?",
+      "options": {
+        "A": "Reporting only to investors",
+        "B": "Using external accounts to identify contradictions between disclosure and actual problems",
+        "C": "Publishing reports without auditing",
+        "D": "Reporting emissions of subsidiaries"
+      },
+      "correct": "B",
+      "key_points": [
+        "Shadow reporting uses external accounts to find contradictions between what companies disclose and actual problems."
+      ],
+      "model_answer": "Shadow reporting uses external accounts to find contradictions between what companies disclose and actual problems.",
+      "hint1": "Someone outside the company is involved.",
+      "hint2": "It checks disclosures against reality.",
+      "source_pages": "S2 p25",
+      "status": "draft"
+    },
+    {
+      "id": "S2-19",
+      "session": 2,
+      "year": 2026,
+      "topic": "Regulation",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Which materiality approach do the ISSB standards (IFRS S1 and S2) use?",
+      "options": {
+        "A": "Double materiality",
+        "B": "Financial materiality",
+        "C": "Impact materiality",
+        "D": "No materiality assessment"
+      },
+      "correct": "B",
+      "key_points": [
+        "IFRS S1 and S2 use financial materiality, target investors, creditors and lenders, and are applied on a voluntary basis."
+      ],
+      "model_answer": "IFRS S1 and S2 use financial materiality, target investors, creditors and lenders, and are applied on a voluntary basis.",
+      "hint1": "Think about the target audience: investors, creditors, lenders.",
+      "hint2": "It's about effects on the company's finances.",
+      "source_pages": "S2 p27",
+      "status": "draft"
+    },
+    {
+      "id": "S2-20",
+      "session": 2,
+      "year": 2026,
+      "topic": "Carbon accounting",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "Under the GHG Protocol, emissions from purchased electricity are:",
+      "options": {
+        "A": "Scope 1",
+        "B": "Scope 2",
+        "C": "Scope 3",
+        "D": "Not counted"
+      },
+      "correct": "B",
+      "key_points": [
+        "Scope 2 covers emissions arising from purchased electricity."
+      ],
+      "model_answer": "Scope 2 covers emissions arising from purchased electricity.",
+      "hint1": "It's not on-site, but it's not the wider value chain either.",
+      "hint2": "The middle scope.",
+      "source_pages": "S2 p30",
+      "status": "draft"
+    },
+    {
+      "id": "S2-21",
+      "session": 2,
+      "year": 2026,
+      "topic": "Carbon accounting",
+      "type": "Open",
+      "difficulty": "easy",
+      "question": "Explain Scope 1, Scope 2 and Scope 3 emissions.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Scope 1: emissions from on-site activity (direct)",
+        "Scope 2: emissions from purchased electricity",
+        "Scope 3: emissions in the wider value chain, upstream (purchased products and services) and downstream (use of the company's products)"
+      ],
+      "model_answer": "Scope 1 covers emissions from the company's own on-site activity. Scope 2 covers emissions from purchased electricity. Scope 3 covers all other emissions in the wider value chain, upstream from purchased goods and services and downstream from the use of its products.",
+      "hint1": "Direct, electricity, value chain.",
+      "hint2": "Scope 3 has an upstream and a downstream part.",
+      "source_pages": "S2 p30",
+      "status": "draft"
+    },
+    {
+      "id": "S2-22",
+      "session": 2,
+      "year": 2026,
+      "topic": "Carbon accounting",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "How are Scope 1 and Scope 2 emissions calculated with the consumption-based method?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Scope 1: quantify fuel consumption (machinery, vehicles, refrigerant leakages, process emissions) x fuel emission factor (e.g. IPCC, EPA, GHG)",
+        "Scope 2: collect electricity consumption (e.g. bills) x electricity emission factor",
+        "Scope 2 factor can be market-based (contract) or location-based (local grid)"
+      ],
+      "model_answer": "For Scope 1, quantify fuel consumption and multiply it by a fuel emission factor (e.g. from IPCC, EPA or GHG Protocol): kg CO2e = fuel (kg) x kg CO2e per kg fuel. For Scope 2, take electricity consumption from bills and multiply it by an electricity emission factor, either market-based (your contract) or location-based (the local grid).",
+      "hint1": "Both are 'consumption x factor'.",
+      "hint2": "Scope 2 has two kinds of emission factor.",
+      "source_pages": "S2 p33, p34",
+      "status": "draft"
+    },
+    {
+      "id": "S2-23",
+      "session": 2,
+      "year": 2026,
+      "topic": "Carbon accounting",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "A location-based Scope 2 emission factor is based on:",
+      "options": {
+        "A": "The company's electricity contract",
+        "B": "The local electric grid",
+        "C": "Supplier surveys",
+        "D": "Fuel receipts"
+      },
+      "correct": "B",
+      "key_points": [
+        "Location-based uses the local electric grid; market-based uses the company's contract."
+      ],
+      "model_answer": "Location-based uses the local electric grid; market-based uses the company's contract.",
+      "hint1": "The word 'location' is the clue.",
+      "hint2": "The other type is market-based (contract).",
+      "source_pages": "S2 p34",
+      "status": "draft"
+    },
+    {
+      "id": "S2-24",
+      "session": 2,
+      "year": 2026,
+      "topic": "Carbon accounting",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "How many categories of Scope 3 emissions does the GHG Protocol define?",
+      "options": {
+        "A": "5",
+        "B": "8",
+        "C": "15",
+        "D": "21"
+      },
+      "correct": "C",
+      "key_points": [
+        "There are 15 Scope 3 categories, from purchased goods and services (1) to investments (15)."
+      ],
+      "model_answer": "There are 15 Scope 3 categories, from purchased goods and services (1) to investments (15).",
+      "hint1": "More than ten.",
+      "hint2": "Category 15 is investments.",
+      "source_pages": "S2 p35",
+      "status": "draft"
+    },
+    {
+      "id": "S2-25",
+      "session": 2,
+      "year": 2026,
+      "topic": "Carbon accounting",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "Describe the four methods companies use to measure Scope 3 emissions, with their pros and cons.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Spend-based: supplier spend x average emission factors; easy but imprecise",
+        "Activity-based: physical data (tonnes, km, kWh); more accurate but needs detailed supplier data",
+        "Supplier-specific: actual emissions data from key suppliers; most accurate, most resource-intensive",
+        "Hybrid: supplier-specific for the biggest contributors, spend-based for the long tail; the practical standard"
+      ],
+      "model_answer": "Spend-based multiplies spend by average factors: easy but imprecise. Activity-based uses physical data like tonnes, km or kWh: more accurate but needs supplier data. Supplier-specific collects actual data from key suppliers: most accurate but most resource-intensive. Hybrid combines supplier data for the biggest contributors with spend-based for the rest, and is the practical standard.",
+      "hint1": "The methods go from cheapest to most accurate.",
+      "hint2": "Spend-based, activity-based, supplier-specific, hybrid.",
+      "source_pages": "S2 p36",
+      "status": "draft"
+    },
+    {
+      "id": "S2-26",
+      "session": 2,
+      "year": 2026,
+      "topic": "Carbon accounting",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "What are the core challenges of Scope 3 accounting, and what is a practical starting point?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Data gaps: most suppliers, especially SMEs, don't track emissions",
+        "Double counting: one company's Scope 3 is another's Scope 1/2",
+        "Boundary decisions: companies choose which of the 15 categories to include, hurting comparability",
+        "Dynamic supply chains: changing suppliers require ongoing data collection",
+        "Starting point: spend-based baseline, identify top 2-3 categories (usually 80%+), invest in better data there"
+      ],
+      "model_answer": "The core challenges are data gaps (many suppliers, especially SMEs, don't track emissions), double counting across companies, boundary choices that make comparisons hard, and constantly changing supply chains. A practical start is a spend-based baseline, then identifying the top 2-3 categories, usually over 80% of the footprint, and improving data there first.",
+      "hint1": "Four challenges: data, double, boundaries, dynamics.",
+      "hint2": "The starting point begins with a spend-based baseline.",
+      "source_pages": "S2 p37",
+      "status": "draft"
+    },
+    {
+      "id": "S2-27",
+      "session": 2,
+      "year": 2026,
+      "topic": "Carbon accounting",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "'One company's Scope 3 is another company's Scope 1 or 2.' Which Scope 3 challenge does this describe?",
+      "options": {
+        "A": "Data gaps",
+        "B": "Double counting",
+        "C": "Boundary decisions",
+        "D": "Dynamic supply chains"
+      },
+      "correct": "B",
+      "key_points": [
+        "Double counting: emissions can be counted multiple times across a supply chain."
+      ],
+      "model_answer": "Double counting: emissions can be counted multiple times across a supply chain.",
+      "hint1": "The same emissions appear in more than one report.",
+      "hint2": "Counted twice.",
+      "source_pages": "S2 p37",
+      "status": "draft"
+    },
+    {
+      "id": "S2-28",
+      "session": 2,
+      "year": 2026,
+      "topic": "Carbon accounting",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "Compare the three use cases for logistics carbon accounting (Smart Freight Centre).",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Reporting: backward-looking, monthly or annual; modeled and default data give a good indication, primary preferred",
+        "Performance monitoring: backward-looking, as per the decision; primary data required; high level of supply chain detail",
+        "Decision making and optimization: forward-looking; modeling needed but improves with primary input data; requires supply chain details"
+      ],
+      "model_answer": "Reporting is backward-looking and done monthly or annually; modeled and default data are acceptable though primary data is preferred. Performance monitoring is also backward-looking but requires primary data and detailed supply chain information. Decision making and optimization is forward-looking; it relies on modeling, improves with primary input data and requires supply chain details.",
+      "hint1": "Two use cases look back, one looks forward.",
+      "hint2": "Which use case requires primary data?",
+      "source_pages": "S2 p39",
+      "status": "draft"
+    },
+    {
+      "id": "S2-29",
+      "session": 2,
+      "year": 2026,
+      "topic": "Carbon accounting",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "EcoTransit, a free online calculator, is an example of which data type?",
+      "options": {
+        "A": "Primary data",
+        "B": "Modeled data",
+        "C": "Default data",
+        "D": "Spend data"
+      },
+      "correct": "B",
+      "key_points": [
+        "Modeled data combines shipment data with information on vehicles and fleets; EcoTransit is the example. GLEC is the example for default data."
+      ],
+      "model_answer": "Modeled data combines shipment data with information on vehicles and fleets; EcoTransit is the example. GLEC is the example for default data.",
+      "hint1": "It models fuel use from shipment data.",
+      "hint2": "Not real fuel receipts, not industry averages.",
+      "source_pages": "S2 p42",
+      "status": "draft"
+    },
+    {
+      "id": "S2-30",
+      "session": 2,
+      "year": 2026,
+      "topic": "Carbon accounting",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Explain the difference between primary, modeled and default data in transport emissions accounting, with a source for each.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Primary: real, actual data (fuel consumption, cargo weight); sources: fuel receipts, fuel cards, electricity bills, telemetry",
+        "Modeled: shipment data combined with vehicle and fleet information; e.g. EcoTransit",
+        "Default: assumptions of vehicle efficiency, load factor, empty running; industry averages, e.g. GLEC, LCA databases"
+      ],
+      "model_answer": "Primary data is real measured data, such as fuel use from receipts, fuel cards or telemetry. Modeled data combines shipment data with vehicle and fleet information, for example in EcoTransit. Default data uses assumptions and industry averages for efficiency, load factor and empty running, for example from GLEC or LCA databases.",
+      "hint1": "Real, modeled, average.",
+      "hint2": "Give one example source each: fuel cards, EcoTransit, GLEC.",
+      "source_pages": "S2 p42",
+      "status": "draft"
+    },
+    {
+      "id": "S2-31",
+      "session": 2,
+      "year": 2026,
+      "topic": "Carbon accounting",
+      "type": "MC",
+      "difficulty": "hard",
+      "question": "In DHL's 2024 logistics-related GHG emissions, which transport mode had the largest share?",
+      "options": {
+        "A": "Road",
+        "B": "Ocean",
+        "C": "Air",
+        "D": "Rail"
+      },
+      "correct": "C",
+      "key_points": [
+        "By mode, air made up about 66%, road 22%, ocean 9% and buildings 1% of DHL's logistics-related emissions (33.77 million t CO2e in 2024)."
+      ],
+      "model_answer": "By mode, air made up about 66%, road 22%, ocean 9% and buildings 1% of DHL's logistics-related emissions (33.77 million t CO2e in 2024).",
+      "hint1": "Think of the most carbon-intensive mode.",
+      "hint2": "About two-thirds of the total.",
+      "source_pages": "S2 p38",
+      "status": "draft"
+    }
+  ]
+}

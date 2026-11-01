@@ -1,0 +1,6 @@
+{
+  "name": "klu-exam-bot-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "observability": { "enabled": true }
+}
