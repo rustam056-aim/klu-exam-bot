@@ -4,7 +4,8 @@
   "scripts": {
     "setup": "npm install && npm --prefix api install && npm --prefix web install",
     "dev": "concurrently -n api,web -c blue,green \"npm --prefix api run dev\" \"npm --prefix web run dev\"",
-    "build": "npm --prefix web run build"
+    "build": "npm --prefix web run build",
+    "deploy": "npm --prefix web run build && npm --prefix api run deploy"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

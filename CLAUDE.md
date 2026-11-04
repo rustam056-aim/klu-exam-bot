@@ -23,6 +23,10 @@ Keep A extensible: questions in data (later a database), voice behind `transcrib
 - `api/`  Cloudflare Worker in TypeScript. `npm run dev` -> http://localhost:8787
 - `api/data/questions_s1_s2_2026.json`  question bank, Sessions 1-2 of 2026 (57 questions, all `draft`)
 
+## Deploy
+- Cloudflare Worker `klu-exam-practice` serves web/dist as static assets and /api/* from api/src/index.ts.
+- Root: `npm run deploy` (builds web, then wrangler deploy). Keys in production: `npx wrangler secret put ANTHROPIC_API_KEY` / `ELEVENLABS_API_KEY` (run in api/).
+
 ## API (api/src/index.ts)
 - `GET  /api/health`
 - `GET  /api/sessions`  -> question count per session
