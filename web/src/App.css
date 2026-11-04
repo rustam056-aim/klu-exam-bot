@@ -300,9 +300,6 @@ h2 {
   max-width: 34ch;
 }
 
-.presenter {
-  display: none; /* option C */
-}
 
 .options {
   display: grid;
@@ -711,4 +708,166 @@ h2 {
   background: var(--surface);
   font-weight: 400;
   font-size: 1rem;
+}
+
+/* Tutor: shows what the bot is doing. Option C swaps the orb for Prof. Meuer's photo. */
+.tutor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.tutor-orb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--steel);
+  transition: background-color 200ms ease;
+}
+
+.tutor-orb::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  transition: border-color 200ms ease;
+}
+
+.tutor-orb span {
+  width: 3px;
+  height: 6px;
+  border-radius: 2px;
+  background: #fff;
+  opacity: 0.9;
+}
+
+.tutor-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+/* Speaking: the bars move like a voice */
+.tutor-speaking .tutor-orb span {
+  animation: talk 0.9s ease-in-out infinite;
+}
+
+.tutor-speaking .tutor-orb span:nth-child(2) {
+  animation-delay: -0.3s;
+}
+
+.tutor-speaking .tutor-orb span:nth-child(3) {
+  animation-delay: -0.6s;
+}
+
+.tutor-speaking .tutor-orb span:nth-child(4) {
+  animation-delay: -0.45s;
+}
+
+.tutor-speaking .tutor-label {
+  color: var(--steel);
+}
+
+/* Listening: a soft red ring, like a recording light */
+.tutor-listening .tutor-orb {
+  background: var(--bad);
+}
+
+.tutor-listening .tutor-orb::after {
+  border-color: var(--bad);
+  animation: ring 1.4s ease-out infinite;
+}
+
+.tutor-listening .tutor-label {
+  color: var(--bad);
+}
+
+/* Thinking: the dots take turns */
+.tutor-thinking .tutor-orb span {
+  height: 4px;
+  width: 4px;
+  animation: think 1.2s ease-in-out infinite;
+}
+
+.tutor-thinking .tutor-orb span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.tutor-thinking .tutor-orb span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.tutor-thinking .tutor-orb span:nth-child(4) {
+  animation-delay: 0.45s;
+}
+
+@keyframes talk {
+  0%,
+  100% {
+    height: 6px;
+  }
+  50% {
+    height: 20px;
+  }
+}
+
+@keyframes ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.25);
+  }
+}
+
+@keyframes think {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+/* Microphone help box */
+.mic-help {
+  margin-top: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--signal);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.mic-help h3 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.mic-help ol {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 4px;
+}
+
+.mic-help-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
 }

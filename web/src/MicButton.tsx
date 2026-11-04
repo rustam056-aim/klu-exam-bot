@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { micHelp } from './micHelp'
+import type { MicHelp } from './micHelp'
 import { stopSpeaking, transcribe } from './voice'
 
 const MAX_SECONDS = 120
@@ -8,10 +10,27 @@ function clock(s: number) {
 }
 
 // Records the student's spoken answer and hands back the text, which they can still edit.
-export function MicButton({ onText, disabled }: { onText: (text: string) => void; disabled?: boolean }) {
-  const [state, setState] = useState<'idle' | 'recording' | 'working'>('idle')
+export type MicState = 'idle' | 'recording' | 'working'
+
+export function MicButton({
+  onText,
+  disabled,
+  onStateChange,
+}: {
+  onText: (text: string) => void
+  disabled?: boolean
+  onStateChange?: (state: MicState) => void
+}) {
+  const [state, setState] = useState<MicState>('idle')
+
+  useEffect(() => {
+    onStateChange?.(state)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state])
   const [seconds, setSeconds] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const [help, setHelp] = useState<MicHelp | null>(null)
+  const [copied, setCopied] = useState(false)
   const recorder = useRef<MediaRecorder | null>(null)
   const chunks = useRef<Blob[]>([])
 
@@ -21,16 +40,18 @@ export function MicButton({ onText, disabled }: { onText: (text: string) => void
 
   async function start() {
     setError(null)
+    setHelp(null)
     stopSpeaking() // don't record the app's own voice
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
-      setError('Voice answers don’t work in this browser. Type your answer instead.')
+      setHelp(micHelp('unsupported'))
       return
     }
     let stream: MediaStream
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    } catch {
-      setError('The microphone is blocked. Allow it in your browser settings, or type your answer.')
+    } catch (err) {
+      const name = (err as DOMException)?.name
+      setHelp(micHelp(name === 'NotFoundError' ? 'missing' : name === 'NotReadableError' ? 'busy' : 'blocked'))
       return
     }
     const mime = ['audio/webm', 'audio/mp4', 'audio/ogg'].find((t) => MediaRecorder.isTypeSupported(t))
@@ -95,6 +116,38 @@ export function MicButton({ onText, disabled }: { onText: (text: string) => void
         <p className="error" role="alert">
           {error}
         </p>
+      )}
+      {help && (
+        <div className="mic-help" role="alert">
+          <h3>{help.title}</h3>
+          <ol>
+            {help.steps.map((s) => (
+              <li key={s}>{s}</li>
+            ))}
+          </ol>
+          <div className="mic-help-actions">
+            <button className="btn primary" type="button" onClick={() => void start()}>
+              Try again
+            </button>
+            {help.openElsewhere && (
+              <button
+                className="btn quiet"
+                type="button"
+                onClick={() => {
+                  navigator.clipboard
+                    ?.writeText(location.href)
+                    .then(() => setCopied(true))
+                    .catch(() => setCopied(false))
+                }}
+              >
+                {copied ? 'Link copied' : 'Copy link'}
+              </button>
+            )}
+            <button className="btn link" type="button" onClick={() => setHelp(null)}>
+              I’ll type instead
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )

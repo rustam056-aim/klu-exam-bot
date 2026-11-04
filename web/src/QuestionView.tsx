@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from './api'
 import { difficultyLabel, formatSource, opening, verdictLabel } from './format'
 import { MicButton } from './MicButton'
+import type { MicState } from './MicButton'
+import { Tutor } from './Tutor'
 import { onSpeakingChange, speak, stopSpeaking } from './voice'
 import type { AnswerResult, Attempt, OpenResult, PublicQuestion, Verdict } from './types'
 
@@ -48,6 +50,7 @@ export function QuestionView({ question, number, total, readAloud, onDone }: Pro
   const nextRef = useRef<HTMLButtonElement>(null)
   const [audioNote, setAudioNote] = useState<string | null>(null)
   const [speaking, setSpeaking] = useState(false)
+  const [micState, setMicState] = useState<MicState>('idle')
   useEffect(() => onSpeakingChange(setSpeaking), [])
 
   function say(text: string) {
@@ -140,6 +143,18 @@ export function QuestionView({ question, number, total, readAloud, onDone }: Pro
 
   return (
     <article className="question">
+      {/* The tutor shows what the bot is doing. Option C: Prof. Meuer's animated photo goes here. */}
+      <Tutor
+        state={
+          micState === 'recording'
+            ? 'listening'
+            : busy || micState === 'working'
+              ? 'thinking'
+              : speaking
+                ? 'speaking'
+                : 'idle'
+        }
+      />
       <p className="q-meta">
         <span>
           Question {number} of {total}
@@ -171,8 +186,6 @@ export function QuestionView({ question, number, total, readAloud, onDone }: Pro
       </div>
       {audioNote && <p className="note">{audioNote}</p>}
 
-      {/* Option C will place Prof. Meuer's animated photo here. Empty in option A. */}
-      <div className="presenter" aria-hidden="true" />
 
       {isMC ? (
         <div className="options" role="radiogroup" aria-label="Answer options">
@@ -210,7 +223,10 @@ export function QuestionView({ question, number, total, readAloud, onDone }: Pro
         </label>
       )}
       {!isMC && !result && (
-        <MicButton onText={(t) => setText((prev) => (prev ? `${prev} ${t}` : t))} />
+        <MicButton
+          onText={(t) => setText((prev) => (prev ? `${prev} ${t}` : t))}
+          onStateChange={setMicState}
+        />
       )}
 
       {hints.length > 0 && (
