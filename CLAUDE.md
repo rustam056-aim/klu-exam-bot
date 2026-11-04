@@ -43,6 +43,6 @@ question, options {A..D} | null, correct | null, key_points[], model_answer, hin
 
 ## Next steps
 1. DONE: quiz page in `web/` (start screen, route-line progress, MC + open answers, hints, feedback, review list, practise again). Open answers use a key-point self-check until step 2.
-2. Claude grading for open answers in `/api/answer` (verdict correct/partly/wrong, points hit, points missed, max 3 sentences).
+2. DONE: Claude grading for open answers (`gradeWithClaude` in api/src/index.ts, model claude-haiku-5-5 via tool call). Claude only picks covered key points + writes feedback; verdict = all/some/none of the points. Falls back to self-check if no key or an error.
 3. DONE: voice. Mic button for open answers (web/src/MicButton.tsx), Read aloud switch + Listen links (web/src/voice.ts).
 4. Access code + daily cap per student; deploy to Cloudflare.

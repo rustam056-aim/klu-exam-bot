@@ -678,3 +678,19 @@ h2 {
     gap: 12px;
   }
 }
+
+.stop-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  font-size: 0.9375rem;
+}
+
+.stop-btn::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--ink);
+}

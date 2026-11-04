@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from './api'
 import { difficultyLabel, formatSource, verdictLabel } from './format'
 import { MicButton } from './MicButton'
-import { speak, stopSpeaking } from './voice'
+import { onSpeakingChange, speak, stopSpeaking } from './voice'
 import type { AnswerResult, Attempt, OpenResult, PublicQuestion, Verdict } from './types'
 
 type Props = {
@@ -47,6 +47,8 @@ export function QuestionView({ question, number, total, readAloud, onDone }: Pro
   const [error, setError] = useState<string | null>(null)
   const nextRef = useRef<HTMLButtonElement>(null)
   const [audioNote, setAudioNote] = useState<string | null>(null)
+  const [speaking, setSpeaking] = useState(false)
+  useEffect(() => onSpeakingChange(setSpeaking), [])
 
   function say(text: string) {
     setAudioNote(null)
@@ -113,6 +115,10 @@ export function QuestionView({ question, number, total, readAloud, onDone }: Pro
   // Keyboard: A-D picks an option, Enter checks or moves on, Cmd/Ctrl+Enter checks a written answer.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        stopSpeaking()
+        return
+      }
       const typing = (e.target as HTMLElement).tagName === 'TEXTAREA'
       if (typing) {
         if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -144,13 +150,21 @@ export function QuestionView({ question, number, total, readAloud, onDone }: Pro
 
       <h2 className="q-text">{question.question}</h2>
       <div className="listen-row">
-        <button className="btn link" type="button" onClick={() => say(questionSpeech(question))}>
-          Listen to the question
-        </button>
-        {result && (
-          <button className="btn link" type="button" onClick={() => say(feedbackSpeech(result))}>
-            Listen to the feedback
+        {speaking ? (
+          <button className="btn quiet stop-btn" type="button" onClick={stopSpeaking}>
+            Stop reading
           </button>
+        ) : (
+          <>
+            <button className="btn link" type="button" onClick={() => say(questionSpeech(question))}>
+              Listen to the question
+            </button>
+            {result && (
+              <button className="btn link" type="button" onClick={() => say(feedbackSpeech(result))}>
+                Listen to the feedback
+              </button>
+            )}
+          </>
         )}
       </div>
       {audioNote && <p className="note">{audioNote}</p>}

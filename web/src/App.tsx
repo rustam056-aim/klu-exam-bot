@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import { api } from './api'
+import { stopSpeaking } from './voice'
 import { QuestionView } from './QuestionView'
 import { RouteLine } from './RouteLine'
 import type { Stop } from './RouteLine'
@@ -86,7 +87,10 @@ export default function App() {
             type="button"
             role="switch"
             aria-checked={readAloud}
-            onClick={() => setReadAloud(!readAloud)}
+            onClick={() => {
+              if (readAloud) stopSpeaking()
+              setReadAloud(!readAloud)
+            }}
           >
             <span className="switch-track" aria-hidden="true" />
             Read aloud
