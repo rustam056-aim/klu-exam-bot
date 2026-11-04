@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from './api'
-import { difficultyLabel, formatSource, verdictLabel } from './format'
+import { difficultyLabel, formatSource, opening, verdictLabel } from './format'
 import { MicButton } from './MicButton'
 import { onSpeakingChange, speak, stopSpeaking } from './voice'
 import type { AnswerResult, Attempt, OpenResult, PublicQuestion, Verdict } from './types'
@@ -22,13 +22,13 @@ function questionSpeech(q: PublicQuestion) {
 function feedbackSpeech(result: AnswerResult): string {
   if (result.type === 'MC') {
     return result.verdict === 'correct'
-      ? `Correct. ${result.explanation}`
-      : `Not quite. The answer is ${result.correctOption}. ${result.explanation}`
+      ? `${opening('correct', result.id)} ${result.explanation}`
+      : `${opening('wrong', result.id)} It’s ${result.correctOption}. ${result.explanation}`
   }
   if (result.verdict === 'not_graded_yet') {
     return `Compare your answer with the key points. ${result.keyPoints.join('. ')}.`
   }
-  return [verdictLabel[result.verdict] + '.', result.feedback ?? ''].join(' ').trim()
+  return [opening(result.verdict, result.id), result.feedback ?? ''].join(' ').trim()
 }
 
 // Self-check verdict for open answers, used until Claude grading is switched on.
@@ -275,7 +275,11 @@ function Feedback(props: {
   if (result.type === 'MC') {
     return (
       <section className={`feedback verdict-${verdict}`} aria-live="polite">
-        <h3>{verdict === 'correct' ? 'Correct.' : `Not quite. The answer is ${result.correctOption}.`}</h3>
+        <h3>
+          {verdict === 'correct'
+            ? opening('correct', result.id)
+            : `${opening('wrong', result.id)} It’s ${result.correctOption}.`}
+        </h3>
         <p>{result.explanation}</p>
         {source}
       </section>
@@ -310,7 +314,7 @@ function Feedback(props: {
   // Graded by Claude (next step in the backend)
   return (
     <section className={`feedback verdict-${verdict}`} aria-live="polite">
-      <h3>{verdictLabel[verdict]}.</h3>
+      <h3>{opening(verdict, result.id)}</h3>
       {result.feedback && <p>{result.feedback}</p>}
       {result.pointsHit && result.pointsHit.length > 0 && (
         <>

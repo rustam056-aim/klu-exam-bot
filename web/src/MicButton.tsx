@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { transcribe } from './voice'
+import { stopSpeaking, transcribe } from './voice'
 
 const MAX_SECONDS = 120
 
@@ -21,6 +21,7 @@ export function MicButton({ onText, disabled }: { onText: (text: string) => void
 
   async function start() {
     setError(null)
+    stopSpeaking() // don't record the app's own voice
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setError('Voice answers don’t work in this browser. Type your answer instead.')
       return
