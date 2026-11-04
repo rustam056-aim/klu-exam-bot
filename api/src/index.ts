@@ -23,6 +23,7 @@ type Question = {
 export interface Env {
   ANTHROPIC_API_KEY?: string;
   ELEVENLABS_API_KEY?: string;
+  ELEVENLABS_VOICE_ID?: string; // optional: a different standard voice
   ONLY_APPROVED?: string; // set to "true" before students get access
 }
 
@@ -119,6 +120,60 @@ export default {
         modelAnswer: q.model_answer,
         source: q.source_pages,
       });
+    }
+
+    // POST /api/transcribe  body = recorded audio (webm/mp4/ogg) -> { text }
+    // Speech to text with ElevenLabs Scribe v2.
+    if (path === '/api/transcribe' && req.method === 'POST') {
+      if (!env.ELEVENLABS_API_KEY) return json({ error: 'voice is not set up' }, 503);
+      const type = req.headers.get('content-type') ?? 'audio/webm';
+      const audio = await req.arrayBuffer();
+      if (audio.byteLength === 0) return json({ error: 'empty recording' }, 400);
+      if (audio.byteLength > 6_000_000) return json({ error: 'recording too long' }, 413);
+      const ext = type.includes('mp4') ? 'mp4' : type.includes('ogg') ? 'ogg' : 'webm';
+      const form = new FormData();
+      form.append('file', new Blob([audio], { type }), `answer.${ext}`);
+      form.append('model_id', 'scribe_v2');
+      form.append('language_code', 'eng');
+      form.append('tag_audio_events', 'false');
+      const res = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
+        method: 'POST',
+        headers: { 'xi-api-key': env.ELEVENLABS_API_KEY },
+        body: form,
+      });
+      if (!res.ok) {
+        console.log('ElevenLabs speech-to-text failed', res.status, (await res.text()).slice(0, 300));
+        return json({ error: 'transcription failed' }, 502);
+      }
+      const data = (await res.json()) as { text?: string };
+      return json({ text: (data.text ?? '').trim() });
+    }
+
+    // POST /api/speak  { "text": "..." } -> audio/mpeg
+    // Text to speech with a standard ElevenLabs voice (Flash v2.5: fast and cheap).
+    if (path === '/api/speak' && req.method === 'POST') {
+      if (!env.ELEVENLABS_API_KEY) return json({ error: 'voice is not set up' }, 503);
+      const body = (await req.json().catch(() => null)) as { text?: string } | null;
+      const text = body?.text?.trim().slice(0, 900);
+      if (!text) return json({ error: 'need text' }, 400);
+      const voice = env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
+      const res = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_128`,
+        {
+          method: 'POST',
+          headers: {
+            'xi-api-key': env.ELEVENLABS_API_KEY,
+            'content-type': 'application/json',
+            accept: 'audio/mpeg',
+          },
+          body: JSON.stringify({ text, model_id: 'eleven_flash_v2_5' }),
+        },
+      );
+      if (!res.ok || !res.body) {
+        console.log('ElevenLabs text-to-speech failed', res.status, (await res.text()).slice(0, 300));
+        return json({ error: 'speech failed' }, 502);
+      }
+      return new Response(res.body, { headers: { 'content-type': 'audio/mpeg', 'cache-control': 'no-store' } });
     }
 
     return json({ error: 'not found' }, 404);

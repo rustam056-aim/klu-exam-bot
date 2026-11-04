@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import { api } from './api'
 import { QuestionView } from './QuestionView'
@@ -18,6 +18,21 @@ export default function App() {
   const [current, setCurrent] = useState<PublicQuestion | null>(null)
   const [total, setTotal] = useState(10)
   const [error, setError] = useState<string | null>(null)
+  const [readAloud, setReadAloud] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('readAloud') === 'on'
+    } catch {
+      return false
+    }
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('readAloud', readAloud ? 'on' : 'off')
+    } catch {
+      /* private mode: just don't remember it */
+    }
+  }, [readAloud])
 
   async function loadNext(done: Attempt[], s: Settings, onlyIds?: string[]) {
     setError(null)
@@ -65,11 +80,23 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <span className="brand">Sustainable Logistics: exam practice</span>
-        {phase === 'quiz' && (
-          <button className="btn link" type="button" onClick={() => setPhase('summary')}>
-            End practice
+        <div className="topbar-actions">
+          <button
+            className={`switch ${readAloud ? 'is-on' : ''}`}
+            type="button"
+            role="switch"
+            aria-checked={readAloud}
+            onClick={() => setReadAloud(!readAloud)}
+          >
+            <span className="switch-track" aria-hidden="true" />
+            Read aloud
           </button>
-        )}
+          {phase === 'quiz' && (
+            <button className="btn link" type="button" onClick={() => setPhase('summary')}>
+              End practice
+            </button>
+          )}
+        </div>
       </header>
 
       <main>
@@ -92,6 +119,7 @@ export default function App() {
                 question={current}
                 number={attempts.length + 1}
                 total={total}
+                readAloud={readAloud}
                 onDone={record}
               />
             )}

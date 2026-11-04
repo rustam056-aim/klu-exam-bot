@@ -1,13 +1,34 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from './api'
 import { difficultyLabel, formatSource, verdictLabel } from './format'
+import { MicButton } from './MicButton'
+import { speak, stopSpeaking } from './voice'
 import type { AnswerResult, Attempt, OpenResult, PublicQuestion, Verdict } from './types'
 
 type Props = {
   question: PublicQuestion
   number: number
   total: number
+  readAloud: boolean
   onDone: (attempt: Attempt) => void
+}
+
+// What gets read aloud: the question (with its options), and the feedback after checking.
+function questionSpeech(q: PublicQuestion) {
+  const options = q.options ? Object.entries(q.options).map(([k, v]) => `${k}: ${v}.`).join(' ') : ''
+  return `${q.question} ${options}`.trim()
+}
+
+function feedbackSpeech(result: AnswerResult): string {
+  if (result.type === 'MC') {
+    return result.verdict === 'correct'
+      ? `Correct. ${result.explanation}`
+      : `Not quite. The answer is ${result.correctOption}. ${result.explanation}`
+  }
+  if (result.verdict === 'not_graded_yet') {
+    return `Compare your answer with the key points. ${result.keyPoints.join('. ')}.`
+  }
+  return [verdictLabel[result.verdict] + '.', result.feedback ?? ''].join(' ').trim()
 }
 
 // Self-check verdict for open answers, used until Claude grading is switched on.
@@ -16,7 +37,7 @@ function selfCheckVerdict(result: OpenResult, covered: Set<number>): Verdict {
   return covered.size === result.keyPoints.length ? 'correct' : 'partly'
 }
 
-export function QuestionView({ question, number, total, onDone }: Props) {
+export function QuestionView({ question, number, total, readAloud, onDone }: Props) {
   const [choice, setChoice] = useState<string | null>(null)
   const [text, setText] = useState('')
   const [hints, setHints] = useState<string[]>([])
@@ -25,6 +46,24 @@ export function QuestionView({ question, number, total, onDone }: Props) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const nextRef = useRef<HTMLButtonElement>(null)
+  const [audioNote, setAudioNote] = useState<string | null>(null)
+
+  function say(text: string) {
+    setAudioNote(null)
+    speak(text).catch(() => setAudioNote('The audio couldn’t play. Use “Listen” to try again.'))
+  }
+
+  // Read the question when it appears (if read aloud is on); stop talking when it goes away.
+  useEffect(() => {
+    if (readAloud) say(questionSpeech(question))
+    return () => stopSpeaking()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (result && readAloud) say(feedbackSpeech(result))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result])
 
   const isMC = question.type === 'MC'
   const answer = isMC ? choice : text.trim()
@@ -104,6 +143,17 @@ export function QuestionView({ question, number, total, onDone }: Props) {
       </p>
 
       <h2 className="q-text">{question.question}</h2>
+      <div className="listen-row">
+        <button className="btn link" type="button" onClick={() => say(questionSpeech(question))}>
+          Listen to the question
+        </button>
+        {result && (
+          <button className="btn link" type="button" onClick={() => say(feedbackSpeech(result))}>
+            Listen to the feedback
+          </button>
+        )}
+      </div>
+      {audioNote && <p className="note">{audioNote}</p>}
 
       {/* Option C will place Prof. Meuer's animated photo here. Empty in option A. */}
       <div className="presenter" aria-hidden="true" />
@@ -142,6 +192,9 @@ export function QuestionView({ question, number, total, onDone }: Props) {
             placeholder="Write your answer in a few sentences, as you would in the exam."
           />
         </label>
+      )}
+      {!isMC && !result && (
+        <MicButton onText={(t) => setText((prev) => (prev ? `${prev} ${t}` : t))} />
       )}
 
       {hints.length > 0 && (

@@ -568,3 +568,113 @@ h2 {
     flex: 1 1 auto;
   }
 }
+
+/* Voice */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.switch-track {
+  position: relative;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--line);
+  transition: background-color 150ms ease;
+}
+
+.switch-track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 150ms ease;
+}
+
+.switch.is-on .switch-track {
+  background: var(--steel);
+}
+
+.switch.is-on .switch-track::after {
+  transform: translateX(14px);
+}
+
+.listen-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin-top: 8px;
+}
+
+.note {
+  margin-top: 8px;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+.mic {
+  margin-top: 12px;
+}
+
+.mic-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mic-btn::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink-2);
+}
+
+.mic-btn.mic-recording {
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
+.mic-btn.mic-recording::before {
+  background: var(--bad);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.mic .error {
+  margin-top: 8px;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (max-width: 560px) {
+  .brand {
+    font-size: 0.875rem;
+  }
+
+  .topbar-actions {
+    gap: 12px;
+  }
+}

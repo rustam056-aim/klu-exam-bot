@@ -28,6 +28,8 @@ Keep A extensible: questions in data (later a database), voice behind `transcrib
 - `GET  /api/sessions`  -> question count per session
 - `GET  /api/question/next?session=1&difficulty=easy&exclude=S1-01,S1-02&only=...`  -> a question without the answer (`only` = practise these again)
 - `GET  /api/hint?id=S1-03&level=1|2`
+- `POST /api/transcribe` (audio body) -> {text}, ElevenLabs Scribe v2
+- `POST /api/speak {text}` -> audio/mpeg, ElevenLabs Flash v2.5, standard voice (ELEVENLABS_VOICE_ID optional)
 - `POST /api/answer {id, answer}`  -> MC: verdict + explanation + source. Open: `not_graded_yet` (Claude grading is the next step)
 
 ## Question format
@@ -42,5 +44,5 @@ question, options {A..D} | null, correct | null, key_points[], model_answer, hin
 ## Next steps
 1. DONE: quiz page in `web/` (start screen, route-line progress, MC + open answers, hints, feedback, review list, practise again). Open answers use a key-point self-check until step 2.
 2. Claude grading for open answers in `/api/answer` (verdict correct/partly/wrong, points hit, points missed, max 3 sentences).
-3. Voice: ElevenLabs speech-to-text for answers, text-to-speech for feedback (sentence by sentence).
+3. DONE: voice. Mic button for open answers (web/src/MicButton.tsx), Read aloud switch + Listen links (web/src/voice.ts).
 4. Access code + daily cap per student; deploy to Cloudflare.
