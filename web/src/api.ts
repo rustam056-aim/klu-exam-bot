@@ -1,13 +1,15 @@
+import { NeedsCode, accessHeaders } from './access'
 import type { AnswerResult, NextResponse } from './types'
 
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(path)
+  const res = await fetch(path, { headers: accessHeaders() })
+  if (res.status === 401) throw new NeedsCode()
   if (!res.ok) throw new Error(`Request failed (${res.status})`)
   return res.json() as Promise<T>
 }
 
 export const api = {
-  sessions: () => get<{ session: number; count: number }[]>('/api/sessions'),
+  sessions: () => get<{ session: number; label?: string; count: number }[]>('/api/sessions'),
 
   next: (p: { session?: string; difficulty?: string; exclude: string[]; only?: string[] }) => {
     const params = new URLSearchParams()
@@ -24,9 +26,10 @@ export const api = {
   answer: async (id: string, answer: string): Promise<AnswerResult> => {
     const res = await fetch('/api/answer', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...accessHeaders() },
       body: JSON.stringify({ id, answer }),
     })
+    if (res.status === 401) throw new NeedsCode()
     if (!res.ok) throw new Error(`Request failed (${res.status})`)
     return res.json() as Promise<AnswerResult>
   },

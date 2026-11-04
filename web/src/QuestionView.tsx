@@ -144,7 +144,9 @@ export function QuestionView({ question, number, total, readAloud, onDone }: Pro
         <span>
           Question {number} of {total}
         </span>
-        <span>Session {question.session}: {question.topic}</span>
+        <span>
+          {question.sessionLabel ?? `Session ${question.session}`}: {question.topic}
+        </span>
         <span className={`tag tag-${question.difficulty}`}>{difficultyLabel[question.difficulty]}</span>
       </p>
 
@@ -270,7 +272,7 @@ function Feedback(props: {
   onToggle: (index: number) => void
 }) {
   const { result, verdict, covered, onToggle } = props
-  const source = <p className="source">From the slides: {formatSource(result.source)}</p>
+  const source = <p className="source">From the course: {formatSource(result.source)}</p>
 
   if (result.type === 'MC') {
     return (

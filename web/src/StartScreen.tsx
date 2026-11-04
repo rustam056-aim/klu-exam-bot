@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { NeedsCode, setAccessCode } from './access'
 import { api } from './api'
 import type { Settings } from './types'
 
@@ -34,19 +35,72 @@ function Choice<T extends string>(props: {
 
 export function StartScreen({ initial, onStart }: { initial: Settings; onStart: (s: Settings) => void }) {
   const [settings, setSettings] = useState(initial)
-  const [sessions, setSessions] = useState<{ session: number; count: number }[] | null>(null)
+  const [sessions, setSessions] = useState<{ session: number; label?: string; count: number }[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [needCode, setNeedCode] = useState(false)
+  const [codeInput, setCodeInput] = useState('')
+  const [codeError, setCodeError] = useState<string | null>(null)
 
-  useEffect(() => {
+  function load(afterCodeEntry = false) {
     api
       .sessions()
-      .then(setSessions)
-      .catch(() => setError('The practice server is not responding. Reload the page in a minute.'))
-  }, [])
+      .then((s) => {
+        setSessions(s)
+        setNeedCode(false)
+      })
+      .catch((e) => {
+        if (e instanceof NeedsCode) {
+          setNeedCode(true)
+          if (afterCodeEntry) setCodeError('That code didn’t work. Check it and try again.')
+        } else {
+          setError('The practice server is not responding. Reload the page in a minute.')
+        }
+      })
+  }
+
+  useEffect(() => load(), [])
+
+  if (needCode) {
+    return (
+      <section className="start">
+        <h1>Practise for the Sustainable Logistics exam</h1>
+        <p className="lede">Enter the access code from the course page on Moodle to start.</p>
+        <form
+          className="settings"
+          onSubmit={(e) => {
+            e.preventDefault()
+            setCodeError(null)
+            setAccessCode(codeInput)
+            load(true)
+          }}
+        >
+          <label className="code-field">
+            <span>Access code</span>
+            <input
+              value={codeInput}
+              onChange={(e) => setCodeInput(e.target.value)}
+              autoComplete="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              autoFocus
+            />
+          </label>
+          {codeError && (
+            <p className="error" role="alert">
+              {codeError}
+            </p>
+          )}
+          <button className="btn primary" type="submit" disabled={!codeInput.trim()}>
+            Continue
+          </button>
+        </form>
+      </section>
+    )
+  }
 
   const sessionOptions: Option<string>[] = [
     { value: 'all', label: 'All sessions' },
-    ...(sessions ?? []).map((s) => ({ value: String(s.session), label: `Session ${s.session}` })),
+    ...(sessions ?? []).map((s) => ({ value: String(s.session), label: s.label ?? `Session ${s.session}` })),
   ]
 
   return (

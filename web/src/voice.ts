@@ -1,3 +1,5 @@
+import { accessHeaders } from './access'
+
 // Voice helpers. All calls go through our backend; the ElevenLabs key never reaches the browser.
 // transcribe() and speak() are the only two places to change for option C (Prof. Meuer's own voice).
 
@@ -38,7 +40,7 @@ function audioUrl(text: string): Promise<string> {
   if (!url) {
     url = fetch('/api/speak', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...accessHeaders() },
       body: JSON.stringify({ text }),
     }).then(async (res) => {
       if (!res.ok) throw new Error(`speak failed (${res.status})`)
@@ -84,7 +86,7 @@ export async function speak(text: string): Promise<void> {
 export async function transcribe(blob: Blob): Promise<string> {
   const res = await fetch('/api/transcribe', {
     method: 'POST',
-    headers: { 'content-type': blob.type || 'audio/webm' },
+    headers: { 'content-type': blob.type || 'audio/webm', ...accessHeaders() },
     body: blob,
   })
   if (!res.ok) throw new Error(`transcribe failed (${res.status})`)

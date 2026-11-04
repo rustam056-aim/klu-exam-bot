@@ -47,7 +47,7 @@ export function Summary(props: {
                 <span className={`tag verdict-tag-${a.verdict}`}>{verdictLabel[a.verdict]}</span>
                 <p>{a.question.question}</p>
                 <p className="source">
-                  {a.source ? formatSource(a.source) : `Session ${a.question.session}`}: {a.question.topic}
+                  {a.source ? formatSource(a.source) : (a.question.sessionLabel ?? `Session ${a.question.session}`)}: {a.question.topic}
                 </p>
               </li>
             ))}

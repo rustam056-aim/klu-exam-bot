@@ -22,6 +22,7 @@ Keep A extensible: questions in data (later a database), voice behind `transcrib
 - `web/`  React + TypeScript + Vite (what students see). `npm run dev` -> http://localhost:5173. `/api` is proxied to the backend.
 - `api/`  Cloudflare Worker in TypeScript. `npm run dev` -> http://localhost:8787
 - `api/data/questions_s1_s2_2026.json`  question bank, Sessions 1-2 of 2026 (57 questions, all `draft`)
+- `api/data/questions_videos_2026.json`  27 questions from Alan McKinnon's 16 video lectures (session 100, session_label "Alan McKinnon videos", source "Video NN")
 
 ## Deploy
 - Cloudflare Worker `klu-exam-practice` serves web/dist as static assets and /api/* from api/src/index.ts.
@@ -49,4 +50,5 @@ question, options {A..D} | null, correct | null, key_points[], model_answer, hin
 1. DONE: quiz page in `web/` (start screen, route-line progress, MC + open answers, hints, feedback, review list, practise again). Open answers use a key-point self-check until step 2.
 2. DONE: Claude grading for open answers (`gradeWithClaude` in api/src/index.ts, model claude-haiku-5-5 via tool call). Claude only picks covered key points + writes feedback; verdict = all/some/none of the points. Falls back to self-check if no key or an error.
 3. DONE: voice. Mic button for open answers (web/src/MicButton.tsx), Read aloud switch + Listen links (web/src/voice.ts).
-4. Access code + daily cap per student; deploy to Cloudflare.
+4. DONE: access code (secret ACCESS_CODE; header x-access-code; web/src/access.ts) and deploy (https://klu-exam-practice.rustam-klu.workers.dev). Still open: daily cap per student.
+5. Alan McKinnon lectures: `node scripts/transcribe-materials.mjs` -> materials/alan-transcripts (git-ignored), then write questions from them.

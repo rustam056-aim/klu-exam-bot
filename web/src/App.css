@@ -694,3 +694,21 @@ h2 {
   border-radius: 2px;
   background: var(--ink);
 }
+
+/* Access code */
+.code-field {
+  display: grid;
+  gap: 8px;
+  font-weight: 650;
+  font-size: 0.9375rem;
+}
+
+.code-field input {
+  width: min(320px, 100%);
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  font-weight: 400;
+  font-size: 1rem;
+}

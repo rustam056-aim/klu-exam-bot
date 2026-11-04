@@ -2,6 +2,8 @@ import type { Difficulty, Verdict } from './types'
 
 // "S1 p28" -> "Session 1, page 28"; "S2 p33, p34" -> "Session 2, pages 33 and 34"
 export function formatSource(source: string): string {
+  const video = source.match(/^Video (\d+)/)?.[1]
+  if (video) return `Alan McKinnon's video lecture ${video}`
   const session = source.match(/S(\d+)/)?.[1]
   const pages = [...source.matchAll(/p(\d+)/g)].map((m) => m[1])
   if (!session) return source

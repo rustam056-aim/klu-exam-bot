@@ -3,6 +3,7 @@ export type Difficulty = 'easy' | 'medium' | 'hard'
 export type PublicQuestion = {
   id: string
   session: number
+  sessionLabel?: string
   topic: string
   type: 'MC' | 'Open'
   difficulty: Difficulty

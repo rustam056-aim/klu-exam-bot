@@ -1,0 +1,646 @@
+{
+  "course": "Sustainable Logistics",
+  "year": 2026,
+  "questions": [
+    {
+      "id": "V01-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Climate change threat",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "According to Alan McKinnon, how much has average global temperature risen above the pre-industrial level so far?",
+      "options": {
+        "A": "About 0.5 °C",
+        "B": "About 1.2 °C",
+        "C": "About 2.7 °C",
+        "D": "About 4 °C"
+      },
+      "correct": "B",
+      "key_points": [
+        "About 1.2 °C above the 1850 level so far. Even with all declared policies, it's projected to reach about 2.7 °C by 2100."
+      ],
+      "model_answer": "About 1.2 °C above the 1850 level so far. Even with all declared policies, it's projected to reach about 2.7 °C by 2100.",
+      "hint1": "It's already above 1 degree.",
+      "hint2": "2.7 °C is the projection for 2100, not today.",
+      "source_pages": "Video 01",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V01-2",
+      "session": 100,
+      "year": 2026,
+      "topic": "Net zero",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "How does Alan McKinnon define net zero, and why should logistics focus on cutting emissions now?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Reduce emissions as much as possible through mitigation measures",
+        "Balance any remaining emissions by removing CO2 from the atmosphere (carbon sequestration)",
+        "Carbon removal is at an embryonic stage, very costly and energy-hungry, so we should cut emissions today to reduce future dependence on it"
+      ],
+      "model_answer": "Net zero means reducing emissions as much as possible through mitigation, and balancing any surplus emissions by removing CO2 from the atmosphere through sequestration. Because carbon removal is still embryonic, costly and energy-intensive, every tonne cut today is one less tonne to recapture later.",
+      "hint1": "There are two sides to net zero.",
+      "hint2": "One side cuts emissions, the other removes CO2.",
+      "source_pages": "Video 01",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V01-3",
+      "session": 100,
+      "year": 2026,
+      "topic": "Climate change threat",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "According to the UN Environment Programme's emissions gap report (2022), by how much must greenhouse gas emissions fall this decade to stay within 1.5 °C?",
+      "options": {
+        "A": "10%",
+        "B": "25%",
+        "C": "45%",
+        "D": "80%"
+      },
+      "correct": "C",
+      "key_points": [
+        "Emissions would need to fall by 45% this decade, in just seven or eight years."
+      ],
+      "model_answer": "Emissions would need to fall by 45% this decade, in just seven or eight years.",
+      "hint1": "It's close to half.",
+      "hint2": "Just under 50%.",
+      "source_pages": "Video 01",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V02-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Logistics share of emissions",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Why does Alan McKinnon see logistics as one of the hardest sectors to decarbonize?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Strong forecast growth: the ITF (2017) expects freight transport to triple by 2050",
+        "Heavy dependence on fossil fuels, especially diesel, across sea, air, road and rail",
+        "Decarbonizing other sectors creates extra freight demand (e.g. moving wind turbines and solar panels)",
+        "Adapting towns, cities and infrastructure to climate change also means moving lots of material"
+      ],
+      "model_answer": "Freight demand is forecast to triple by 2050 (ITF 2017), and the sector depends heavily on fossil fuels, mainly diesel. On top of that, the energy transition (moving wind turbines and solar panels) and adapting the built environment to climate change will create even more freight movement.",
+      "hint1": "Two main reasons, plus two things that push demand up even further.",
+      "hint2": "Think growth, fossil fuels, the energy transition and climate adaptation.",
+      "source_pages": "Video 02",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V02-2",
+      "session": 100,
+      "year": 2026,
+      "topic": "Logistics share of emissions",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "Roughly what share of logistics emissions comes from transport, as opposed to buildings like warehouses and terminals?",
+      "options": {
+        "A": "About 50%",
+        "B": "About 70%",
+        "C": "About 90%",
+        "D": "About 99%"
+      },
+      "correct": "C",
+      "key_points": [
+        "About 90% of logistics emissions are transport-related; logistics buildings account for about 10%."
+      ],
+      "model_answer": "About 90% of logistics emissions are transport-related; logistics buildings account for about 10%.",
+      "hint1": "Buildings are only a small part.",
+      "hint2": "Buildings are about 10%.",
+      "source_pages": "Video 02",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V06-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Methodologies and standards",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Why is the lack of a single standard for calculating logistics emissions a problem, and what is the Global Logistics Emissions Council trying to do?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Many organizations created different methods; there is no single internationally agreed standard",
+        "Shippers can't compare logistics providers (e.g. DHL, UPS, Maersk) because they report on different bases",
+        "The GLEC (set up 2014) aims at agreed methods and standards, building on existing approaches rather than starting from scratch",
+        "The goal is 'multidimensional harmonization': across modes, supply chains, sectors, commodities and levels from company down to vehicle"
+      ],
+      "model_answer": "Many different methods exist and none is internationally agreed, so shippers can't compare providers like DHL, UPS or Maersk consistently. The Global Logistics Emissions Council, set up in 2014, builds on existing methods to agree common standards, aiming for multidimensional harmonization across modes, supply chains, sectors, commodities and levels of detail.",
+      "hint1": "Think about a shipper trying to compare carriers.",
+      "hint2": "The answer has a problem part and a GLEC part.",
+      "source_pages": "Video 06",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V08-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Carbon intensity",
+      "type": "Open",
+      "difficulty": "easy",
+      "question": "What is the difference between an absolute emissions figure and a carbon intensity measure, and which one is used for benchmarking?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Absolute: total CO2 of an operation (e.g. a warehouse per year, a truck per journey); good for footprinting",
+        "Intensity: emissions divided by a measure of activity, e.g. tonne-km, vehicle-km, pallet-km or TEU",
+        "Carbon intensity values are used to compare and benchmark companies"
+      ],
+      "model_answer": "An absolute figure is the total CO2 of an operation, useful for the overall footprint. Carbon intensity divides emissions by a measure of activity, such as tonne-kilometres, vehicle-kilometres, pallet-kilometres or TEUs. Intensity values are what you use to compare and benchmark companies.",
+      "hint1": "One is a total, the other is a ratio.",
+      "hint2": "What goes on the bottom of the fraction?",
+      "source_pages": "Video 08",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V08-2",
+      "session": 100,
+      "year": 2026,
+      "topic": "Carbon intensity",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "For a road or rail transport operation, what is typically used as the activity measure in a carbon intensity calculation?",
+      "options": {
+        "A": "Number of employees",
+        "B": "Tonne-kilometres",
+        "C": "Revenue in euros",
+        "D": "Number of warehouses"
+      },
+      "correct": "B",
+      "key_points": [
+        "Tonne-kilometres: the weight moved multiplied by the distance travelled. Vehicle-km, pallet-km or TEUs are alternatives."
+      ],
+      "model_answer": "Tonne-kilometres: the weight moved multiplied by the distance travelled. Vehicle-km, pallet-km or TEUs are alternatives.",
+      "hint1": "It combines weight and distance.",
+      "hint2": "Weight times distance.",
+      "source_pages": "Video 08",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V09-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Calculation methods",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Explain the difference between an energy-based and an activity-based emissions calculation, and why many shippers use the activity-based one.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Energy-based: convert actual energy used into emissions with energy-based emission factors; the ideal approach",
+        "Carriers often won't share energy data, because energy is a big share of their costs and affects commercial negotiations",
+        "Activity-based: tonne-km multiplied by emission factors per tonne-km from national or industry tables",
+        "Activity-based is suboptimal but often necessary until there is energy-data transparency across the supply chain"
+      ],
+      "model_answer": "Energy-based calculation converts the actual energy used into emissions, which is ideal. But carriers often won't share energy data because it's commercially sensitive. So shippers that outsource transport use activity-based calculation: tonne-kilometres multiplied by emission factors from national or industry tables. It's suboptimal, but necessary until energy data flows across the supply chain.",
+      "hint1": "Who actually knows how much fuel was burned?",
+      "hint2": "Shippers know tonnes and distances, not fuel.",
+      "source_pages": "Video 09",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V16-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Avoid-Shift-Improve",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "In the Avoid-Shift-Improve (ASI) framework, what does 'Shift' mean?",
+      "options": {
+        "A": "Shifting deliveries to night time",
+        "B": "Moving freight from high-carbon modes (air, road) to lower-carbon ones (rail, water)",
+        "C": "Shifting costs to customers",
+        "D": "Moving warehouses closer to cities"
+      },
+      "correct": "B",
+      "key_points": [
+        "Shift means moving as much freight as possible from high-carbon modes like air and road to lower-carbon rail and water."
+      ],
+      "model_answer": "Shift means moving as much freight as possible from high-carbon modes like air and road to lower-carbon rail and water.",
+      "hint1": "It's about transport modes.",
+      "hint2": "Think trains and ships.",
+      "source_pages": "Video 16",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V16-2",
+      "session": 100,
+      "year": 2026,
+      "topic": "Avoid-Shift-Improve",
+      "type": "Open",
+      "difficulty": "easy",
+      "question": "Explain the three parts of the Avoid-Shift-Improve framework.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Avoid: reduce the underlying demand for transport, eliminate unnecessary transport",
+        "Shift: move freight from high-carbon modes (air, road) to lower-carbon modes (rail, water)",
+        "Improve: improve vehicle energy efficiency and vehicle loading to cut carbon intensity"
+      ],
+      "model_answer": "Avoid reduces the underlying demand for transport by cutting unnecessary trips. Shift moves freight from air and road to lower-carbon rail and water. Improve raises vehicle energy efficiency and vehicle loading, which both cut carbon intensity.",
+      "hint1": "A, S and I.",
+      "hint2": "Avoid, Shift, Improve: say what each one does.",
+      "source_pages": "Video 16",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V23-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Carbon offsetting",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "What critical questions should a company ask before using carbon offsetting?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "What is the nature of the scheme, and will it effectively remove CO2?",
+        "Additionality: would it have happened anyway?",
+        "Timing and permanence: when will it absorb CO2 (forests take 10-20 years), and could it be reversed (trees cut down)?",
+        "Can offsetting scale up if many companies and people use it?",
+        "Is the scheme genuine, honest and fair (fraud exists; use accredited schemes)?",
+        "Is it an easy option distracting from real internal cuts? It should only be a last resort"
+      ],
+      "model_answer": "A company should check how the scheme works and whether it really removes CO2, whether it's additional, when it will absorb CO2 and how permanent that is, whether offsetting can scale, and whether the scheme is genuine and accredited. Above all, offsetting shouldn't be an easy way out: it's a last resort after serious internal reductions.",
+      "hint1": "Think about forests: when and how long?",
+      "hint2": "Additionality, timing, permanence, scale, honesty, and last resort.",
+      "source_pages": "Video 23",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V23-2",
+      "session": 100,
+      "year": 2026,
+      "topic": "Carbon offsetting",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "How carbon-intensive is air cargo compared with trucking and shipping, according to Alan McKinnon?",
+      "options": {
+        "A": "About 2x trucking, 10x shipping",
+        "B": "About 10x trucking, 100x shipping",
+        "C": "About the same as trucking",
+        "D": "About 100x trucking, 1,000x shipping"
+      },
+      "correct": "B",
+      "key_points": [
+        "Air cargo has a carbon intensity about ten times that of trucking and about a hundred times that of shipping."
+      ],
+      "model_answer": "Air cargo has a carbon intensity about ten times that of trucking and about a hundred times that of shipping.",
+      "hint1": "It's by far the most carbon-intensive mode.",
+      "hint2": "Think powers of ten.",
+      "source_pages": "Video 23",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V24-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Carbon insetting",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "What is carbon insetting, and why is it proposed for freight transport?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Keeping money spent on offsetting freight emissions within the freight sector to fund its own decarbonization (Greene and Façanha, 2019)",
+        "Only about 0.2% of the ~$270 million spent on voluntary offsets went to transport; 75% went to forestry and cookstoves",
+        "The money could fund low-carbon fuels, retrofitting vehicles and vessels, and decommissioning old high-carbon equipment",
+        "It needs recognition by the GHG Protocol and the Science Based Targets initiative, and must show additionality"
+      ],
+      "model_answer": "Carbon insetting keeps offsetting money inside the freight sector so it funds the sector's own decarbonization. Today only about 0.2% of voluntary offset spending reaches transport, while 75% goes to forestry and cookstoves. Insetting could fund low-carbon fuels, retrofits and the retirement of old equipment, but it needs recognition by the GHG Protocol and SBTi and must prove additionality.",
+      "hint1": "In-setting versus off-setting: where does the money go?",
+      "hint2": "Think about the 'leakage' of money out of logistics.",
+      "source_pages": "Video 24",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V24-2",
+      "session": 100,
+      "year": 2026,
+      "topic": "Carbon insetting",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Roughly what share of money spent on voluntary carbon offsets ended up in the transport sector, according to the Smart Freight Centre?",
+      "options": {
+        "A": "0.2%",
+        "B": "5%",
+        "C": "25%",
+        "D": "75%"
+      },
+      "correct": "A",
+      "key_points": [
+        "Only about 0.2%. Around 75% went to forestry and low-carbon cooking stoves."
+      ],
+      "model_answer": "Only about 0.2%. Around 75% went to forestry and low-carbon cooking stoves.",
+      "hint1": "It's tiny.",
+      "hint2": "Less than one percent.",
+      "source_pages": "Video 24",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V36-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Modal shift policy",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "What are the prospects for modal shift policies in freight, according to Alan McKinnon?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "EU target: increase rail freight by 50% from 2020 to 2030 and double it by 2050",
+        "Past experience is poor: the EU's 2011 modal split target failed and road actually gained share, despite public money",
+        "Similar initiatives in Asia also failed (Asian Development Bank); few countries reversed the drift from rail to road",
+        "Positive signs: businesses now see modal shift as the most cost-effective decarbonization option (2020 survey of 90 executives); India's rail revival"
+      ],
+      "model_answer": "The EU wants 50% more rail freight by 2030 and double by 2050, but past targets failed: road gained share despite heavy spending, and Asian initiatives also fell short. Still, businesses now rate modal shift as the most cost-effective way to decarbonize, and countries like India are reviving rail freight.",
+      "hint1": "Is the track record good or bad?",
+      "hint2": "Mention the EU target, past failures and recent positive signs.",
+      "source_pages": "Video 36",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V47-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Truck energy efficiency",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "What did the US SuperTruck programme show, and how can its technologies become standard?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "SuperTruck (started 2009 by President Obama) showed a prototype could cut emissions by about 40% versus a standard US truck",
+        "Fuel economy standards: legal requirements on manufacturers for new vehicles (US, China, Japan, Canada, EU)",
+        "Technologies: turbocharging (reusing waste engine heat), lightweighting, anti-idling devices, low rolling resistance tyres"
+      ],
+      "model_answer": "The SuperTruck programme showed that combining technologies could cut a truck's emissions by about 40%. To make that standard, governments introduce fuel economy standards that legally require manufacturers to meet efficiency levels. The technologies include turbocharging, lightweighting, anti-idling devices and low rolling resistance tyres.",
+      "hint1": "About 40% is the headline number.",
+      "hint2": "How do you force manufacturers to adopt the tech?",
+      "source_pages": "Video 47",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V51-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Eco-driving",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "How much fuel efficiency improvement does eco-driver training typically achieve?",
+      "options": {
+        "A": "1-2%",
+        "B": "5-10%",
+        "C": "25-30%",
+        "D": "About 50%"
+      },
+      "correct": "B",
+      "key_points": [
+        "Typically 5-10%, plus safer driving and lower insurance costs, as long as performance is monitored afterwards."
+      ],
+      "model_answer": "Typically 5-10%, plus safer driving and lower insurance costs, as long as performance is monitored afterwards.",
+      "hint1": "It's single digits to around ten.",
+      "hint2": "Between five and ten.",
+      "source_pages": "Video 51",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V51-2",
+      "session": 100,
+      "year": 2026,
+      "topic": "Eco-driving",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Why is eco-driver training one of the most cost-effective ways to cut road freight emissions, and what makes it stick?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "5-10% better fuel efficiency",
+        "Extra benefits: safer driving, fewer accidents, lower insurance costs",
+        "Training must be combined with ongoing monitoring and feedback (on-board systems, traffic-light feedback)",
+        "UK estimate: if 90% of drivers were trained and monitored, about 3 million tonnes of CO2 and £300 million saved per year"
+      ],
+      "model_answer": "Eco-driver training improves fuel efficiency by 5-10% and also makes driving safer and cuts insurance costs. It only lasts if combined with monitoring and feedback from on-board systems. In the UK, training and monitoring 90% of drivers could save about 3 million tonnes of CO2 and £300 million a year.",
+      "hint1": "It's not only about fuel.",
+      "hint2": "Training alone isn't enough: what else is needed?",
+      "source_pages": "Video 51",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V53-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Congestion",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "How does traffic congestion affect truck fuel efficiency, and what can companies do about it?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "German research: about 28 l/100 km at a constant 50 km/h versus about 52 l/100 km if the truck stops once every kilometre",
+        "US: relieving 437 interstate bottlenecks could save about 4 billion gallons of fuel and 45 million tonnes of CO2 over ten years",
+        "Rescheduling deliveries to evenings and nights (UK: 8.5% of truck-km at night in 1985, over 20% today)",
+        "Limit: freight must stay synchronized with production and distribution, which mostly happen in the daytime"
+      ],
+      "model_answer": "Congestion almost doubles fuel use: about 28 litres per 100 km at a steady 50 km/h, but about 52 litres if the truck stops every kilometre. Companies can shift deliveries to the night, as in the UK where night-time truck-km rose from 8.5% to over 20%, but only as far as daytime production and distribution allow.",
+      "hint1": "Stop-start driving burns fuel.",
+      "hint2": "Think about the timing of deliveries.",
+      "source_pages": "Video 53",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V63-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Electrification by mode",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "Rank the freight transport modes from easiest to hardest to electrify, and explain how each would be powered.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Easiest: rail, already largely electrified by overhead cables (about half of rail freight); the Americas may use batteries or hydrogen",
+        "Next: small vans in urban stop-start delivery, by battery; costs have fallen and are near parity with diesel",
+        "Harder: heavy long-haul trucks, mostly batteries now; very heavy, very long trips likely need green hydrogen fuel cells; dynamic charging from overhead cables is possible",
+        "Hardest: ships and aircraft; batteries too weak, so indirectly via green hydrogen (e-methanol, green ammonia, e-kerosene); ships can use cold ironing in port"
+      ],
+      "model_answer": "Rail is easiest, since about half of rail freight already runs on overhead power. Urban vans come next, using batteries that are now close to cost parity. Heavy trucks are harder: mostly batteries, with green hydrogen for the heaviest long-haul loads and possibly dynamic charging. Ships and aircraft are hardest: they'll rely on green hydrogen-based fuels like e-methanol, green ammonia and e-kerosene, plus cold ironing for ships in port.",
+      "hint1": "Start with the mode that already has wires.",
+      "hint2": "Rail, vans, trucks, then ships and planes.",
+      "source_pages": "Video 63",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V63-2",
+      "session": 100,
+      "year": 2026,
+      "topic": "Electrification by mode",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "What is 'cold ironing'?",
+      "options": {
+        "A": "Cooling ship engines with seawater",
+        "B": "Ships drawing electrical power from the quayside while in port",
+        "C": "Storing cargo in refrigerated containers",
+        "D": "Recycling old steel vessels"
+      },
+      "correct": "B",
+      "key_points": [
+        "Cold ironing means ships plugging into shoreside electricity while in port. It matters because about half of port CO2 comes from the vessels."
+      ],
+      "model_answer": "Cold ironing means ships plugging into shoreside electricity while in port. It matters because about half of port CO2 comes from the vessels.",
+      "hint1": "It happens in port.",
+      "hint2": "Think of plugging the ship in.",
+      "source_pages": "Video 63",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V64-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Electrification route",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "Which three major developments does the electrification route to decarbonizing freight depend on?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Electrifying freight transport: directly via infrastructure (rail, electrified roads) or indirectly via green hydrogen as an energy carrier",
+        "Decarbonizing electricity: IEA projects grid intensity falling from about 480 g/kWh (2022) to about 160 g/kWh (2050); microgeneration at warehouses, terminals and ports",
+        "Expanding grid capacity and connectivity, with huge investment for highway and rail electrification and recharging"
+      ],
+      "model_answer": "First, electrifying freight transport, either directly through infrastructure or indirectly through green hydrogen. Second, decarbonizing electricity itself: the IEA expects grid intensity to drop from about 480 to about 160 g CO2/kWh by 2050, and logistics sites can generate their own renewable power. Third, expanding grid capacity and connectivity, which needs huge investment.",
+      "hint1": "Vehicles, the power itself, and the network.",
+      "hint2": "Electrify, decarbonize electricity, expand the grid.",
+      "source_pages": "Video 64",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V65-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Hydrogen",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Roughly how much of the original energy is lost when low-carbon electricity is turned into hydrogen and back into electricity in a truck?",
+      "options": {
+        "A": "About 10%",
+        "B": "About 30%",
+        "C": "Upwards of 70%",
+        "D": "Nothing"
+      },
+      "correct": "C",
+      "key_points": [
+        "Upwards of 70% of the original energy is wasted, which is why many argue it's better to move electrons than hydrogen."
+      ],
+      "model_answer": "Upwards of 70% of the original energy is wasted, which is why many argue it's better to move electrons than hydrogen.",
+      "hint1": "It's a lot.",
+      "hint2": "More than two-thirds.",
+      "source_pages": "Video 65",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V65-2",
+      "session": 100,
+      "year": 2026,
+      "topic": "Hydrogen",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "How would hydrogen work as an energy carrier for trucks, and why do many people prefer direct electricity?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Low-carbon electricity electrolyzes water into hydrogen, which is compressed or liquefied and put into the vehicle",
+        "A fuel cell converts it back into electricity to power the wheels; technically feasible",
+        "Upwards of 70% of the original energy is wasted",
+        "Low-carbon electricity will be precious for the foreseeable future, so it's better to transfer it as electrons than as hydrogen"
+      ],
+      "model_answer": "Low-carbon electricity splits water into hydrogen, which is stored in the vehicle and turned back into electricity by a fuel cell. It works, but upwards of 70% of the energy is lost. Since low-carbon electricity will stay precious, many argue it's better delivered directly as electrons.",
+      "hint1": "Electricity to hydrogen and back again.",
+      "hint2": "What happens to the energy along the way?",
+      "source_pages": "Video 65",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V67-1",
+      "session": 100,
+      "year": 2026,
+      "topic": "Combined effect",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "Why does Alan McKinnon argue that reducing carbon intensity alone won't be enough to decarbonize freight by 2050?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "ITF's most optimistic case: carbon intensity falls from about 28 to about 8 g CO2 per tonne-km, roughly 70%",
+        "But freight demand is expected to triple between 2015 and 2050",
+        "So absolute emissions fall only about 12-14%, far less than required",
+        "We must also reduce total freight demand (regulation, emissions trading, carbon pricing); a low-carbon world may be a low-freight world"
+      ],
+      "model_answer": "Even the ITF's most optimistic scenario cuts carbon intensity by about 70%, from 28 to 8 g per tonne-km. But with freight demand tripling, absolute emissions fall only about 12-14%. So we also need to curb total freight demand through regulation, emissions trading and carbon pricing: a low-carbon world may also be a low-freight world.",
+      "hint1": "Intensity versus total emissions.",
+      "hint2": "What happens when demand triples?",
+      "source_pages": "Video 67",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    },
+    {
+      "id": "V67-2",
+      "session": 100,
+      "year": 2026,
+      "topic": "Combined effect",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "In the ITF's most optimistic scenario, by how much would absolute freight emissions fall by 2050?",
+      "options": {
+        "A": "About 12-14%",
+        "B": "About 50%",
+        "C": "About 70%",
+        "D": "To zero"
+      },
+      "correct": "A",
+      "key_points": [
+        "Only about 12-14%, because the 70% cut in carbon intensity is mostly cancelled out by a threefold growth in freight demand."
+      ],
+      "model_answer": "Only about 12-14%, because the 70% cut in carbon intensity is mostly cancelled out by a threefold growth in freight demand.",
+      "hint1": "70% is the intensity cut, not the absolute one.",
+      "hint2": "Much less than half.",
+      "source_pages": "Video 67",
+      "status": "draft",
+      "session_label": "Alan McKinnon videos"
+    }
+  ]
+}

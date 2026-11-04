@@ -1,6 +1,7 @@
 // Practice bot API: picks questions, gives hints, checks answers.
 // Rule: everything comes from data/*.json (the course question bank). No outside knowledge.
 import bank from '../data/questions_s1_s2_2026.json';
+import videos from '../data/questions_videos_2026.json';
 
 type Question = {
   id: string;
@@ -18,6 +19,7 @@ type Question = {
   hint2: string;
   source_pages: string;
   status: string;
+  session_label?: string; // e.g. "Alan McKinnon videos" (otherwise "Session N")
 };
 
 export interface Env {
@@ -25,10 +27,15 @@ export interface Env {
   ELEVENLABS_API_KEY?: string;
   ELEVENLABS_VOICE_ID?: string; // optional: a different standard voice
   ANTHROPIC_MODEL?: string; // optional: override the grading model
+  ACCESS_CODE?: string; // if set, every /api call (except health) needs header x-access-code
   ONLY_APPROVED?: string; // set to "true" before students get access
 }
 
-const ALL = (bank as { questions: Question[] }).questions;
+const ALL = [
+  ...(bank as { questions: Question[] }).questions,
+  ...(videos as { questions: Question[] }).questions,
+];
+const labelOf = (q: Question) => q.session_label ?? `Session ${q.session}`;
 const active = (env: Env) =>
   env.ONLY_APPROVED === 'true' ? ALL.filter((q) => q.status === 'approved') : ALL;
 
@@ -36,6 +43,7 @@ const active = (env: Env) =>
 const publicView = (q: Question) => ({
   id: q.id,
   session: q.session,
+  sessionLabel: labelOf(q),
   topic: q.topic,
   type: q.type,
   difficulty: q.difficulty,
@@ -159,13 +167,23 @@ export default {
       return json({ ok: true, questions: qs.length });
     }
 
+    // Access code: keeps strangers from using up the AI and voice credits.
+    if (env.ACCESS_CODE && path.startsWith('/api/')) {
+      const given = (req.headers.get('x-access-code') ?? '').trim().toLowerCase();
+      if (given !== env.ACCESS_CODE.trim().toLowerCase()) {
+        return json({ error: 'access code required' }, 401);
+      }
+    }
+
     // GET /api/sessions -> [{ session: 1, count: 26 }, ...]
     if (path === '/api/sessions') {
-      const counts: Record<number, number> = {};
-      for (const q of qs) counts[q.session] = (counts[q.session] ?? 0) + 1;
-      return json(
-        Object.entries(counts).map(([session, count]) => ({ session: Number(session), count })),
-      );
+      const groups = new Map<number, { session: number; label: string; count: number }>();
+      for (const q of qs) {
+        const g = groups.get(q.session) ?? { session: q.session, label: labelOf(q), count: 0 };
+        g.count++;
+        groups.set(q.session, g);
+      }
+      return json([...groups.values()].sort((a, b) => a.session - b.session));
     }
 
     // GET /api/question/next?session=1&difficulty=easy&exclude=S1-01,S1-02
