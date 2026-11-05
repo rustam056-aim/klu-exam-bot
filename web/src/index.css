@@ -1,5 +1,5 @@
 /* Design tokens: KLU / GSLS look. White page, soft green blocks, KLU burgundy and red.
-   Dark mode follows the phone/laptop setting. */
+   Always light, like the KLU and GSLS sites (even when the laptop is in dark mode). */
 :root {
   --paper: #ffffff;
   --card: #e3f8df; /* the GSLS green */
@@ -24,30 +24,9 @@
   line-height: 1.55;
   color: var(--ink);
   background: var(--paper);
-  color-scheme: light dark;
+  color-scheme: light;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #121314;
-    --card: #1b2a1d;
-    --surface: #1c1e20;
-    --surface-2: #24272a;
-    --ink: #ececec;
-    --ink-2: #a9aeb2;
-    --line: #33383c;
-    --steel: #ee8aa0;
-    --steel-dark: #f5a7b8;
-    --on-steel: #2a0714;
-    --signal: #ef5a3c;
-    --band: #3d0a1f;
-    --good: #4cc38a;
-    --part: #e4a73a;
-    --bad: #f0675d;
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.25);
-  }
 }
 
 *,
