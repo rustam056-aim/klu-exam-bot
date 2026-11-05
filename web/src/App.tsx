@@ -82,47 +82,53 @@ export default function App() {
   )
 
   return (
-    <div className={`app app-${phase}`}>
+    <div className={`page page-${phase}`}>
       <header className="topbar">
-        <button
-          className="brand"
-          type="button"
-          onClick={() => {
-            stopSpeaking()
-            setPhase('start')
-          }}
-          aria-label="Sustainable Logistics exam practice: back to the start"
-        >
-          <span className="brand-mark" aria-hidden="true">SL</span>
-          <span className="brand-name">Sustainable Logistics practice</span>
-        </button>
-        <div className="topbar-actions">
-          {phase === 'quiz' && settings.voice ? (
-            <span className="mode-pill">Voice mode</span>
-          ) : (
+        <div className="topbar-inner">
           <button
-            className={`switch ${readAloud ? 'is-on' : ''}`}
+            className="brand"
             type="button"
-            role="switch"
-            aria-checked={readAloud}
             onClick={() => {
-              if (readAloud) stopSpeaking()
-              setReadAloud(!readAloud)
+              stopSpeaking()
+              setPhase('start')
             }}
+            aria-label="Sustainable Logistics exam practice: back to the start"
           >
-            <span className="switch-track" aria-hidden="true" />
-            Read aloud
+            <img className="brand-logo" src="/klu-logo.png" alt="Kühne Logistics University" width="160" height="68" />
+            <span className="brand-tag">
+              Sustainable Logistics
+              <span>Exam practice</span>
+            </span>
           </button>
-          )}
-          {phase === 'quiz' && (
-            <button className="btn secondary sm" type="button" onClick={() => setPhase('summary')}>
-              End practice
-            </button>
-          )}
+          <div className="topbar-actions">
+            {phase === 'quiz' && settings.voice ? (
+              <span className="mode-pill">Voice mode</span>
+            ) : (
+              <button
+                className={`switch ${readAloud ? 'is-on' : ''}`}
+                type="button"
+                role="switch"
+                aria-checked={readAloud}
+                aria-label="Read aloud"
+                onClick={() => {
+                  if (readAloud) stopSpeaking()
+                  setReadAloud(!readAloud)
+                }}
+              >
+                <span className="switch-track" aria-hidden="true" />
+                <span className="switch-label">Read aloud</span>
+              </button>
+            )}
+            {phase === 'quiz' && (
+              <button className="btn secondary sm" type="button" onClick={() => setPhase('summary')}>
+                End practice
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
-      <main>
+      <main className="app">
         {phase === 'start' && <StartScreen initial={settings} onStart={(s, ids) => start(s, ids)} />}
 
         {phase === 'quiz' && (

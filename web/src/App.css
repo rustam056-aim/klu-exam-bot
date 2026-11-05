@@ -5,51 +5,68 @@
 .app {
   max-width: 760px;
   margin: 0 auto;
-  padding: 0 20px 64px;
+  padding: 36px 20px 64px;
 }
 
-.app-quiz {
+.page-quiz .app {
   padding-bottom: 190px; /* room for the bottom bar */
 }
 
+/* KLU band at the top: white logo box + red tag, like the KLU site */
 .topbar {
+  background: var(--band);
+  color: #fff;
+}
+
+.topbar-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--line);
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 14px 20px;
 }
 
 .brand {
   display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px 10px 4px 4px;
+  align-items: stretch;
+  gap: 4px;
+  padding: 0;
   border: 0;
-  border-radius: 999px;
   background: none;
   cursor: pointer;
-  font-weight: 700;
-  font-size: 0.9375rem;
-  transition: background-color 120ms ease;
+  color: #fff;
+  text-align: left;
 }
 
-.brand:hover {
-  background: var(--surface);
-}
-
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
+.brand-logo {
+  display: block;
+  height: 52px;
+  width: auto;
   border-radius: 10px;
-  background: var(--steel);
-  color: var(--on-steel);
-  font-size: 0.8125rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
+  background: #fff;
+}
+
+.brand-tag {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: #d83e22;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.brand-tag span {
+  font-weight: 450;
+  opacity: 0.95;
+}
+
+.brand:hover .brand-tag {
+  background: #c2361c;
 }
 
 .topbar-actions {
@@ -58,16 +75,35 @@
   gap: 8px;
 }
 
-main {
-  padding-top: 32px;
+.topbar .switch,
+.topbar .btn.secondary {
+  background: transparent;
+  border-color: rgb(255 255 255 / 0.45);
+  color: #fff;
 }
+
+.topbar .switch:hover,
+.topbar .btn.secondary:not(:disabled):hover {
+  border-color: #fff;
+  background: rgb(255 255 255 / 0.08);
+}
+
+.topbar .switch-track {
+  background: rgb(255 255 255 / 0.3);
+}
+
+.topbar .switch.is-on .switch-track {
+  background: #d83e22;
+}
+
+
 
 /* ---------- Type ---------- */
 h1 {
-  font-size: 2.25rem;
-  line-height: 1.12;
-  font-weight: 760;
-  letter-spacing: -0.015em;
+  font-size: 2.5rem;
+  line-height: 1.08;
+  font-weight: 700;
+  letter-spacing: -0.025em;
   max-width: 22ch;
 }
 
@@ -240,8 +276,8 @@ h2 {
   min-height: 38px;
   padding: 0 14px;
   border-radius: 999px;
-  background: var(--signal);
-  color: #16202a;
+  background: #d83e22;
+  color: #fff;
   font-size: 0.875rem;
   font-weight: 700;
   white-space: nowrap;
@@ -250,11 +286,9 @@ h2 {
 /* ---------- Cards ---------- */
 .card {
   margin-top: 20px;
-  padding: 24px;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  padding: 28px;
+  border-radius: 32px;
+  background: var(--card);
 }
 
 .card h2 {
@@ -280,7 +314,7 @@ h2 {
   height: 48px;
   border-radius: 14px;
   background: var(--signal);
-  color: #16202a;
+  color: var(--on-signal);
 }
 
 .quick-text {
@@ -326,7 +360,7 @@ h2 {
   padding: 0 16px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: var(--surface-2);
+  background: var(--surface);
   cursor: pointer;
   font-size: 0.9375rem;
   transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
@@ -528,8 +562,8 @@ h2 {
   width: 84px;
   height: 84px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #6fa9e6, #3b74b3 55%, #24527f);
-  box-shadow: 0 0 0 8px rgb(59 116 179 / 0.1), 0 10px 40px rgb(59 116 179 / 0.25);
+  background: radial-gradient(circle at 35% 30%, #a3365f, #7a173f 50%, #590e2c);
+  box-shadow: 0 0 0 8px rgb(89 14 44 / 0.08), 0 10px 40px rgb(89 14 44 / 0.22);
   transition: background 200ms ease;
 }
 
@@ -576,12 +610,12 @@ h2 {
 }
 
 .tutor-listening .tutor-orb {
-  background: radial-gradient(circle at 35% 30%, #ff8d84, #e0493f 60%, #b0271f);
-  box-shadow: 0 0 0 8px rgb(224 73 63 / 0.12), 0 10px 40px rgb(224 73 63 / 0.3);
+  background: radial-gradient(circle at 35% 30%, #f37a5c, #d83e22 60%, #a92c14);
+  box-shadow: 0 0 0 8px rgb(216 62 34 / 0.12), 0 10px 40px rgb(216 62 34 / 0.3);
 }
 
 .tutor-listening .tutor-orb::after {
-  border-color: #e0493f;
+  border-color: #d83e22;
   animation: ring 1.4s ease-out infinite;
 }
 
@@ -1081,7 +1115,7 @@ h2 {
 }
 
 .round-recording {
-  background: var(--bad);
+  background: #d83e22;
   color: #fff;
 }
 
@@ -1109,7 +1143,7 @@ h2 {
 
 .round-next {
   background: var(--signal);
-  color: #16202a;
+  color: var(--on-signal);
 }
 
 /* ---------- Microphone help ---------- */
@@ -1160,10 +1194,9 @@ h2 {
 }
 
 .review li {
-  padding: 16px 18px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--surface);
+  padding: 18px 22px;
+  border-radius: 24px;
+  background: var(--card);
 }
 
 .review li p:not(.source) {
@@ -1192,15 +1225,28 @@ h2 {
 /* ---------- Phones ---------- */
 @media (max-width: 560px) {
   .app {
-    padding: 0 16px 48px;
+    padding: 24px 16px 48px;
   }
 
-  .app-quiz {
+  .page-quiz .app {
     padding-bottom: 190px;
   }
 
-  main {
-    padding-top: 22px;
+  .brand-tag span {
+    display: none;
+  }
+
+  .page-quiz .brand-tag {
+    display: none;
+  }
+
+  .page-quiz .switch-label {
+    display: none;
+  }
+
+  .topbar .switch {
+    padding: 0 12px 0 8px;
+    font-size: 0.875rem;
   }
 
   h1 {
@@ -1211,12 +1257,22 @@ h2 {
     font-size: 1.3rem;
   }
 
-  .brand-name {
-    display: none;
+  .topbar-inner {
+    padding: 12px 16px;
+  }
+
+  .brand-logo {
+    height: 44px;
+  }
+
+  .brand-tag {
+    padding: 0 12px;
+    font-size: 0.8125rem;
   }
 
   .card {
-    padding: 20px 18px;
+    padding: 22px 18px;
+    border-radius: 26px;
   }
 
   .quick-card {

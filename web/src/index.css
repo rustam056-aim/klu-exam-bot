@@ -1,21 +1,25 @@
-/* Design tokens. One set for light, one for dark (follows the phone/laptop setting). */
+/* Design tokens: KLU / GSLS look. White page, soft green blocks, KLU burgundy and red.
+   Dark mode follows the phone/laptop setting. */
 :root {
-  --paper: #eef2f5;
+  --paper: #ffffff;
+  --card: #e3f8df; /* the GSLS green */
   --surface: #ffffff;
-  --surface-2: #f4f7f9;
-  --ink: #15202b;
-  --ink-2: #4f5f6e;
-  --line: #d3dce3;
-  --steel: #24527f;
-  --steel-dark: #1a3d60;
+  --surface-2: #f4f7f3;
+  --ink: #232323;
+  --ink-2: #5b5f5a;
+  --line: #d6ddd3;
+  --steel: #590e2c; /* KLU burgundy: main buttons, picked chips */
+  --steel-dark: #3f0a1f;
   --on-steel: #ffffff;
-  --signal: #f4b400;
+  --signal: #d83e22; /* KLU red: accents */
+  --on-signal: #ffffff;
+  --band: #590e2c;
   --good: #1d7346;
   --part: #9a6200;
   --bad: #b0271f;
-  --shadow: 0 1px 2px rgb(21 32 43 / 0.05), 0 6px 20px rgb(21 32 43 / 0.06);
+  --shadow: 0 1px 2px rgb(35 35 35 / 0.04), 0 6px 20px rgb(35 35 35 / 0.06);
 
-  font-family: 'Archivo Variable', 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: 'Hanken Grotesk Variable', 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 17px;
   line-height: 1.55;
   color: var(--ink);
@@ -27,15 +31,18 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #0f1720;
-    --surface: #17212b;
-    --surface-2: #1d2934;
-    --ink: #e9eef2;
-    --ink-2: #9aabba;
-    --line: #2b3946;
-    --steel: #5b9be0;
-    --steel-dark: #78afe8;
-    --on-steel: #0b1520;
+    --paper: #121314;
+    --card: #1b2a1d;
+    --surface: #1c1e20;
+    --surface-2: #24272a;
+    --ink: #ececec;
+    --ink-2: #a9aeb2;
+    --line: #33383c;
+    --steel: #ee8aa0;
+    --steel-dark: #f5a7b8;
+    --on-steel: #2a0714;
+    --signal: #ef5a3c;
+    --band: #3d0a1f;
     --good: #4cc38a;
     --part: #e4a73a;
     --bad: #f0675d;
