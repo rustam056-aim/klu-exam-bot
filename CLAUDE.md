@@ -23,6 +23,7 @@ Keep A extensible: questions in data (later a database), voice behind `transcrib
 - `api/`  Cloudflare Worker in TypeScript. `npm run dev` -> http://localhost:8787
 - `api/data/questions_s1_s2_2026.json`  question bank, Sessions 1-2 of 2026 (57 questions, all `draft`)
 - `api/data/questions_videos_2026.json`  27 questions from Alan McKinnon's 16 video lectures (session 100, session_label "Alan McKinnon videos", source "Video NN")
+- `api/data/questions_readings_2026.json`  assigned readings, sessions 200+ (200 = Elkington 2018, 10 questions, source "Elkington 2018 pN"). GSLS report goes here next as 201.
 
 ## Deploy
 - Cloudflare Worker `klu-exam-practice` serves web/dist as static assets and /api/* from api/src/index.ts.

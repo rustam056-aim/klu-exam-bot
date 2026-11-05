@@ -1,0 +1,244 @@
+{
+  "course": "Sustainable Logistics",
+  "year": 2026,
+  "questions": [
+    {
+      "id": "E-01",
+      "session": 200,
+      "year": 2026,
+      "topic": "What the TBL was meant to be",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Elkington says the Triple Bottom Line was never supposed to be just an accounting tool. What was it originally meant to do?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Push for system change: the transformation of capitalism",
+        "Act as a 'genetic code' or 'triple helix' of change for tomorrow's capitalism",
+        "Focus on breakthrough change, disruption and asymmetric growth, with unsustainable sectors actively sidelined",
+        "Scale up next-generation market solutions"
+      ],
+      "model_answer": "Its goal from the start was system change, transforming capitalism. Elkington calls it a genetic code, a triple helix of change for tomorrow's capitalism, focused on breakthrough change, disruption, asymmetric growth that sidelines unsustainable sectors, and scaling next-generation market solutions.",
+      "hint1": "Think bigger than a report.",
+      "hint2": "He uses a biology metaphor for it.",
+      "source_pages": "Elkington 2018 p5",
+      "status": "draft",
+      "session_label": "Reading: Elkington (2018)"
+    },
+    {
+      "id": "E-02",
+      "session": 200,
+      "year": 2026,
+      "topic": "Why a recall",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Why does Elkington propose a 'recall' of the Triple Bottom Line 25 years after he coined it?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Sustainability success can't be measured in profit and loss alone, but in people's wellbeing and the planet's health, and there the record is mixed",
+        "Climate, water, oceans, forests, soils and biodiversity are all increasingly threatened",
+        "The TBL has been captured and diluted by accountants and reporting consultants",
+        "It has failed to bury the single bottom line: leaders chase profit targets far harder than people and planet targets"
+      ],
+      "model_answer": "Because sustainability has to be judged by people's wellbeing and the planet's health, and there the record is mixed: climate, water, oceans, forests, soils and biodiversity are all under growing threat. The TBL got captured and diluted by accountants and reporting consultants, and it never replaced the single bottom line, since leaders still chase profit targets much harder than people and planet targets.",
+      "hint1": "Like a car that fails a safety test.",
+      "hint2": "What happened to the idea once accountants got hold of it?",
+      "source_pages": "Elkington 2018 p3, p5",
+      "status": "draft",
+      "session_label": "Reading: Elkington (2018)"
+    },
+    {
+      "id": "E-03",
+      "session": 200,
+      "year": 2026,
+      "topic": "Trade-off thinking",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "According to Elkington, how did many early adopters misunderstand the Triple Bottom Line?",
+      "options": {
+        "A": "As a pure marketing slogan with no measurement behind it",
+        "B": "As a balancing act, with a trade-off mentality",
+        "C": "As a legal reporting requirement",
+        "D": "As something only relevant for NGOs"
+      },
+      "correct": "B",
+      "key_points": [
+        "Many early adopters treated it as a balancing act and adopted a trade-off mentality, instead of using it to rethink capitalism."
+      ],
+      "model_answer": "Many early adopters treated it as a balancing act and adopted a trade-off mentality, instead of using it to rethink capitalism.",
+      "hint1": "It's about how the three dimensions were weighed against each other.",
+      "hint2": "Giving up a bit of one to get more of another.",
+      "source_pages": "Elkington 2018 p4",
+      "status": "draft",
+      "session_label": "Reading: Elkington (2018)"
+    },
+    {
+      "id": "E-04",
+      "session": 200,
+      "year": 2026,
+      "topic": "Proper use of the TBL",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Covestro's former CEO Patrick Thomas describes the proper use of the TBL. What does it involve, at minimum?",
+      "options": {
+        "A": "Equal progress on all three dimensions every year",
+        "B": "Progress on profit first, then on people and planet",
+        "C": "Progress on two dimensions while the third remains unaffected",
+        "D": "Reporting all three dimensions in one integrated report"
+      },
+      "correct": "C",
+      "key_points": [
+        "At minimum, progress on two dimensions while the third stays unaffected. Elkington wants this to become the default for all business leaders, not just a handful."
+      ],
+      "model_answer": "At minimum, progress on two dimensions while the third stays unaffected. Elkington wants this to become the default for all business leaders, not just a handful.",
+      "hint1": "No dimension may get worse.",
+      "hint2": "Count how many must improve.",
+      "source_pages": "Elkington 2018 p5",
+      "status": "draft",
+      "session_label": "Reading: Elkington (2018)"
+    },
+    {
+      "id": "E-05",
+      "session": 200,
+      "year": 2026,
+      "topic": "Too many frameworks",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "The TBL was followed by many related concepts (ESG, Integrated Reporting, Shared Value and others). What does Elkington see as the downside of this proliferation?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "The bewildering range of options can give business an alibi for inaction",
+        "Nobody has benchmarked these options against their real-world impact and performance",
+        "Thousands of TBL reports are produced, but it's unclear the data are aggregated and analyzed in ways that help decision-makers manage systemic effects"
+      ],
+      "model_answer": "So many options can become an alibi for doing nothing, and nobody has benchmarked them against their real-world impact. On top of that, thousands of TBL reports come out every year, but it's unclear the data are aggregated and analyzed in a way that actually helps decision-makers and policy-makers manage the systemic effects.",
+      "hint1": "Experimentation is good, but there's a catch.",
+      "hint2": "What do companies do when there are too many choices, and has anyone compared them?",
+      "source_pages": "Elkington 2018 p4, p5",
+      "status": "draft",
+      "session_label": "Reading: Elkington (2018)"
+    },
+    {
+      "id": "E-06",
+      "session": 200,
+      "year": 2026,
+      "topic": "Origins",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "Elkington links the timing of the TBL to Luca Paccioli. Why?",
+      "options": {
+        "A": "Paccioli invented the first sustainability report",
+        "B": "The TBL appeared exactly 500 years after Paccioli's treatise on double-entry bookkeeping, the basis of single bottom line thinking",
+        "C": "Paccioli was the first to measure social impact",
+        "D": "The TBL was based on Paccioli's work on cost accounting for factories"
+      },
+      "correct": "B",
+      "key_points": [
+        "The TBL surfaced exactly 500 years after Paccioli published the first treatise on double-entry bookkeeping, the cornerstone of single bottom line thinking."
+      ],
+      "model_answer": "The TBL surfaced exactly 500 years after Paccioli published the first treatise on double-entry bookkeeping, the cornerstone of single bottom line thinking.",
+      "hint1": "It's about anniversaries.",
+      "hint2": "Think of where the 'single bottom line' comes from.",
+      "source_pages": "Elkington 2018 p4",
+      "status": "draft",
+      "session_label": "Reading: Elkington (2018)"
+    },
+    {
+      "id": "E-07",
+      "session": 200,
+      "year": 2026,
+      "topic": "Economic vs financial",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "How was Elkington's original idea wider than The Economist's description of the TBL?",
+      "options": {
+        "A": "It tracked economic (not just financial), social and environmental value added, or destroyed",
+        "B": "It added governance as a fourth dimension",
+        "C": "It focused only on environmental value",
+        "D": "It replaced financial reporting entirely"
+      },
+      "correct": "A",
+      "key_points": [
+        "The Economist described it as measuring financial, social and environmental performance. Elkington's original idea was wider: track and manage economic, not just financial, social and environmental value added or destroyed."
+      ],
+      "model_answer": "The Economist described it as measuring financial, social and environmental performance. Elkington's original idea was wider: track and manage economic, not just financial, social and environmental value added or destroyed.",
+      "hint1": "Look at the first of the three dimensions.",
+      "hint2": "One word is swapped for a broader one.",
+      "source_pages": "Elkington 2018 p4",
+      "status": "draft",
+      "session_label": "Reading: Elkington (2018)"
+    },
+    {
+      "id": "E-08",
+      "session": 200,
+      "year": 2026,
+      "topic": "B Corps",
+      "type": "Open",
+      "difficulty": "easy",
+      "question": "Why does Elkington see B Corporations as a 'bright ray of hope'?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Lots of momentum: around 2,500 businesses worldwide certified as B Corps (in 2018)",
+        "They are all configured around the TBL",
+        "They aim to be not just 'best in the world' but 'best for the world'",
+        "Large companies such as Natura and Danone's North American operation have become B Corps, and other multinationals are considering it"
+      ],
+      "model_answer": "There's real momentum: about 2,500 certified B Corps worldwide, all built around the TBL and aiming to be 'best for the world', not just 'best in the world'. Big companies like Natura and Danone North America have joined, and other multinationals are thinking about it.",
+      "hint1": "There's a nice wordplay in their motto.",
+      "hint2": "In the world vs for the world.",
+      "source_pages": "Elkington 2018 p5",
+      "status": "draft",
+      "session_label": "Reading: Elkington (2018)"
+    },
+    {
+      "id": "E-09",
+      "session": 200,
+      "year": 2026,
+      "topic": "Companies that moved",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "Which company rechartered itself around the Triple Bottom Line in 2004?",
+      "options": {
+        "A": "Unilever",
+        "B": "Novo Nordisk",
+        "C": "Covestro",
+        "D": "Puma"
+      },
+      "correct": "B",
+      "key_points": [
+        "Denmark's Novo Nordisk rechartered itself around the TBL in 2004. Unilever and Covestro are also named as companies that moved in this direction."
+      ],
+      "model_answer": "Denmark's Novo Nordisk rechartered itself around the TBL in 2004. Unilever and Covestro are also named as companies that moved in this direction.",
+      "hint1": "It's a Danish company.",
+      "hint2": "A pharmaceutical company.",
+      "source_pages": "Elkington 2018 p5",
+      "status": "draft",
+      "session_label": "Reading: Elkington (2018)"
+    },
+    {
+      "id": "E-10",
+      "session": 200,
+      "year": 2026,
+      "topic": "What's needed now",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "According to Elkington, why won't more TBL implementation on its own be enough, and what is needed instead?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "None of the frameworks will be enough while they lack the pace and scale, the 'radical intent', needed",
+        "Without that, we keep overshooting our planetary boundaries",
+        "A new wave of TBL innovation, and a triple helix for value creation that regenerates economies, societies and the biosphere"
+      ],
+      "model_answer": "Because no framework will be enough while it lacks the pace, scale and radical intent needed to stop us overshooting planetary boundaries. What's needed is a new wave of TBL innovation, a triple helix for value creation that regenerates our economies, societies and the biosphere.",
+      "hint1": "It's about speed and ambition, not the framework itself.",
+      "hint2": "He uses two words: pace and scale.",
+      "source_pages": "Elkington 2018 p6",
+      "status": "draft",
+      "session_label": "Reading: Elkington (2018)"
+    }
+  ]
+}

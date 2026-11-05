@@ -23,6 +23,10 @@ const VIDEO_TITLES: Record<string, string> = {
 export function formatSource(source: string): string {
   const video = source.match(/^Video (\d+)/)?.[1]
   if (video) return `Alan McKinnon’s video “${VIDEO_TITLES[video] ?? video}”`
+  if (source.startsWith('Elkington 2018')) {
+    const pages = [...source.matchAll(/p(\d+)/g)].map((m) => m[1])
+    return `Elkington’s article “25 Years Ago I Coined the Phrase Triple Bottom Line”${pages.length ? `, page ${pages.join(' and ')}` : ''}`
+  }
   const session = source.match(/S(\d+)/)?.[1]
   const pages = [...source.matchAll(/p(\d+)/g)].map((m) => m[1])
   if (!session) return source

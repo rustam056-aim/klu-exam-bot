@@ -2,6 +2,7 @@
 // Rule: everything comes from data/*.json (the course question bank). No outside knowledge.
 import bank from '../data/questions_s1_s2_2026.json';
 import videos from '../data/questions_videos_2026.json';
+import readings from '../data/questions_readings_2026.json';
 
 type Question = {
   id: string;
@@ -34,6 +35,7 @@ export interface Env {
 const ALL = [
   ...(bank as { questions: Question[] }).questions,
   ...(videos as { questions: Question[] }).questions,
+  ...(readings as { questions: Question[] }).questions,
 ];
 const labelOf = (q: Question) => q.session_label ?? `Session ${q.session}`;
 const active = (env: Env) =>
