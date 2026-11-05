@@ -53,3 +53,10 @@ export type Settings = {
   difficulty: 'mixed' | Difficulty
   length: number
 }
+
+export type SessionInfo = {
+  session: number
+  label?: string
+  count: number
+  byDifficulty?: Record<string, number>
+}

@@ -177,12 +177,19 @@ export default {
       }
     }
 
-    // GET /api/sessions -> [{ session: 1, count: 26 }, ...]
+    // GET /api/sessions -> [{ session: 1, label, count: 26, byDifficulty: { easy: 9, medium: 12, hard: 5 } }, ...]
     if (path === '/api/sessions') {
-      const groups = new Map<number, { session: number; label: string; count: number }>();
+      type Group = { session: number; label: string; count: number; byDifficulty: Record<string, number> };
+      const groups = new Map<number, Group>();
       for (const q of qs) {
-        const g = groups.get(q.session) ?? { session: q.session, label: labelOf(q), count: 0 };
+        const g = groups.get(q.session) ?? {
+          session: q.session,
+          label: labelOf(q),
+          count: 0,
+          byDifficulty: { easy: 0, medium: 0, hard: 0 },
+        };
         g.count++;
+        g.byDifficulty[q.difficulty] = (g.byDifficulty[q.difficulty] ?? 0) + 1;
         groups.set(q.session, g);
       }
       return json([...groups.values()].sort((a, b) => a.session - b.session));

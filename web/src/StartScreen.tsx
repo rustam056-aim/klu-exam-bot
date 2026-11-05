@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NeedsCode, setAccessCode } from './access'
 import { api } from './api'
-import type { Settings } from './types'
+import type { SessionInfo, Settings } from './types'
 
 type Option<T extends string> = { value: T; label: string }
 
@@ -35,7 +35,7 @@ function Choice<T extends string>(props: {
 
 export function StartScreen({ initial, onStart }: { initial: Settings; onStart: (s: Settings) => void }) {
   const [settings, setSettings] = useState(initial)
-  const [sessions, setSessions] = useState<{ session: number; label?: string; count: number }[] | null>(null)
+  const [sessions, setSessions] = useState<SessionInfo[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [needCode, setNeedCode] = useState(false)
   const [codeInput, setCodeInput] = useState('')
@@ -103,11 +103,25 @@ export function StartScreen({ initial, onStart }: { initial: Settings; onStart: 
     ...(sessions ?? []).map((s) => ({ value: String(s.session), label: s.label ?? `Session ${s.session}` })),
   ]
 
+  // How many questions match the chosen session + difficulty, so the length options fit.
+  const picked = (sessions ?? []).filter((s) => settings.session === 'all' || String(s.session) === settings.session)
+  const available = picked.reduce(
+    (sum, s) =>
+      sum + (settings.difficulty === 'mixed' ? s.count : (s.byDifficulty?.[settings.difficulty] ?? s.count)),
+    0,
+  )
+  const ALL = 999 // "All" stays "All" when you switch to a bigger session
+  const length = Math.min(settings.length, available)
+  const lengthOptions: Option<string>[] = [
+    ...[5, 10, 15].filter((n) => n < available).map((n) => ({ value: String(n), label: String(n) })),
+    ...(available > 0 ? [{ value: String(available), label: `All ${available}` }] : []),
+  ]
+
   return (
     <section className="start">
       <h1>Practise for the Sustainable Logistics exam</h1>
       <p className="lede">
-        Answer questions from this year&rsquo;s course slides, get feedback right away, and see what to review
+        Answer questions from this year&rsquo;s course material, get feedback right away, and see what to review
         before the exam.
       </p>
 
@@ -115,7 +129,7 @@ export function StartScreen({ initial, onStart }: { initial: Settings; onStart: 
         className="settings"
         onSubmit={(e) => {
           e.preventDefault()
-          onStart(settings)
+          if (length > 0) onStart({ ...settings, length })
         }}
       >
         <Choice
@@ -137,24 +151,26 @@ export function StartScreen({ initial, onStart }: { initial: Settings; onStart: 
           ]}
           onChange={(difficulty) => setSettings({ ...settings, difficulty })}
         />
-        <Choice
-          legend="Questions"
-          name="length"
-          value={String(settings.length)}
-          options={[
-            { value: '5', label: '5' },
-            { value: '10', label: '10' },
-            { value: '15', label: '15' },
-          ]}
-          onChange={(length) => setSettings({ ...settings, length: Number(length) })}
-        />
+        {sessions && available === 0 ? (
+          <p className="fineprint">No {settings.difficulty} questions here yet. Try another difficulty.</p>
+        ) : (
+          <Choice
+            legend="Questions"
+            name="length"
+            value={String(length)}
+            options={lengthOptions}
+            onChange={(n) =>
+              setSettings({ ...settings, length: Number(n) === available ? ALL : Number(n) })
+            }
+          />
+        )}
 
         {error && (
           <p className="error" role="alert">
             {error}
           </p>
         )}
-        <button className="btn primary" type="submit" disabled={!sessions}>
+        <button className="btn primary" type="submit" disabled={!sessions || available === 0}>
           Start practice
         </button>
       </form>

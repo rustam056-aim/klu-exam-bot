@@ -1,5 +1,5 @@
 import { NeedsCode, accessHeaders } from './access'
-import type { AnswerResult, NextResponse } from './types'
+import type { AnswerResult, NextResponse, SessionInfo } from './types'
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(path, { headers: accessHeaders() })
@@ -9,7 +9,7 @@ async function get<T>(path: string): Promise<T> {
 }
 
 export const api = {
-  sessions: () => get<{ session: number; label?: string; count: number }[]>('/api/sessions'),
+  sessions: () => get<SessionInfo[]>('/api/sessions'),
 
   next: (p: { session?: string; difficulty?: string; exclude: string[]; only?: string[] }) => {
     const params = new URLSearchParams()
