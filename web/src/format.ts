@@ -1,9 +1,28 @@
 import type { Difficulty, Verdict } from './types'
 
+const VIDEO_TITLES: Record<string, string> = {
+  '01': "Scale of the climate change threat",
+  '02': "Logistics' share of emissions and freight growth",
+  '06': "Methodologies and lack of standards",
+  '08': "Absolute and carbon intensity measures",
+  '09': "Activity-based vs energy-based calculation",
+  '16': "Avoid-Shift-Improve",
+  '23': "Carbon offsetting: critical questions",
+  '24': "Carbon insetting",
+  '36': "Policy targets for freight modal shift",
+  '47': "Truck energy efficiency and fuel economy standards",
+  '51': "Eco-driver training",
+  '53': "Traffic congestion and fuel efficiency",
+  '63': "Low-carbon electricity in freight transport",
+  '64': "The electrification route",
+  '65': "Hydrogen as an energy carrier",
+  '67': "Combined effect of all carbon-saving measures",
+}
+
 // "S1 p28" -> "Session 1, page 28"; "S2 p33, p34" -> "Session 2, pages 33 and 34"
 export function formatSource(source: string): string {
   const video = source.match(/^Video (\d+)/)?.[1]
-  if (video) return `Alan McKinnon's video lecture ${video}`
+  if (video) return `Alan McKinnon’s video “${VIDEO_TITLES[video] ?? video}”`
   const session = source.match(/S(\d+)/)?.[1]
   const pages = [...source.matchAll(/p(\d+)/g)].map((m) => m[1])
   if (!session) return source
