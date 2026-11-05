@@ -1,24 +1,46 @@
+/* Design tokens. One set for light, one for dark (follows the phone/laptop setting). */
 :root {
-  --paper: #edf1f3;
+  --paper: #eef2f5;
   --surface: #ffffff;
-  --ink: #16202a;
-  --ink-2: #4b5a68;
-  --line: #c5d0d8;
+  --surface-2: #f4f7f9;
+  --ink: #15202b;
+  --ink-2: #4f5f6e;
+  --line: #d3dce3;
   --steel: #24527f;
   --steel-dark: #1a3d60;
+  --on-steel: #ffffff;
   --signal: #f4b400;
   --good: #1d7346;
   --part: #9a6200;
   --bad: #b0271f;
+  --shadow: 0 1px 2px rgb(21 32 43 / 0.05), 0 6px 20px rgb(21 32 43 / 0.06);
 
   font-family: 'Archivo Variable', 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 17px;
   line-height: 1.55;
   color: var(--ink);
   background: var(--paper);
-  color-scheme: light;
+  color-scheme: light dark;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0f1720;
+    --surface: #17212b;
+    --surface-2: #1d2934;
+    --ink: #e9eef2;
+    --ink-2: #9aabba;
+    --line: #2b3946;
+    --steel: #5b9be0;
+    --steel-dark: #78afe8;
+    --on-steel: #0b1520;
+    --good: #4cc38a;
+    --part: #e4a73a;
+    --bad: #f0675d;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.25);
+  }
 }
 
 *,

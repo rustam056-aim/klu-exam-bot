@@ -63,7 +63,7 @@ export function Summary(props: {
             Practise these {toReview.length} again
           </button>
         )}
-        <button className={`btn ${toReview.length > 0 ? 'quiet' : 'primary'}`} type="button" onClick={onRestart}>
+        <button className={`btn ${toReview.length > 0 ? 'secondary' : 'primary'}`} type="button" onClick={onRestart}>
           Start a new practice
         </button>
       </div>

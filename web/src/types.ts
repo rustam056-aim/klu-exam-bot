@@ -22,6 +22,7 @@ export type McResult = {
   correctOption: string
   explanation: string
   source: string
+  sourceTime?: number // seconds into Alan's lecture
 }
 
 export type OpenResult = {
@@ -32,6 +33,7 @@ export type OpenResult = {
   keyPoints: string[]
   modelAnswer: string
   source: string
+  sourceTime?: number
   pointsHit?: string[]
   pointsMissed?: string[]
   feedback?: string

@@ -74,7 +74,7 @@ export function StartScreen({
         <h1>Practise for the Sustainable Logistics exam</h1>
         <p className="lede">Enter the access code from the course page on Moodle to start.</p>
         <form
-          className="settings"
+          className="card settings"
           onSubmit={(e) => {
             e.preventDefault()
             setCodeError(null)
@@ -133,29 +133,34 @@ export function StartScreen({
         before the exam.
       </p>
 
-      <div className="quick">
-        <div>
-          <h2>On the bus? Quick 5</h2>
-          <p>Five multiple-choice questions from everything so far. About three minutes.</p>
+      <div className="card quick-card">
+        <span className="card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="24" height="24">
+            <path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z" fill="currentColor" />
+          </svg>
+        </span>
+        <div className="quick-text">
+          <h2>Quick 5</h2>
+          <p>Five multiple-choice questions from everything so far. About three minutes, good for the bus.</p>
         </div>
         <button
-          className="btn signal"
+          className="btn primary"
           type="button"
           disabled={!sessions}
           onClick={() => onStart({ ...settings, session: 'all', difficulty: 'mixed', length: 5, quick: true })}
         >
-          Go
+          Start Quick 5
         </button>
       </div>
 
       <form
-        className="settings"
+        className="card settings"
         onSubmit={(e) => {
           e.preventDefault()
           if (length > 0) onStart({ ...settings, length, quick: false })
         }}
       >
-        <h2 className="settings-title">Or set up your own practice</h2>
+        <h2>Your own practice</h2>
         <Choice
           legend="Sessions"
           name="session"
@@ -176,19 +181,16 @@ export function StartScreen({
           onChange={(difficulty) => setSettings({ ...settings, difficulty })}
         />
         {sessions && available === 0 ? (
-          <p className="fineprint">No {settings.difficulty} questions here yet. Try another difficulty.</p>
+          <p className="choice-note">No {settings.difficulty} questions here yet. Try another difficulty.</p>
         ) : (
           <Choice
             legend="Questions"
             name="length"
             value={String(length)}
             options={lengthOptions}
-            onChange={(n) =>
-              setSettings({ ...settings, length: Number(n) === available ? ALL : Number(n) })
-            }
+            onChange={(n) => setSettings({ ...settings, length: Number(n) === available ? ALL : Number(n) })}
           />
         )}
-
         <Choice
           legend="How you answer"
           name="mode"
@@ -199,9 +201,11 @@ export function StartScreen({
           ]}
           onChange={(m) => setSettings({ ...settings, voice: m === 'voice' })}
         />
-        {settings.voice && (
-          <p className="choice-note">Questions are read out. Tap the big mic, answer out loud, and you hear the feedback.</p>
-        )}
+        <p className="choice-note">
+          {settings.voice
+            ? 'Questions are read out. Tap the big mic, answer out loud, and you hear the feedback.'
+            : 'You can still say your answer with the mic button, and switch on Read aloud at the top.'}
+        </p>
 
         {error && (
           <p className="error" role="alert">
@@ -225,9 +229,7 @@ export function StartScreen({
         />
       )}
 
-      <p className="fineprint">
-        Questions come only from the course material. This is practice, not the real exam.
-      </p>
+      <p className="fineprint">Questions come only from the course material. This is practice, not the real exam.</p>
     </section>
   )
 }
@@ -242,7 +244,7 @@ function ProgressPanel(props: {
   const { sessions, progress, onPractiseMissed, onReset } = props
   const missed = missedIds(progress)
   return (
-    <section className="progress" aria-label="Your progress">
+    <section className="card progress" aria-label="Your progress">
       <h2>Your progress</h2>
       <ul>
         {sessions.map((s) => {
@@ -268,11 +270,11 @@ function ProgressPanel(props: {
       </ul>
       <div className="actions">
         {missed.length > 0 && (
-          <button className="btn quiet" type="button" onClick={() => onPractiseMissed(missed)}>
+          <button className="btn secondary" type="button" onClick={() => onPractiseMissed(missed)}>
             Practise the {missed.length} you missed
           </button>
         )}
-        <button className="btn link" type="button" onClick={onReset}>
+        <button className="btn ghost" type="button" onClick={onReset}>
           Start over
         </button>
       </div>

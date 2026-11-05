@@ -4,3 +4,6 @@ node_modules
 dist
 .DS_Store
 materials/
+
+# Alan McKinnon lecture audio: deployed from this Mac only, never on GitHub
+web/public/alan/

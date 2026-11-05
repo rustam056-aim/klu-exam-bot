@@ -54,6 +54,7 @@ function audioUrl(text: string): Promise<string> {
 
 export async function speak(text: string): Promise<void> {
   stopSpeaking()
+  document.querySelectorAll('audio').forEach((a) => a.pause()) // e.g. Alan's lecture clip
   const mine = generation
   setSpeaking(true)
   let url: string

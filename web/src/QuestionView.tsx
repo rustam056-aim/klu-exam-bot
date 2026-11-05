@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from './api'
-import { difficultyLabel, formatSource, opening, slideImages, verdictLabel } from './format'
-import { MicButton, MicHelpBox } from './MicButton'
-import type { MicState } from './MicButton'
+import { difficultyLabel, formatSource, lectureAudio, opening, slideImages, verdictLabel } from './format'
+import { MicHelpBox } from './MicButton'
 import { spokenChoice } from './spokenChoice'
 import { Tutor } from './Tutor'
 import { clock, useRecorder } from './useRecorder'
+import type { MicState } from './useRecorder'
 import { onSpeakingChange, speak, stopSpeaking } from './voice'
 import type { AnswerResult, Attempt, OpenResult, PublicQuestion, Verdict } from './types'
 
@@ -63,8 +63,12 @@ export function QuestionView({ question, number, total, readAloud, voice, onDone
 
   // Voice mode: whatever the student says is checked straight away.
   const big = useRecorder((said) => {
-    setHeard(said)
     setError(null)
+    if (!voice) {
+      setText((prev) => (prev ? `${prev} ${said}` : said))
+      return
+    }
+    setHeard(said)
     if (isMC) {
       const letter = spokenChoice(said, question.options ?? {})
       if (!letter) {
@@ -78,9 +82,7 @@ export function QuestionView({ question, number, total, readAloud, voice, onDone
       void check(said)
     }
   })
-  useEffect(() => {
-    if (voice) setMicState(big.state)
-  }, [voice, big.state])
+  useEffect(() => setMicState(big.state), [big.state])
 
   function say(text: string) {
     setAudioNote(null)
@@ -142,10 +144,10 @@ export function QuestionView({ question, number, total, readAloud, voice, onDone
   const feedbackRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!result) return
-    nextRef.current?.focus({ preventScroll: voice })
-    // Voice mode: bring the feedback up above the big buttons.
-    if (voice) feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [result, voice])
+    nextRef.current?.focus({ preventScroll: true })
+    // Bring the feedback up above the bottom bar.
+    feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [result])
 
   // Keyboard: A-D picks an option, Enter checks or moves on, Cmd/Ctrl+Enter checks a written answer,
   // Space in voice mode starts and stops the microphone.
@@ -185,35 +187,40 @@ export function QuestionView({ question, number, total, readAloud, voice, onDone
   const tutorState =
     micState === 'recording' ? 'listening' : busy || micState === 'working' ? 'thinking' : speaking ? 'speaking' : 'idle'
   const showTextBox = !isMC && (!voice || typing)
+  const recording = big.state === 'recording'
+  const micBusy = big.state !== 'idle'
+  const hintLabel = hints.length === 0 ? 'Hint' : hints.length === 1 ? 'Stronger hint' : 'No more hints'
+  // Middle button: the mic for open questions and in voice mode; a check button for tapped answers.
+  const micIsMain = voice || !isMC
 
   return (
-    <article className={`question ${voice ? 'question-voice' : ''}`}>
+    <article className="question">
       {/* The tutor shows what the bot is doing. Option C: Prof. Meuer's animated photo goes here. */}
-      <Tutor state={tutorState} big={voice} />
+      <Tutor state={tutorState} />
       <p className="q-meta">
-        <span>
+        <span className="q-count">
           Question {number} of {total}
         </span>
         <span>
           {question.sessionLabel ?? `Session ${question.session}`}: {question.topic}
         </span>
-        <span className={`tag tag-${question.difficulty}`}>{difficultyLabel[question.difficulty]}</span>
+        <span className="tag">{difficultyLabel[question.difficulty]}</span>
       </p>
 
       <h2 className="q-text">{question.question}</h2>
       <div className="listen-row">
         {speaking ? (
-          <button className="btn quiet stop-btn" type="button" onClick={stopSpeaking}>
-            Stop reading
+          <button className="btn secondary sm" type="button" onClick={stopSpeaking}>
+            <StopIcon /> Stop reading
           </button>
         ) : (
           <>
-            <button className="btn link" type="button" onClick={() => say(questionSpeech(question))}>
-              {voice ? 'Read it again' : 'Listen to the question'}
+            <button className="btn secondary sm" type="button" onClick={() => say(questionSpeech(question))}>
+              <SpeakerIcon /> {voice ? 'Read it again' : 'Listen'}
             </button>
             {result && (
-              <button className="btn link" type="button" onClick={() => say(feedbackSpeech(result))}>
-                Listen to the feedback
+              <button className="btn secondary sm" type="button" onClick={() => say(feedbackSpeech(result))}>
+                <SpeakerIcon /> Listen to the feedback
               </button>
             )}
           </>
@@ -255,11 +262,7 @@ export function QuestionView({ question, number, total, readAloud, voice, onDone
           {heard}
         </blockquote>
       )}
-      {voice && heard && isMC && !result && (
-        <p className="note">
-          You said: “{heard}”
-        </p>
-      )}
+      {voice && heard && isMC && !result && <p className="note">You said: “{heard}”</p>}
 
       {showTextBox && (
         <label className="open">
@@ -267,14 +270,15 @@ export function QuestionView({ question, number, total, readAloud, voice, onDone
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            disabled={!!result}
-            rows={voice ? 4 : 6}
+            disabled={!!result || recording}
+            rows={5}
             autoFocus={voice && typing}
-            placeholder="Write your answer in a few sentences, as you would in the exam."
+            placeholder={
+              recording ? 'Listening… tap the button again when you’re done.' : 'Type your answer, or tap the mic below and say it.'
+            }
           />
         </label>
       )}
-      {!voice && !isMC && !result && <MicButton onText={(t) => setText((prev) => (prev ? `${prev} ${t}` : t))} onStateChange={setMicState} />}
 
       {hints.length > 0 && (
         <ul className="hints">
@@ -291,27 +295,15 @@ export function QuestionView({ question, number, total, readAloud, voice, onDone
           {error ?? big.error}
         </p>
       )}
-      {voice && big.help && <MicHelpBox help={big.help} onRetry={big.start} onDismiss={() => { big.dismissHelp(); setTyping(true) }} />}
-
-      {!result && !voice && (
-        <div className="actions">
-          <button className="btn primary" type="button" onClick={() => void check()} disabled={!answer || busy}>
-            {busy ? 'Checking…' : 'Check answer'}
-          </button>
-          <button className="btn quiet" type="button" onClick={() => void showHint()} disabled={hints.length >= 2}>
-            {hints.length === 0 ? 'Show a hint' : hints.length === 1 ? 'Show a stronger hint' : 'No more hints'}
-          </button>
-          <button className="btn quiet" type="button" onClick={skip}>
-            Skip
-          </button>
-        </div>
-      )}
-      {!result && voice && typing && (
-        <div className="actions">
-          <button className="btn primary" type="button" onClick={() => void check()} disabled={!answer || busy}>
-            {busy ? 'Checking…' : 'Check answer'}
-          </button>
-        </div>
+      {big.help && (
+        <MicHelpBox
+          help={big.help}
+          onRetry={big.start}
+          onDismiss={() => {
+            big.dismissHelp()
+            setTyping(true)
+          }}
+        />
       )}
 
       {result && (
@@ -327,75 +319,122 @@ export function QuestionView({ question, number, total, readAloud, voice, onDone
               setCovered(nextSet)
             }}
           />
-          {!voice && (
-            <div className="actions">
-              <button ref={nextRef} className="btn primary" type="button" onClick={next}>
-                {number === total ? 'See results' : 'Next question'}
-              </button>
-            </div>
-          )}
         </div>
       )}
 
-      {voice && (
-        <div className="dock" role="toolbar" aria-label="Voice controls">
-          {!result ? (
-            <>
-              <button
-                className="dock-side"
-                type="button"
-                onClick={() => void showHint()}
-                disabled={hints.length >= 2 || big.state !== 'idle'}
-              >
-                {hints.length === 0 ? 'Hint' : hints.length === 1 ? 'Stronger hint' : 'No more hints'}
+      {/* Bottom bar, same on every question: hint and skip on the left, the main round button in the middle. */}
+      <div className="dock" role="toolbar" aria-label="Answer controls">
+        {!result ? (
+          <>
+            <div className="dock-side">
+              <button className="btn secondary sm" type="button" onClick={() => void showHint()} disabled={hints.length >= 2 || micBusy}>
+                {hintLabel}
               </button>
-              <div className="dock-main">
+              <button className="btn ghost sm" type="button" onClick={skip} disabled={micBusy || busy}>
+                Skip
+              </button>
+            </div>
+
+            <div className="dock-main">
+              {micIsMain ? (
                 <button
                   type="button"
-                  className={`big-mic big-mic-${busy ? 'working' : big.state}`}
+                  className={`round ${busy ? 'round-working' : `round-${big.state}`}`}
                   onClick={big.toggle}
                   disabled={busy || big.state === 'working'}
-                  aria-pressed={big.state === 'recording'}
-                  aria-label={big.state === 'recording' ? 'Stop and check my answer' : 'Answer by talking'}
+                  aria-pressed={recording}
+                  aria-label={recording ? 'Stop recording' : 'Answer by talking'}
                 >
-                  <MicIcon recording={big.state === 'recording'} />
+                  <MicIcon recording={recording} />
                 </button>
-                <span className="dock-label" aria-live="polite">
-                  {big.state === 'recording'
-                    ? `Tap when you’re done · ${clock(big.seconds)}`
-                    : big.state === 'working' || busy
+              ) : (
+                <button
+                  type="button"
+                  className={`round round-check ${busy ? 'round-working' : ''}`}
+                  onClick={() => void check()}
+                  disabled={!answer || busy}
+                  aria-label="Check answer"
+                >
+                  <CheckIcon />
+                </button>
+              )}
+              <span className="dock-label" aria-live="polite">
+                {recording
+                  ? `Tap when you’re done · ${clock(big.seconds)}`
+                  : big.state === 'working'
+                    ? 'Turning it into text…'
+                    : busy
                       ? 'Checking…'
-                      : isMC
-                        ? 'Tap and say A, B, C or D'
-                        : 'Tap and talk'}
-                </span>
-              </div>
-              <div className="dock-side dock-stack">
-                {!isMC && !typing && (
-                  <button className="dock-link" type="button" onClick={() => setTyping(true)} disabled={big.state !== 'idle'}>
-                    Type instead
-                  </button>
-                )}
-                <button className="dock-link" type="button" onClick={skip} disabled={big.state !== 'idle' || busy}>
-                  Skip
+                      : !micIsMain
+                        ? choice
+                          ? 'Check answer'
+                          : 'Pick an answer'
+                        : voice
+                          ? isMC
+                            ? 'Tap and say A, B, C or D'
+                            : 'Tap and talk'
+                          : 'Tap to say it'}
+              </span>
+            </div>
+
+            <div className="dock-side dock-right">
+              {!isMC && (!voice || typing) && (
+                <button className="btn primary sm" type="button" onClick={() => void check()} disabled={!answer || busy || micBusy}>
+                  Check
                 </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <span className="dock-side" />
-              <div className="dock-main">
-                <button ref={nextRef} type="button" className="big-mic big-next" onClick={next} aria-label={number === total ? 'See results' : 'Next question'}>
-                  <ArrowIcon />
+              )}
+              {!isMC && voice && !typing && (
+                <button className="btn secondary sm" type="button" onClick={() => setTyping(true)} disabled={micBusy}>
+                  Type instead
                 </button>
-                <span className="dock-label">{number === total ? 'See results' : 'Next question'}</span>
-              </div>
-              <span className="dock-side" />
-            </>
-          )}
-        </div>
-      )}
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <span className="dock-side" />
+            <div className="dock-main">
+              <button
+                ref={nextRef}
+                type="button"
+                className="round round-next"
+                onClick={next}
+                aria-label={number === total ? 'See results' : 'Next question'}
+              >
+                <ArrowIcon />
+              </button>
+              <span className="dock-label">{number === total ? 'See results' : 'Next question'}</span>
+            </div>
+            <span className="dock-side" />
+          </>
+        )}
+      </div>
     </article>
+  )
+}
+
+function SpeakerIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" />
+      <path d="M15.5 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" />
+    </svg>
+  )
+}
+
+function StopIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+      <rect x="5" y="5" width="14" height="14" rx="2.5" fill="currentColor" />
+    </svg>
+  )
+}
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
   )
 }
 
@@ -448,11 +487,35 @@ function Slides({ source }: { source: string }) {
       {open && (
         <div className="lightbox" role="dialog" aria-label="Slide" onClick={() => setOpen(null)}>
           <img src={open} alt="Slide, enlarged" />
-          <button className="btn quiet lightbox-close" type="button" onClick={() => setOpen(null)} autoFocus>
+          <button className="btn secondary lightbox-close" type="button" onClick={() => setOpen(null)} autoFocus>
             Close
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+// "Hear it from Alan": the lecture the answer comes from, starting around the right part.
+function LectureClip({ source, at }: { source: string; at?: number }) {
+  const clip = lectureAudio(source)
+  const [broken, setBroken] = useState(false)
+  if (!clip || broken) return null
+  return (
+    <div className="clip">
+      <p className="slides-title">Hear it from Alan</p>
+      <p className="clip-title">“{clip.title}”</p>
+      <audio
+        controls
+        preload="metadata"
+        src={clip.src}
+        onLoadedMetadata={(e) => {
+          if (at) e.currentTarget.currentTime = at
+        }}
+        onPlay={() => stopSpeaking()}
+        onError={() => setBroken(true)}
+      />
+      {at ? <p className="note">Starts at {clock(at)}, around where he talks about this.</p> : null}
     </div>
   )
 }
@@ -468,6 +531,7 @@ function Feedback(props: {
     <>
       <p className="source">From the course: {formatSource(result.source)}</p>
       <Slides source={result.source} />
+      <LectureClip source={result.source} at={result.sourceTime} />
     </>
   )
 

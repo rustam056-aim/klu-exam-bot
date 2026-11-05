@@ -3,6 +3,7 @@
 import bank from '../data/questions_s1_s2_2026.json';
 import videos from '../data/questions_videos_2026.json';
 import readings from '../data/questions_readings_2026.json';
+import videoTimes from '../data/video_times_2026.json'; // where in Alan's lecture each answer comes up (seconds)
 
 type Question = {
   id: string;
@@ -38,6 +39,7 @@ const ALL = [
   ...(videos as { questions: Question[] }).questions,
   ...(readings as { questions: Question[] }).questions,
 ];
+const timeOf = (q: Question): number | undefined => (videoTimes as Record<string, number>)[q.id];
 const labelOf = (q: Question) => q.session_label ?? `Session ${q.session}`;
 const active = (env: Env) =>
   env.ONLY_APPROVED === 'true' ? ALL.filter((q) => q.status === 'approved') : ALL;
@@ -170,18 +172,37 @@ export default {
       return json({ ok: true, questions: qs.length });
     }
 
-    // GET /slides/S1-28.webp?c=CODE  slide images behind the same access code.
-    // (An <img> can't send headers, so the code comes in the URL.)
-    if (path.startsWith('/slides/')) {
+    // GET /slides/S1-28.webp?c=CODE and /alan/01.m4a?c=CODE: slides and lecture audio behind the access code.
+    // (An <img> or <audio> can't send headers, so the code comes in the URL.)
+    if (path.startsWith('/slides/') || path.startsWith('/alan/')) {
       const given = (url.searchParams.get('c') ?? '').trim().toLowerCase();
       if (env.ACCESS_CODE && given !== env.ACCESS_CODE.trim().toLowerCase()) {
         return new Response('access code required', { status: 401 });
       }
       if (!env.ASSETS) return new Response('not found', { status: 404 });
       const res = await env.ASSETS.fetch(new Request(new URL(path, url.origin)));
-      const headers = new Headers(res.headers);
-      headers.set('cache-control', 'private, max-age=86400');
-      return new Response(res.body, { status: res.status, headers });
+      const type = res.headers.get('content-type') ?? '';
+      if (!res.ok || type.includes('text/html')) return new Response('not found', { status: 404 });
+      const headers = new Headers({
+        'content-type': path.endsWith('.m4a') ? 'audio/mp4' : type,
+        'cache-control': 'private, max-age=86400',
+        'accept-ranges': 'bytes',
+      });
+      // Safari only plays audio when it can ask for byte ranges; static assets don't do that, so we do.
+      const range = req.headers.get('range')?.match(/^bytes=(\d*)-(\d*)$/);
+      if (!range || (range[1] === '' && range[2] === '')) return new Response(res.body, { status: 200, headers });
+      const body = await res.arrayBuffer();
+      const size = body.byteLength;
+      let from = range[1] === '' ? size - Number(range[2]) : Number(range[1]);
+      let to = range[1] !== '' && range[2] !== '' ? Number(range[2]) : size - 1;
+      from = Math.max(0, from);
+      to = Math.min(to, size - 1);
+      if (from > to) {
+        headers.set('content-range', `bytes */${size}`);
+        return new Response(null, { status: 416, headers });
+      }
+      headers.set('content-range', `bytes ${from}-${to}/${size}`);
+      return new Response(body.slice(from, to + 1), { status: 206, headers });
     }
 
     // Access code: keeps strangers from using up the AI and voice credits.
@@ -253,6 +274,7 @@ export default {
           correctOption: q.correct,
           explanation: q.model_answer,
           source: q.source_pages,
+          sourceTime: timeOf(q),
         });
       }
 
@@ -268,6 +290,7 @@ export default {
             keyPoints: q.key_points,
             modelAnswer: q.model_answer,
             source: q.source_pages,
+            sourceTime: timeOf(q),
           });
         } catch (err) {
           console.log('Grading failed, falling back to self-check:', String(err));
@@ -280,6 +303,7 @@ export default {
         keyPoints: q.key_points,
         modelAnswer: q.model_answer,
         source: q.source_pages,
+        sourceTime: timeOf(q),
       });
     }
 

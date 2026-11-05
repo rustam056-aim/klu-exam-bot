@@ -74,3 +74,10 @@ export function slideImages(source: string): { src: string; caption: string }[] 
     caption: `Session ${session}, page ${m[1]}`,
   }))
 }
+
+// Alan McKinnon's lecture audio for a source like "Video 65".
+export function lectureAudio(source: string): { src: string; title: string } | null {
+  const video = source.match(/^Video (\d+)/)?.[1]
+  if (!video) return null
+  return { src: `/alan/${video}.m4a${accessQuery()}`, title: VIDEO_TITLES[video] ?? `Video ${video}` }
+}

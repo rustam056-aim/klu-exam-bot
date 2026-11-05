@@ -82,9 +82,20 @@ export default function App() {
   )
 
   return (
-    <div className={`app ${phase === 'quiz' && settings.voice ? 'voice-scene' : ''}`}>
+    <div className={`app app-${phase}`}>
       <header className="topbar">
-        <span className="brand">Sustainable Logistics: exam practice</span>
+        <button
+          className="brand"
+          type="button"
+          onClick={() => {
+            stopSpeaking()
+            setPhase('start')
+          }}
+          aria-label="Sustainable Logistics exam practice: back to the start"
+        >
+          <span className="brand-mark" aria-hidden="true">SL</span>
+          <span className="brand-name">Sustainable Logistics practice</span>
+        </button>
         <div className="topbar-actions">
           {phase === 'quiz' && settings.voice ? (
             <span className="mode-pill">Voice mode</span>
@@ -104,7 +115,7 @@ export default function App() {
           </button>
           )}
           {phase === 'quiz' && (
-            <button className="btn link" type="button" onClick={() => setPhase('summary')}>
+            <button className="btn secondary sm" type="button" onClick={() => setPhase('summary')}>
               End practice
             </button>
           )}
