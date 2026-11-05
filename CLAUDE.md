@@ -53,3 +53,5 @@ question, options {A..D} | null, correct | null, key_points[], model_answer, hin
 3. DONE: voice. Mic button for open answers (web/src/MicButton.tsx), Read aloud switch + Listen links (web/src/voice.ts).
 4. DONE: access code (secret ACCESS_CODE; header x-access-code; web/src/access.ts) and deploy (https://klu-exam-practice.rustam-klu.workers.dev). Still open: daily cap per student.
 5. Alan McKinnon lectures: `node scripts/transcribe-materials.mjs` -> materials/alan-transcripts (git-ignored), then write questions from them.
+5. DONE (5 Nov): Quick 5 (MC only, `type=MC` on /api/question/next), voice mode (dark scene, big mic dock, auto-check after talking, spoken MC letters via web/src/spokenChoice.ts, shared recorder in web/src/useRecorder.ts), "See the slide" under feedback (web/public/slides/S1-28.webp etc., only pages the questions cite; served through the Worker at /slides/* behind the access code `?c=`), progress per session in localStorage (web/src/progress.ts) with "Practise the N you missed", question count fits the chosen session.
+   New slides for a session: render only the cited PDF pages to web/public/slides/S<n>-<page>.webp (1200 px wide).

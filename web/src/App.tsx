@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import { api } from './api'
+import { saveAttempt } from './progress'
 import { stopSpeaking } from './voice'
 import { QuestionView } from './QuestionView'
 import { RouteLine } from './RouteLine'
@@ -13,7 +14,7 @@ type Phase = 'start' | 'quiz' | 'summary'
 
 export default function App() {
   const [phase, setPhase] = useState<Phase>('start')
-  const [settings, setSettings] = useState<Settings>({ session: 'all', difficulty: 'mixed', length: 10 })
+  const [settings, setSettings] = useState<Settings>({ session: 'all', difficulty: 'mixed', length: 10, voice: false })
   const [only, setOnly] = useState<string[] | undefined>()
   const [attempts, setAttempts] = useState<Attempt[]>([])
   const [current, setCurrent] = useState<PublicQuestion | null>(null)
@@ -42,6 +43,7 @@ export default function App() {
       const res = await api.next({
         session: s.session === 'all' ? undefined : s.session,
         difficulty: s.difficulty === 'mixed' ? undefined : s.difficulty,
+        type: s.quick ? 'MC' : undefined,
         exclude: done.map((a) => a.question.id),
         only: onlyIds,
       })
@@ -58,7 +60,8 @@ export default function App() {
   }
 
   function start(s: Settings, onlyIds?: string[]) {
-    setSettings(s)
+    // Quick 5 shouldn't change the length you picked for your own practice.
+    setSettings(s.quick ? { ...s, length: settings.length } : s)
     setOnly(onlyIds)
     setAttempts([])
     setTotal(onlyIds ? onlyIds.length : s.length)
@@ -67,6 +70,7 @@ export default function App() {
   }
 
   function record(attempt: Attempt) {
+    saveAttempt(attempt)
     const done = [...attempts, attempt]
     setAttempts(done)
     if (done.length >= total) setPhase('summary')
@@ -78,10 +82,13 @@ export default function App() {
   )
 
   return (
-    <div className="app">
+    <div className={`app ${phase === 'quiz' && settings.voice ? 'voice-scene' : ''}`}>
       <header className="topbar">
         <span className="brand">Sustainable Logistics: exam practice</span>
         <div className="topbar-actions">
+          {phase === 'quiz' && settings.voice ? (
+            <span className="mode-pill">Voice mode</span>
+          ) : (
           <button
             className={`switch ${readAloud ? 'is-on' : ''}`}
             type="button"
@@ -95,6 +102,7 @@ export default function App() {
             <span className="switch-track" aria-hidden="true" />
             Read aloud
           </button>
+          )}
           {phase === 'quiz' && (
             <button className="btn link" type="button" onClick={() => setPhase('summary')}>
               End practice
@@ -104,7 +112,7 @@ export default function App() {
       </header>
 
       <main>
-        {phase === 'start' && <StartScreen initial={settings} onStart={(s) => start(s)} />}
+        {phase === 'start' && <StartScreen initial={settings} onStart={(s, ids) => start(s, ids)} />}
 
         {phase === 'quiz' && (
           <>
@@ -123,7 +131,8 @@ export default function App() {
                 question={current}
                 number={attempts.length + 1}
                 total={total}
-                readAloud={readAloud}
+                readAloud={readAloud || settings.voice}
+                voice={settings.voice}
                 onDone={record}
               />
             )}
@@ -133,7 +142,7 @@ export default function App() {
         {phase === 'summary' && (
           <Summary
             attempts={attempts}
-            onRetry={(ids) => start({ ...settings, session: 'all', difficulty: 'mixed' }, ids)}
+            onRetry={(ids) => start({ ...settings, session: 'all', difficulty: 'mixed', quick: false }, ids)}
             onRestart={() => setPhase('start')}
           />
         )}

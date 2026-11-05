@@ -9,9 +9,9 @@ const label: Record<TutorState, string> = {
   thinking: 'Thinking…',
 }
 
-export function Tutor({ state }: { state: TutorState }) {
+export function Tutor({ state, big = false }: { state: TutorState; big?: boolean }) {
   return (
-    <div className={`tutor tutor-${state}`}>
+    <div className={`tutor tutor-${state} ${big ? 'tutor-big' : ''}`}>
       <div className="tutor-orb" aria-hidden="true">
         <span />
         <span />

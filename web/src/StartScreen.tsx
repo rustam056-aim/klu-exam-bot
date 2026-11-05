@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NeedsCode, setAccessCode } from './access'
 import { api } from './api'
+import { loadProgress, missedIds, resetProgress, sessionStats } from './progress'
 import type { SessionInfo, Settings } from './types'
 
 type Option<T extends string> = { value: T; label: string }
@@ -33,8 +34,15 @@ function Choice<T extends string>(props: {
   )
 }
 
-export function StartScreen({ initial, onStart }: { initial: Settings; onStart: (s: Settings) => void }) {
-  const [settings, setSettings] = useState(initial)
+export function StartScreen({
+  initial,
+  onStart,
+}: {
+  initial: Settings
+  onStart: (s: Settings, onlyIds?: string[]) => void
+}) {
+  const [settings, setSettings] = useState({ ...initial, quick: false })
+  const [progress, setProgress] = useState(loadProgress)
   const [sessions, setSessions] = useState<SessionInfo[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [needCode, setNeedCode] = useState(false)
@@ -125,13 +133,29 @@ export function StartScreen({ initial, onStart }: { initial: Settings; onStart: 
         before the exam.
       </p>
 
+      <div className="quick">
+        <div>
+          <h2>On the bus? Quick 5</h2>
+          <p>Five multiple-choice questions from everything so far. About three minutes.</p>
+        </div>
+        <button
+          className="btn signal"
+          type="button"
+          disabled={!sessions}
+          onClick={() => onStart({ ...settings, session: 'all', difficulty: 'mixed', length: 5, quick: true })}
+        >
+          Go
+        </button>
+      </div>
+
       <form
         className="settings"
         onSubmit={(e) => {
           e.preventDefault()
-          if (length > 0) onStart({ ...settings, length })
+          if (length > 0) onStart({ ...settings, length, quick: false })
         }}
       >
+        <h2 className="settings-title">Or set up your own practice</h2>
         <Choice
           legend="Sessions"
           name="session"
@@ -165,6 +189,20 @@ export function StartScreen({ initial, onStart }: { initial: Settings; onStart: 
           />
         )}
 
+        <Choice
+          legend="How you answer"
+          name="mode"
+          value={settings.voice ? 'voice' : 'type'}
+          options={[
+            { value: 'type', label: 'Type and tap' },
+            { value: 'voice', label: 'Talk (voice mode)' },
+          ]}
+          onChange={(m) => setSettings({ ...settings, voice: m === 'voice' })}
+        />
+        {settings.voice && (
+          <p className="choice-note">Questions are read out. Tap the big mic, answer out loud, and you hear the feedback.</p>
+        )}
+
         {error && (
           <p className="error" role="alert">
             {error}
@@ -175,9 +213,70 @@ export function StartScreen({ initial, onStart }: { initial: Settings; onStart: 
         </button>
       </form>
 
+      {sessions && Object.keys(progress).length > 0 && (
+        <ProgressPanel
+          sessions={sessions}
+          progress={progress}
+          onPractiseMissed={(ids) => onStart({ ...settings, session: 'all', difficulty: 'mixed', quick: false }, ids)}
+          onReset={() => {
+            resetProgress()
+            setProgress({})
+          }}
+        />
+      )}
+
       <p className="fineprint">
         Questions come only from the course material. This is practice, not the real exam.
       </p>
+    </section>
+  )
+}
+
+// "Your progress": how much of each session you've tried and got right (kept in this browser only).
+function ProgressPanel(props: {
+  sessions: SessionInfo[]
+  progress: ReturnType<typeof loadProgress>
+  onPractiseMissed: (ids: string[]) => void
+  onReset: () => void
+}) {
+  const { sessions, progress, onPractiseMissed, onReset } = props
+  const missed = missedIds(progress)
+  return (
+    <section className="progress" aria-label="Your progress">
+      <h2>Your progress</h2>
+      <ul>
+        {sessions.map((s) => {
+          const { tried, right } = sessionStats(progress, s.session)
+          const label = s.label ?? `Session ${s.session}`
+          return (
+            <li key={s.session}>
+              <span className="progress-label">{label}</span>
+              <span
+                className="progress-bar"
+                role="img"
+                aria-label={`${right} right and ${tried - right} not yet, out of ${s.count}`}
+              >
+                <span className="progress-right" style={{ width: `${(100 * right) / s.count}%` }} />
+                <span className="progress-tried" style={{ width: `${(100 * (tried - right)) / s.count}%` }} />
+              </span>
+              <span className="progress-count">
+                {tried === 0 ? 'not started' : `${tried} of ${s.count} tried · ${right} right`}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+      <div className="actions">
+        {missed.length > 0 && (
+          <button className="btn quiet" type="button" onClick={() => onPractiseMissed(missed)}>
+            Practise the {missed.length} you missed
+          </button>
+        )}
+        <button className="btn link" type="button" onClick={onReset}>
+          Start over
+        </button>
+      </div>
+      <p className="note">Saved in this browser only. Nobody else sees it.</p>
     </section>
   )
 }

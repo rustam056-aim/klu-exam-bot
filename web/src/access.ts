@@ -21,4 +21,9 @@ export function accessHeaders(): Record<string, string> {
   return code ? { 'x-access-code': code } : {}
 }
 
+// For image URLs (an <img> can't send headers).
+export function accessQuery(): string {
+  return code ? `?c=${encodeURIComponent(code)}` : ''
+}
+
 export class NeedsCode extends Error {}

@@ -30,6 +30,7 @@ export interface Env {
   ANTHROPIC_MODEL?: string; // optional: override the grading model
   ACCESS_CODE?: string; // if set, every /api call (except health) needs header x-access-code
   ONLY_APPROVED?: string; // set to "true" before students get access
+  ASSETS?: { fetch: (req: Request) => Promise<Response> }; // the built web app, incl. slide images
 }
 
 const ALL = [
@@ -169,6 +170,20 @@ export default {
       return json({ ok: true, questions: qs.length });
     }
 
+    // GET /slides/S1-28.webp?c=CODE  slide images behind the same access code.
+    // (An <img> can't send headers, so the code comes in the URL.)
+    if (path.startsWith('/slides/')) {
+      const given = (url.searchParams.get('c') ?? '').trim().toLowerCase();
+      if (env.ACCESS_CODE && given !== env.ACCESS_CODE.trim().toLowerCase()) {
+        return new Response('access code required', { status: 401 });
+      }
+      if (!env.ASSETS) return new Response('not found', { status: 404 });
+      const res = await env.ASSETS.fetch(new Request(new URL(path, url.origin)));
+      const headers = new Headers(res.headers);
+      headers.set('cache-control', 'private, max-age=86400');
+      return new Response(res.body, { status: res.status, headers });
+    }
+
     // Access code: keeps strangers from using up the AI and voice credits.
     if (env.ACCESS_CODE && path.startsWith('/api/')) {
       const given = (req.headers.get('x-access-code') ?? '').trim().toLowerCase();
@@ -195,11 +210,12 @@ export default {
       return json([...groups.values()].sort((a, b) => a.session - b.session));
     }
 
-    // GET /api/question/next?session=1&difficulty=easy&exclude=S1-01,S1-02
+    // GET /api/question/next?session=1&difficulty=easy&type=MC&exclude=S1-01,S1-02
     // Optional: only=S1-03,S2-10 limits the pool to these questions ("practise these again").
     if (path === '/api/question/next' && req.method === 'GET') {
       const session = url.searchParams.get('session');
       const difficulty = url.searchParams.get('difficulty');
+      const type = url.searchParams.get('type'); // "MC" for Quick 5
       const list = (name: string) => (url.searchParams.get(name) ?? '').split(',').filter(Boolean);
       const exclude = new Set(list('exclude'));
       const only = new Set(list('only'));
@@ -207,6 +223,7 @@ export default {
       if (only.size > 0) pool = pool.filter((q) => only.has(q.id));
       if (session) pool = pool.filter((q) => String(q.session) === session);
       if (difficulty) pool = pool.filter((q) => q.difficulty === difficulty);
+      if (type) pool = pool.filter((q) => q.type === type);
       if (pool.length === 0) return json({ done: true });
       const q = pool[Math.floor(Math.random() * pool.length)];
       return json({ done: false, question: publicView(q), remaining: pool.length - 1 });

@@ -52,6 +52,8 @@ export type Settings = {
   session: string // 'all' or a session number
   difficulty: 'mixed' | Difficulty
   length: number
+  voice: boolean // voice mode: big mic, answers by speaking, everything read aloud
+  quick?: boolean // Quick 5: multiple choice only
 }
 
 export type SessionInfo = {

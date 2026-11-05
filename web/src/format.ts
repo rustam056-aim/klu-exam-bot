@@ -1,3 +1,4 @@
+import { accessQuery } from './access'
 import type { Difficulty, Verdict } from './types'
 
 const VIDEO_TITLES: Record<string, string> = {
@@ -62,4 +63,14 @@ export function opening(verdict: Verdict, id: string): string {
   let h = 0
   for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0
   return list[h % list.length]
+}
+
+// Slide images for a source like "S1 p15, p17" (only this year's session decks have them).
+export function slideImages(source: string): { src: string; caption: string }[] {
+  const session = source.match(/^S(\d+)/)?.[1]
+  if (!session) return []
+  return [...source.matchAll(/p(\d+)/g)].map((m) => ({
+    src: `/slides/S${session}-${m[1]}.webp${accessQuery()}`,
+    caption: `Session ${session}, page ${m[1]}`,
+  }))
 }

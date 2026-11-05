@@ -11,10 +11,11 @@ async function get<T>(path: string): Promise<T> {
 export const api = {
   sessions: () => get<SessionInfo[]>('/api/sessions'),
 
-  next: (p: { session?: string; difficulty?: string; exclude: string[]; only?: string[] }) => {
+  next: (p: { session?: string; difficulty?: string; type?: 'MC'; exclude: string[]; only?: string[] }) => {
     const params = new URLSearchParams()
     if (p.session) params.set('session', p.session)
     if (p.difficulty) params.set('difficulty', p.difficulty)
+    if (p.type) params.set('type', p.type)
     if (p.exclude.length) params.set('exclude', p.exclude.join(','))
     if (p.only?.length) params.set('only', p.only.join(','))
     return get<NextResponse>(`/api/question/next?${params}`)
