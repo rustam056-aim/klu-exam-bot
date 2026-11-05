@@ -1,23 +1,26 @@
-/* Design tokens: KLU / GSLS look. White page, soft green blocks, KLU burgundy and red.
-   Always light, like the KLU and GSLS sites (even when the laptop is in dark mode). */
+/* Design tokens: KLU / GSLS look, softened. Warm off-white page that fades from a hint of KLU
+   burgundy at the top to a hint of GSLS green at the bottom; nothing pure white, nothing harsh.
+   Always light, like the KLU and GSLS sites. */
 :root {
-  --paper: #ffffff;
-  --card: #e3f8df; /* the GSLS green */
-  --surface: #ffffff;
-  --surface-2: #f4f7f3;
-  --ink: #232323;
-  --ink-2: #5b5f5a;
-  --line: #d6ddd3;
-  --steel: #590e2c; /* KLU burgundy: main buttons, picked chips */
-  --steel-dark: #3f0a1f;
-  --on-steel: #ffffff;
-  --signal: #d83e22; /* KLU red: accents */
-  --on-signal: #ffffff;
-  --band: #590e2c;
-  --good: #1d7346;
-  --part: #9a6200;
-  --bad: #b0271f;
-  --shadow: 0 1px 2px rgb(35 35 35 / 0.04), 0 6px 20px rgb(35 35 35 / 0.06);
+  --paper: #f5f6f1;
+  --paper-top: #f4ecee;
+  --paper-end: #eef3ea;
+  --card: #e6f0e1; /* GSLS green, a bit calmer */
+  --surface: #fbfcf9;
+  --surface-2: #f0f3ec;
+  --ink: #2a2a2b;
+  --ink-2: #60655e;
+  --line: #d9e0d4;
+  --steel: #6a1f3d; /* KLU burgundy, softened: main buttons, picked chips */
+  --steel-dark: #571632;
+  --on-steel: #fdf8f9;
+  --signal: #d14b2f; /* KLU red, softened: accents */
+  --on-signal: #fff8f5;
+  --band: #5c1532;
+  --good: #2c7a4f;
+  --part: #9a6a12;
+  --bad: #b23a2e;
+  --shadow: 0 1px 2px rgb(42 42 43 / 0.04), 0 8px 24px rgb(42 42 43 / 0.05);
 
   font-family: 'Hanken Grotesk Variable', 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 17px;
@@ -37,7 +40,8 @@
 
 body {
   margin: 0;
-  background: var(--paper);
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--paper-top) 0, var(--paper) 360px, var(--paper-end) 100%) var(--paper);
 }
 
 h1,
@@ -56,8 +60,8 @@ textarea {
 }
 
 :focus-visible {
-  outline: 3px solid var(--signal);
-  outline-offset: 2px;
+  outline: 3px solid rgb(209 75 47 / 0.55);
+  outline-offset: 3px;
 }
 
 .sr-only {
