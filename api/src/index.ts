@@ -29,6 +29,7 @@ export interface Env {
   ELEVENLABS_API_KEY?: string;
   ELEVENLABS_VOICE_ID?: string; // optional: another voice, e.g. the clone of Prof. Meuer
   ELEVENLABS_SPEED?: string; // optional: reading speed, 0.7 (slow) to 1.2 (fast); default 0.82
+  ELEVENLABS_MODEL?: string; // optional: voice model; default eleven_multilingual_v2 (livelier), or eleven_flash_v2_5 (cheaper)
   ANTHROPIC_MODEL?: string; // optional: override the grading model
   ACCESS_CODE?: string; // if set, every /api call (except health) needs header x-access-code
   ONLY_APPROVED?: string; // set to "true" before students get access
@@ -340,7 +341,7 @@ export default {
     }
 
     // POST /api/speak  { "text": "..." } -> audio/mpeg
-    // Text to speech (Flash v2.5: fast and cheap), in Prof. Meuer's cloned voice when ELEVENLABS_VOICE_ID is set.
+    // Text to speech, in Prof. Meuer's cloned voice when ELEVENLABS_VOICE_ID is set.
     if (path === '/api/speak' && req.method === 'POST') {
       if (!env.ELEVENLABS_API_KEY) return json({ error: 'voice is not set up' }, 503);
       const body = (await req.json().catch(() => null)) as { text?: string } | null;
@@ -356,12 +357,20 @@ export default {
             'content-type': 'application/json',
             accept: 'audio/mpeg',
           },
-          // speed: 1 = the voice's normal pace. 0.82 is a bit slower, closer to how Prof. Meuer talks
-          // (ElevenLabs allows 0.7 to 1.2). Change it with the ELEVENLABS_SPEED secret, no code needed.
+          // Multilingual v2 sounds livelier than Flash (what you hear on the ElevenLabs site), but costs
+          // about twice the credits; set ELEVENLABS_MODEL=eleven_flash_v2_5 to go back to cheap and fast.
+          // Lower stability + a bit of style = more energy in the voice. speed 0.82 = a bit slower,
+          // closer to how Prof. Meuer talks (0.7 to 1.2, change with the ELEVENLABS_SPEED secret).
           body: JSON.stringify({
             text,
-            model_id: 'eleven_flash_v2_5',
-            voice_settings: { speed: speedOf(env) },
+            model_id: env.ELEVENLABS_MODEL || 'eleven_multilingual_v2',
+            voice_settings: {
+              stability: 0.35,
+              similarity_boost: 0.8,
+              style: 0.3,
+              use_speaker_boost: true,
+              speed: speedOf(env),
+            },
           }),
         },
       );
