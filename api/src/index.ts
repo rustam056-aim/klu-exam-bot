@@ -27,7 +27,8 @@ type Question = {
 export interface Env {
   ANTHROPIC_API_KEY?: string;
   ELEVENLABS_API_KEY?: string;
-  ELEVENLABS_VOICE_ID?: string; // optional: a different standard voice
+  ELEVENLABS_VOICE_ID?: string; // optional: another voice, e.g. the clone of Prof. Meuer
+  ELEVENLABS_SPEED?: string; // optional: reading speed, 0.7 (slow) to 1.2 (fast); default 0.82
   ANTHROPIC_MODEL?: string; // optional: override the grading model
   ACCESS_CODE?: string; // if set, every /api call (except health) needs header x-access-code
   ONLY_APPROVED?: string; // set to "true" before students get access
@@ -40,6 +41,10 @@ const ALL = [
   ...(readings as { questions: Question[] }).questions,
 ];
 const timeOf = (q: Question): number | undefined => (videoTimes as Record<string, number>)[q.id];
+const speedOf = (env: Env) => {
+  const n = Number(env.ELEVENLABS_SPEED);
+  return Number.isFinite(n) && n > 0 ? Math.min(1.2, Math.max(0.7, n)) : 0.82;
+};
 const labelOf = (q: Question) => q.session_label ?? `Session ${q.session}`;
 const active = (env: Env) =>
   env.ONLY_APPROVED === 'true' ? ALL.filter((q) => q.status === 'approved') : ALL;
@@ -335,7 +340,7 @@ export default {
     }
 
     // POST /api/speak  { "text": "..." } -> audio/mpeg
-    // Text to speech with a standard ElevenLabs voice (Flash v2.5: fast and cheap).
+    // Text to speech (Flash v2.5: fast and cheap), in Prof. Meuer's cloned voice when ELEVENLABS_VOICE_ID is set.
     if (path === '/api/speak' && req.method === 'POST') {
       if (!env.ELEVENLABS_API_KEY) return json({ error: 'voice is not set up' }, 503);
       const body = (await req.json().catch(() => null)) as { text?: string } | null;
@@ -351,7 +356,13 @@ export default {
             'content-type': 'application/json',
             accept: 'audio/mpeg',
           },
-          body: JSON.stringify({ text, model_id: 'eleven_flash_v2_5' }),
+          // speed: 1 = the voice's normal pace. 0.82 is a bit slower, closer to how Prof. Meuer talks
+          // (ElevenLabs allows 0.7 to 1.2). Change it with the ELEVENLABS_SPEED secret, no code needed.
+          body: JSON.stringify({
+            text,
+            model_id: 'eleven_flash_v2_5',
+            voice_settings: { speed: speedOf(env) },
+          }),
         },
       );
       if (!res.ok || !res.body) {

@@ -3,6 +3,8 @@
 //
 //   node scripts/transcribe-materials.mjs --one   -> just one file, to check the cost first
 //   node scripts/transcribe-materials.mjs         -> all files that aren't done yet
+//   node scripts/transcribe-materials.mjs --in materials/meuer-voice --out materials/meuer-transcript
+//                                                  -> any other folder of recordings
 import { existsSync, mkdirSync, openAsBlob, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { basename, extname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -15,8 +17,12 @@ if (!key) {
   process.exit(1)
 }
 
-const inDir = join(root, 'materials/alan-audio')
-const outDir = join(root, 'materials/alan-transcripts')
+const arg = (name, fallback) => {
+  const i = process.argv.indexOf(name)
+  return i > -1 && process.argv[i + 1] ? process.argv[i + 1] : fallback
+}
+const inDir = join(root, arg('--in', 'materials/alan-audio'))
+const outDir = join(root, arg('--out', 'materials/alan-transcripts'))
 mkdirSync(outDir, { recursive: true })
 
 const files = readdirSync(inDir)
@@ -48,4 +54,4 @@ for (const f of batch) {
   writeFileSync(outName(f), text + '\n')
   console.log(`done, ${text.split(/\s+/).length} words`)
 }
-console.log(`\nTranscripts are in materials/alan-transcripts`)
+console.log(`\nTranscripts are in ${outDir}`)
