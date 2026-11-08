@@ -1,0 +1,1279 @@
+{
+  "course": "Sustainable Logistics",
+  "year": 2026,
+  "questions": [
+    {
+      "id": "S3-01",
+      "session": 3,
+      "year": 2026,
+      "topic": "Belly freight",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "Roughly what share of the total air cargo volume is carried in passenger aircraft (belly freight)?",
+      "options": {
+        "A": "About 10%",
+        "B": "About 25%",
+        "C": "About 50%",
+        "D": "About 80%"
+      },
+      "correct": "C",
+      "key_points": [
+        "About half. 50% of all air cargo flies in the belly of passenger aircraft, the other half on freighters."
+      ],
+      "model_answer": "About half. 50% of all air cargo flies in the belly of passenger aircraft, the other half on freighters.",
+      "hint1": "Think of the cargo hold under the passengers.",
+      "hint2": "It's a nice round number.",
+      "source_pages": "S3 p8",
+      "status": "draft"
+    },
+    {
+      "id": "S3-02",
+      "session": 3,
+      "year": 2026,
+      "topic": "Value of air cargo",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "According to the Fraport figures in the lecture, roughly what is one kilogram of air cargo worth on average?",
+      "options": {
+        "A": "About 15 €",
+        "B": "About 50 €",
+        "C": "About 150 €",
+        "D": "About 1,500 €"
+      },
+      "correct": "C",
+      "key_points": [
+        "About 150 € per kg (152.81 €), compared with about 6.53 € by road, 2.49 € by sea and 2.09 € by rail."
+      ],
+      "model_answer": "About 150 € per kg (152.81 €), compared with about 6.53 € by road, 2.49 € by sea and 2.09 € by rail.",
+      "hint1": "Air freight carries the high-value stuff.",
+      "hint2": "It's more than twenty times the value of road freight.",
+      "source_pages": "S3 p11",
+      "status": "draft"
+    },
+    {
+      "id": "S3-03",
+      "session": 3,
+      "year": 2026,
+      "topic": "Largest cargo aircraft",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "Which aircraft had the largest payload of the three shown in the warm-up?",
+      "options": {
+        "A": "Boeing 777-F (102 t)",
+        "B": "Boeing 747-8F (139 t)",
+        "C": "Antonov 225 (250 t)",
+        "D": "Airbus A380 (180 t)"
+      },
+      "correct": "C",
+      "key_points": [
+        "The Antonov 225 with a payload of 250 t, ahead of the Boeing 747-8F (139 t) and the Boeing 777-F (102 t)."
+      ],
+      "model_answer": "The Antonov 225 with a payload of 250 t, ahead of the Boeing 747-8F (139 t) and the Boeing 777-F (102 t).",
+      "hint1": "It's not a Boeing.",
+      "hint2": "Its payload was 250 tonnes.",
+      "source_pages": "S3 p6",
+      "status": "draft"
+    },
+    {
+      "id": "S3-04",
+      "session": 3,
+      "year": 2026,
+      "topic": "Transport split vs emissions",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Air carries only a tiny share of global freight activity, but a much bigger share of freight emissions. Give both numbers from the lecture and explain what that tells you.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Air is about 0.1% of global freight activity (tonne-kilometres)",
+        "Air is about 6% of global freight transport emissions",
+        "So air is by far the most carbon-intensive mode per tonne-kilometre"
+      ],
+      "model_answer": "Air moves only about 0.1% of global freight tonne-kilometres, but causes about 6% of freight transport emissions. Per tonne-kilometre it's by far the most carbon-intensive mode (sea does 79% of tkm, road 10%, rail 11%).",
+      "hint1": "Compare the transport split chart with the emissions pie.",
+      "hint2": "One number is below 1%, the other is a few percent.",
+      "source_pages": "S3 p13, p15",
+      "status": "draft"
+    },
+    {
+      "id": "S3-05",
+      "session": 3,
+      "year": 2026,
+      "topic": "Freight emissions by mode",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "Which mode causes the largest share of global freight transport emissions?",
+      "options": {
+        "A": "Sea (about 70%)",
+        "B": "Road (about 70%)",
+        "C": "Air (about 22%)",
+        "D": "Rail (about 22%)"
+      },
+      "correct": "B",
+      "key_points": [
+        "Road, with about 70% of global freight transport emissions, followed by sea (22%), air (6%) and rail (2%)."
+      ],
+      "model_answer": "Road, with about 70% of global freight transport emissions, followed by sea (22%), air (6%) and rail (2%).",
+      "hint1": "It's the mode with the most vehicles on the move.",
+      "hint2": "Trucks.",
+      "source_pages": "S3 p15",
+      "status": "draft"
+    },
+    {
+      "id": "S3-06",
+      "session": 3,
+      "year": 2026,
+      "topic": "Air cargo in global CO2",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Roughly what share of total global CO2 emissions comes from air cargo?",
+      "options": {
+        "A": "About 0.5%",
+        "B": "About 2%",
+        "C": "About 6%",
+        "D": "About 11%"
+      },
+      "correct": "A",
+      "key_points": [
+        "About 0.54%. For comparison: road cargo about 6.3%, sea cargo about 1.98%, rail cargo about 0.18%."
+      ],
+      "model_answer": "About 0.54%. For comparison: road cargo about 6.3%, sea cargo about 1.98%, rail cargo about 0.18%.",
+      "hint1": "It's well below 1%.",
+      "hint2": "It's about half a percent.",
+      "source_pages": "S3 p16",
+      "status": "draft"
+    },
+    {
+      "id": "S3-07",
+      "session": 3,
+      "year": 2026,
+      "topic": "When to use air freight",
+      "type": "Open",
+      "difficulty": "easy",
+      "question": "Name four situations where using air freight makes sense, commercially or for humanitarian reasons.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Tight delivery deadlines on intercontinental routes",
+        "Critical spare parts to prevent production downtime",
+        "Perishable goods, so they arrive with more shelf life left",
+        "High-value goods, to reduce the capital tied up in transit",
+        "Replenishing stock quickly when demand is higher than forecast",
+        "Reaching remote places with little road, rail or sea access",
+        "Life-saving humanitarian aid to communities cut off by disaster or conflict"
+      ],
+      "model_answer": "When speed is worth the price: tight intercontinental deadlines, critical spare parts to avoid production downtime, perishables with more shelf life left, high-value goods to tie up less capital in transit, quick restocking when demand beats the forecast, remote places with poor road, rail or sea access, and humanitarian aid for areas cut off by disaster or conflict.",
+      "hint1": "Think about when time costs more than the freight rate.",
+      "hint2": "Spare parts, perishables, emergencies...",
+      "source_pages": "S3 p17",
+      "status": "draft"
+    },
+    {
+      "id": "S3-08",
+      "session": 3,
+      "year": 2026,
+      "topic": "Cost of capital in transit",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "How do you calculate the cost of the capital tied up in goods while they're in transit? Give the formula.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Inventory cost = shipment value × annual capital cost × (transit time ÷ 360)",
+        "Longer transit time means more capital tied up, so a higher inventory cost"
+      ],
+      "model_answer": "Inventory cost = shipment value × annual capital cost × transit time / 360. The longer the goods are on the way, the more capital is tied up.",
+      "hint1": "You need the value, an interest rate and the days.",
+      "hint2": "Days are divided by 360.",
+      "source_pages": "S3 p19",
+      "status": "draft"
+    },
+    {
+      "id": "S3-09",
+      "session": 3,
+      "year": 2026,
+      "topic": "Sea vs air: total cost",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "A 450,000 € shipment goes from Hamburg to Melbourne. Sea takes 55 days and costs 2,000 € in freight; air takes 4 days and costs 7,000 €. The annual capital cost is 10%. Which mode is cheaper in total, and why?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Sea inventory cost: 450,000 × 0.10 × 55/360 ≈ 6,875 €, so sea total ≈ 8,875 €",
+        "Air inventory cost: 450,000 × 0.10 × 4/360 = 500 €, so air total = 7,500 €",
+        "Air is cheaper in total, because the capital tied up during the long sea transit outweighs the higher air freight rate"
+      ],
+      "model_answer": "Air. Sea: 2,000 € freight + 6,875 € tied-up capital (450,000 × 10% × 55/360) = 8,875 €. Air: 7,000 € freight + 500 € (450,000 × 10% × 4/360) = 7,500 €. For high-value goods the cost of capital in transit can outweigh the higher air rate.",
+      "hint1": "Don't stop at the freight rate, add the cost of capital in transit.",
+      "hint2": "Inventory cost = value × 10% × days/360.",
+      "source_pages": "S3 p18, p20, p21, p22",
+      "status": "draft"
+    },
+    {
+      "id": "S3-10",
+      "session": 3,
+      "year": 2026,
+      "topic": "Chargeable weight",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "A shipment from Frankfurt to Atlanta measures 120 × 90 × 160 cm and weighs 130 kg. With a volumetric divisor of 6,000 cm³/kg, what is the chargeable weight, and why?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Volumetric weight = (120 × 90 × 160) ÷ 6,000 = 288 kg",
+        "The chargeable weight is the higher of actual and volumetric weight",
+        "So the chargeable weight is 288 kg, not the actual 130 kg"
+      ],
+      "model_answer": "288 kg. Volumetric weight = 120 × 90 × 160 / 6,000 = 288 kg, which is higher than the actual 130 kg, so the airline charges for 288 kg: bulky, light cargo pays for the space it takes.",
+      "hint1": "Airlines also charge for space, not just weight.",
+      "hint2": "Multiply the dimensions and divide by 6,000, then take the higher number.",
+      "source_pages": "S3 p23",
+      "status": "draft"
+    },
+    {
+      "id": "S3-11",
+      "session": 3,
+      "year": 2026,
+      "topic": "Air freight cost items",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Besides the air freight rate itself, which other cost items make up the total cost of an air shipment? Name at least four.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Collection and loading",
+        "Terminal handling at the departure airport",
+        "Cargo security screening and airline security surcharge",
+        "Air waybill (AWB) issuance and documentation",
+        "Fuel surcharge",
+        "SAF surcharge",
+        "Special handling",
+        "Arrival handling and cargo release / documentation at destination"
+      ],
+      "model_answer": "Collection and loading, departure terminal handling, security screening, AWB issuance and documentation, fuel surcharge, SAF surcharge, airline security surcharge, special handling, plus arrival handling and cargo release at the destination. In the Frankfurt–Atlanta example the air freight itself was 1,080 € of a 2,289.91 € total.",
+      "hint1": "Follow the shipment from pick-up to release.",
+      "hint2": "Several items are charged per kg of chargeable weight, some per shipment.",
+      "source_pages": "S3 p24",
+      "status": "draft"
+    },
+    {
+      "id": "S3-12",
+      "session": 3,
+      "year": 2026,
+      "topic": "Air freight cost items",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "In the Frankfurt–Atlanta cost example, how were most surcharges (fuel, SAF, security, terminal handling) charged?",
+      "options": {
+        "A": "Per shipment",
+        "B": "Per kg of rounded chargeable weight",
+        "C": "As a % of the goods value",
+        "D": "Per km flown"
+      },
+      "correct": "B",
+      "key_points": [
+        "Per kg of rounded chargeable weight (288 kg). Only items like collection, AWB documentation and special handling were charged per shipment."
+      ],
+      "model_answer": "Per kg of rounded chargeable weight (288 kg). Only items like collection, AWB documentation and special handling were charged per shipment.",
+      "hint1": "Look at the 'charging base' column.",
+      "hint2": "Most lines say 'x 288'.",
+      "source_pages": "S3 p24",
+      "status": "draft"
+    },
+    {
+      "id": "S3-13",
+      "session": 3,
+      "year": 2026,
+      "topic": "Logistics footprint",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "According to the lecture, roughly what share of global CO2 emissions does logistics cause?",
+      "options": {
+        "A": "About 3%",
+        "B": "About 11%",
+        "C": "About 25%",
+        "D": "About 40%"
+      },
+      "correct": "B",
+      "key_points": [
+        "About 11%: freight transport about 9-10% and warehousing and terminals about 1-2%."
+      ],
+      "model_answer": "About 11%: freight transport about 9-10% and warehousing and terminals about 1-2%.",
+      "hint1": "It's around one tenth.",
+      "hint2": "Freight transport alone is 9-10%.",
+      "source_pages": "S3 p14",
+      "status": "draft"
+    },
+    {
+      "id": "S3-14",
+      "session": 3,
+      "year": 2026,
+      "topic": "Why logistics is hard to decarbonise",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "The lecture lists four features of logistics that make its footprint a big challenge. Name them.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "High dependence on fossil fuel",
+        "Long life of freight assets (slow replacement rate)",
+        "Systemically relevant for almost all economic activities",
+        "Very high forecasted growth rate"
+      ],
+      "model_answer": "High dependence on fossil fuel, long-lived freight assets that get replaced slowly, it's systemically relevant for almost all economic activity, and it's forecast to grow very fast.",
+      "hint1": "Think fuel, assets, importance and growth.",
+      "hint2": "One of them is about how long trucks, ships and planes stay in use.",
+      "source_pages": "S3 p14",
+      "status": "draft"
+    },
+    {
+      "id": "MAN-01",
+      "session": 31,
+      "year": 2026,
+      "topic": "Energy efficiency of drives",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "MAN says what share of the primary energy actually reaches the drive system for battery-electric, hydrogen-based and e-fuel trucks?",
+      "options": {
+        "A": "75% / 25% / 15%",
+        "B": "50% / 50% / 50%",
+        "C": "25% / 75% / 15%",
+        "D": "90% / 60% / 40%"
+      },
+      "correct": "A",
+      "key_points": [
+        "About 75% for battery-electric, 25% for hydrogen-based and 15% for e-fuels. That's why MAN's path is 'BEV first, but not only'."
+      ],
+      "model_answer": "About 75% for battery-electric, 25% for hydrogen-based and 15% for e-fuels. That's why MAN's path is 'BEV first, but not only'.",
+      "hint1": "One technology is far ahead of the other two.",
+      "hint2": "Battery-electric is around three quarters.",
+      "source_pages": "MAN p6",
+      "status": "draft",
+      "session_label": "Guest lecture: MAN (eTrucks)"
+    },
+    {
+      "id": "MAN-02",
+      "session": 31,
+      "year": 2026,
+      "topic": "BEV first, but not only",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "What does MAN mean by 'BEV first, but not only', and what two criteria decide which technology fits?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Battery-electric trucks are the main path because they use energy most efficiently (about 75% vs 25% hydrogen and 15% e-fuel)",
+        "Hydrogen and e-fuels stay options for some uses",
+        "The choice depends on maturity of the technology plus attractiveness of the use case"
+      ],
+      "model_answer": "Battery-electric is the main path because it's by far the most efficient (75% of primary energy reaches the wheels vs 25% for hydrogen and 15% for e-fuels), but hydrogen and e-fuels stay options. What decides is the maturity of the technology plus how attractive the use case is.",
+      "hint1": "Look at the efficiency numbers first.",
+      "hint2": "Two things are added together on the slide.",
+      "source_pages": "MAN p6",
+      "status": "draft",
+      "session_label": "Guest lecture: MAN (eTrucks)"
+    },
+    {
+      "id": "MAN-03",
+      "session": 31,
+      "year": 2026,
+      "topic": "TCO of a diesel truck",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "In MAN's example TCO for a diesel truck in Germany, which cost item is the largest?",
+      "options": {
+        "A": "Driver (29%)",
+        "B": "Diesel incl. AdBlue (37%)",
+        "C": "Toll (17%)",
+        "D": "Vehicle depreciation (13%)"
+      },
+      "correct": "B",
+      "key_points": [
+        "Diesel costs incl. AdBlue are the largest at 37%, then driver 29%, toll 17%, depreciation 13%, repair and maintenance 3% and vehicle tax under 1%."
+      ],
+      "model_answer": "Diesel costs incl. AdBlue are the largest at 37%, then driver 29%, toll 17%, depreciation 13%, repair and maintenance 3% and vehicle tax under 1%.",
+      "hint1": "It's the item an electric truck can replace.",
+      "hint2": "Fuel.",
+      "source_pages": "MAN p10",
+      "status": "draft",
+      "session_label": "Guest lecture: MAN (eTrucks)"
+    },
+    {
+      "id": "MAN-04",
+      "session": 31,
+      "year": 2026,
+      "topic": "Advantages of eTrucks",
+      "type": "Open",
+      "difficulty": "easy",
+      "question": "Which four advantages of electric trucks for customers did MAN show?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Energy self-sufficiency: replace diesel costs with self-generated energy",
+        "Recuperation: higher energy efficiency, e.g. 39% energy recovered on Innsbruck–Bozen–Innsbruck",
+        "Dynamic pricing: charge when electricity is cheap",
+        "Bidirectional charging: feed energy back into the grid"
+      ],
+      "model_answer": "Energy self-sufficiency (replace diesel with self-generated power), recuperation (e.g. 39% energy recovered on Innsbruck–Bozen–Innsbruck), dynamic pricing (charge when power is cheap) and bidirectional charging (feed power back into the grid).",
+      "hint1": "One is about producing your own energy, one about braking downhill.",
+      "hint2": "Two are about the electricity price and the grid.",
+      "source_pages": "MAN p10",
+      "status": "draft",
+      "session_label": "Guest lecture: MAN (eTrucks)"
+    },
+    {
+      "id": "MAN-05",
+      "session": 31,
+      "year": 2026,
+      "topic": "eTruck business case",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "In MAN's Munich–Leipzig case, the eTruck costs 170,000 € more than the diesel truck. Where do the annual savings come from, and after how long does it pay off?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Energy cost advantage of about 19,700 € a year",
+        "Toll advantage of about 35,500 € a year (the largest lever)",
+        "Maintenance advantage of about 1,075 € a year",
+        "Total about 56,300 € a year, so break-even after about 3 years (170,000 ÷ 56,322)"
+      ],
+      "model_answer": "About 56,300 € a year: energy about 19,700 €, toll about 35,500 € (the biggest lever) and maintenance about 1,075 €. 170,000 € ÷ 56,322 € means it pays off after about 3 years.",
+      "hint1": "Three savings add up: energy, toll and maintenance.",
+      "hint2": "Divide the extra investment by the annual advantage.",
+      "source_pages": "MAN p16",
+      "status": "draft",
+      "session_label": "Guest lecture: MAN (eTrucks)"
+    },
+    {
+      "id": "MAN-06",
+      "session": 31,
+      "year": 2026,
+      "topic": "Charging concept",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "How does the eTruck manage the Munich–Leipzig round trip (430 km each way) with a 480 kWh battery?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Two 45-minute charging stops at a Milence fast charger (375 kW) during the driving breaks",
+        "Full charge at the MAN plant in Munich (250 kW) before the next trip",
+        "Charging is fitted into the legally required driving breaks"
+      ],
+      "model_answer": "With two 45-minute stops at the Milence charger in Himmelkron (375 kW), one on each leg during the driver's break, plus charging back to full at the MAN plant in Munich (250 kW).",
+      "hint1": "The charging happens while the driver has to stop anyway.",
+      "hint2": "45 minutes, twice.",
+      "source_pages": "MAN p15",
+      "status": "draft",
+      "session_label": "Guest lecture: MAN (eTrucks)"
+    },
+    {
+      "id": "MAN-07",
+      "session": 31,
+      "year": 2026,
+      "topic": "Success factors",
+      "type": "Open",
+      "difficulty": "easy",
+      "question": "According to MAN, which factors have to come together for decarbonisation to succeed? Why does the slide 'multiply' them?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Product (the right vehicle)",
+        "Infrastructure (charging)",
+        "Renewable energy",
+        "TCO for customers (it has to pay off)",
+        "Multiplication: if one factor is zero, the whole result is zero"
+      ],
+      "model_answer": "Product, infrastructure, renewable energy and TCO for customers. They're multiplied because if any one of them is missing (zero), the whole thing fails.",
+      "hint1": "Think vehicle, charging, power and money.",
+      "hint2": "What happens when you multiply by zero?",
+      "source_pages": "MAN p12",
+      "status": "draft",
+      "session_label": "Guest lecture: MAN (eTrucks)"
+    },
+    {
+      "id": "MAN-08",
+      "session": 31,
+      "year": 2026,
+      "topic": "eTruck growth",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "By how much did MAN's electric vehicle sales grow in 2025 compared with the previous year?",
+      "options": {
+        "A": "+18%",
+        "B": "+68%",
+        "C": "+168%",
+        "D": "+268%"
+      },
+      "correct": "C",
+      "key_points": [
+        "By 168%, with a record of more than 1,300 electric buses sold."
+      ],
+      "model_answer": "By 168%, with a record of more than 1,300 electric buses sold.",
+      "hint1": "Sales more than doubled.",
+      "hint2": "It's well over 100%.",
+      "source_pages": "MAN p8",
+      "status": "draft",
+      "session_label": "Guest lecture: MAN (eTrucks)"
+    },
+    {
+      "id": "TEC-01",
+      "session": 32,
+      "year": 2026,
+      "topic": "EU truck fleet",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "What share of the roughly six million trucks over 3.5 t in the EU ran on diesel (ACEA)?",
+      "options": {
+        "A": "About 76%",
+        "B": "About 86%",
+        "C": "About 96%",
+        "D": "About 99.9%"
+      },
+      "correct": "C",
+      "key_points": [
+        "About 96.4%. Natural gas was about 0.8% and battery-electric only about 0.1%."
+      ],
+      "model_answer": "About 96.4%. Natural gas was about 0.8% and battery-electric only about 0.1%.",
+      "hint1": "Diesel is overwhelmingly dominant.",
+      "hint2": "It's above 95%.",
+      "source_pages": "TEC p4, p9",
+      "status": "draft",
+      "session_label": "Guest lecture: Tecvia (fleet decarbonisation)"
+    },
+    {
+      "id": "TEC-02",
+      "session": 32,
+      "year": 2026,
+      "topic": "Bio-LNG",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "What are the advantages and the business-case conditions of Bio-LNG trucks?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "About 25% less CO2 than diesel, and as a bio-fuel nearly CO2-neutral (about 90% reduction)",
+        "Virtually no soot and no need for complex exhaust aftertreatment (SCR, EGR, particulate filters)",
+        "Fuel costs are much lower, but repair and maintenance about 10-15% higher and the truck costs about 25,000-40,000 € more",
+        "Worth it mainly with high mileage (over 130,000 km a year) and a purchase price close to diesel"
+      ],
+      "model_answer": "About 25% less CO2 (as Bio-LNG nearly CO2-neutral, about 90% less), virtually no soot and no complex exhaust aftertreatment. Fuel is much cheaper, but maintenance is 10-15% higher and the truck costs 25,000-40,000 € more, so it pays off mainly above 130,000 km a year and when the price gap to diesel is small.",
+      "hint1": "Think emissions, exhaust system and costs.",
+      "hint2": "Mileage is the key condition.",
+      "source_pages": "TEC p10, p11",
+      "status": "draft",
+      "session_label": "Guest lecture: Tecvia (fleet decarbonisation)"
+    },
+    {
+      "id": "TEC-03",
+      "session": 32,
+      "year": 2026,
+      "topic": "Why LNG fell out of favour",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Why did many transport companies give up on LNG trucks, and why is it coming back?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Natural gas was temporarily toll-exempt, so many companies chose it",
+        "After the Russian war began, prices soared (up to 5 € per kg) and the toll exemption was removed, so many dropped it",
+        "Now suppliers are back with Bio-LNG, and improved vehicles make a business case possible even without the toll exemption"
+      ],
+      "model_answer": "LNG was popular while it was toll-exempt. When prices soared after the start of the Russian war (up to 5 €/kg) and the toll exemption ended, many companies gave up. Now suppliers are back with Bio-LNG, and better vehicles make a business case possible even without the exemption.",
+      "hint1": "Two things happened at once: a price shock and a policy change.",
+      "hint2": "Toll and gas prices.",
+      "source_pages": "TEC p10",
+      "status": "draft",
+      "session_label": "Guest lecture: Tecvia (fleet decarbonisation)"
+    },
+    {
+      "id": "TEC-04",
+      "session": 32,
+      "year": 2026,
+      "topic": "Battery development",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "How did battery costs develop between 2010 and 2024, according to the lecture?",
+      "options": {
+        "A": "From about 1,000 to 500 €/kWh",
+        "B": "From about 500 to 200 €/kWh",
+        "C": "From about 200 to 100 €/kWh",
+        "D": "They stayed about the same"
+      },
+      "correct": "B",
+      "key_points": [
+        "From about 500 €/kWh (2010) to about 200 €/kWh (2024), while energy density rose from about 80 to 200 Wh/kg."
+      ],
+      "model_answer": "From about 500 €/kWh (2010) to about 200 €/kWh (2024), while energy density rose from about 80 to 200 Wh/kg.",
+      "hint1": "They fell by more than half.",
+      "hint2": "It started at 500.",
+      "source_pages": "TEC p13",
+      "status": "draft",
+      "session_label": "Guest lecture: Tecvia (fleet decarbonisation)"
+    },
+    {
+      "id": "TEC-05",
+      "session": 32,
+      "year": 2026,
+      "topic": "Diesel vs e-truck cost",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "In the lecture's cost comparison, how do a diesel truck and an e-truck compare on fixed costs, variable costs and total cost?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "The e-truck has much higher fixed costs (44,750 € vs 23,750 €)",
+        "But lower variable costs per 100 km (about 87.54 € vs 124.34 €)",
+        "So its total cost is lower: about 121.96 € vs 142.61 € per 100 km, about 475,652 € vs 556,166 € over 36 months"
+      ],
+      "model_answer": "The e-truck costs more in fixed costs (44,750 € vs 23,750 €) but less to run (87.54 € vs 124.34 € variable per 100 km), so overall it's cheaper: 121.96 € vs 142.61 € per 100 km, or about 475,652 € vs 556,166 € over 36 months.",
+      "hint1": "One side is higher for the e-truck, the other lower.",
+      "hint2": "Compare 'total costs per 100 km'.",
+      "source_pages": "TEC p30",
+      "status": "draft",
+      "session_label": "Guest lecture: Tecvia (fleet decarbonisation)"
+    },
+    {
+      "id": "TEC-06",
+      "session": 32,
+      "year": 2026,
+      "topic": "Truck charging network",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Why is public charging still a problem for heavy trucks, even though Europe has more than a million public charging points?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Most public charging points are for cars; the network for heavy trucks is far smaller",
+        "In April 2026 Europe had only about 2,400 truck-suitable points of 350 kW or more at 373 sites",
+        "Megawatt charging is still at an early stage, and a comprehensive high-power network for articulated vehicles is still missing",
+        "Expansion is shifting towards drive-through charging parks with 400 kW to 1 MW"
+      ],
+      "model_answer": "Almost all of the ~1.18 million EU public points are built for cars. For heavy trucks Europe had only about 2,400 points of 350 kW+ at 373 sites (April 2026), and megawatt charging is just starting. A real high-power network for articulated trucks is still missing, so expansion is moving to drive-through truck charging parks (400 kW to 1 MW).",
+      "hint1": "Compare the total number with the truck-suitable high-power number.",
+      "hint2": "350 kW or more, suitable for articulated trucks.",
+      "source_pages": "TEC p34, p38",
+      "status": "draft",
+      "session_label": "Guest lecture: Tecvia (fleet decarbonisation)"
+    },
+    {
+      "id": "TEC-07",
+      "session": 32,
+      "year": 2026,
+      "topic": "Catenary trucks",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "What happened to the catenary truck trial in Germany?",
+      "options": {
+        "A": "It's being expanded across all motorways",
+        "B": "It ended in 2022 and the sections were dismantled despite a positive assessment",
+        "C": "It failed technically and was stopped in 2015",
+        "D": "It's still running on the A5 today"
+      },
+      "correct": "B",
+      "key_points": [
+        "It ended in 2022. Despite a positive assessment the catenary sections were dismantled, and there are no new initiatives to revive it."
+      ],
+      "model_answer": "It ended in 2022. Despite a positive assessment the catenary sections were dismantled, and there are no new initiatives to revive it.",
+      "hint1": "The assessment was good, but...",
+      "hint2": "It's no longer there.",
+      "source_pages": "TEC p40",
+      "status": "draft",
+      "session_label": "Guest lecture: Tecvia (fleet decarbonisation)"
+    },
+    {
+      "id": "TEC-08",
+      "session": 32,
+      "year": 2026,
+      "topic": "Hybrid trucks",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "How does the parallel hybrid truck in the lecture work, and when does it make sense?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Diesel engine plus electric motor that work together or separately (parallel hybrid)",
+        "The battery is charged during diesel operation and by recuperation; manoeuvring can be fully electric",
+        "Up to 92% less CO2 in pure electric mode, about 60 km electric range",
+        "Makes sense for mixed use: both urban and open road"
+      ],
+      "model_answer": "A Euro 6 diesel plus an electric motor that can run together or separately. The battery charges during diesel driving and through recuperation, so it can manoeuvre electrically (about 60 km range, up to 92% less CO2 in pure electric mode). It suits mixed urban and open-road use.",
+      "hint1": "Two engines that can work together or alone.",
+      "hint2": "Think city and motorway in one tour.",
+      "source_pages": "TEC p24, p25",
+      "status": "draft",
+      "session_label": "Guest lecture: Tecvia (fleet decarbonisation)"
+    },
+    {
+      "id": "FRA-01",
+      "session": 33,
+      "year": 2026,
+      "topic": "Europe's largest cargo hub",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "Which airport handled the most cargo in Europe in 2025?",
+      "options": {
+        "A": "Paris CDG",
+        "B": "London Heathrow",
+        "C": "Frankfurt (FRA)",
+        "D": "Amsterdam (AMS)"
+      },
+      "correct": "C",
+      "key_points": [
+        "Frankfurt, with about 2.03 million tonnes, ahead of Istanbul (1.97 m t) and Paris CDG (1.94 m t)."
+      ],
+      "model_answer": "Frankfurt, with about 2.03 million tonnes, ahead of Istanbul (1.97 m t) and Paris CDG (1.94 m t).",
+      "hint1": "It's the host of this guest lecture.",
+      "hint2": "It's in Germany.",
+      "source_pages": "FRA p12",
+      "status": "draft",
+      "session_label": "Guest lecture: Fraport (Frankfurt Airport)"
+    },
+    {
+      "id": "FRA-02",
+      "session": 33,
+      "year": 2026,
+      "topic": "Belly vs freighter cargo",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "What happened to the share of freighter cargo at Frankfurt in spring 2020, and why?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "The freighter share jumped sharply, to roughly 90% or more",
+        "Because passenger flights were grounded in the Covid-19 pandemic, so belly cargo almost disappeared",
+        "Afterwards belly cargo slowly recovered and the freighter share fell back"
+      ],
+      "model_answer": "It shot up to around 90%+. With passenger flights grounded during Covid-19, belly cargo nearly vanished, so almost everything flew on freighters. As passenger traffic came back, belly cargo recovered and the freighter share dropped again.",
+      "hint1": "What happened to passenger flights in 2020?",
+      "hint2": "Belly cargo needs passenger planes.",
+      "source_pages": "FRA p13",
+      "status": "draft",
+      "session_label": "Guest lecture: Fraport (Frankfurt Airport)"
+    },
+    {
+      "id": "FRA-03",
+      "session": 33,
+      "year": 2026,
+      "topic": "Special cargo at FRA",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "What makes Frankfurt stand out for handling special types of cargo? Name at least three.",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Europe's largest perishable center",
+        "World's leading pharma hub (16,500 m² of certified pharma handling space)",
+        "Storage for dangerous goods of all classes",
+        "World's most modern animal station",
+        "Valuables storage, airmail and express distribution centres",
+        "Highest forwarder density in Europe"
+      ],
+      "model_answer": "Europe's largest perishable center, the world's leading pharma hub (16,500 m² certified pharma space), dangerous goods storage for all classes, the world's most modern animal station, valuables storage, airmail and express centres, and Europe's highest density of forwarders.",
+      "hint1": "Think food, medicine, animals, dangerous goods.",
+      "hint2": "Pharma is a big one.",
+      "source_pages": "FRA p14, p15, p17",
+      "status": "draft",
+      "session_label": "Guest lecture: Fraport (Frankfurt Airport)"
+    },
+    {
+      "id": "FRA-04",
+      "session": 33,
+      "year": 2026,
+      "topic": "Fraport climate targets",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "When does the Fraport Group aim to reach net zero in scopes 1 and 2?",
+      "options": {
+        "A": "2030",
+        "B": "2040",
+        "C": "2045",
+        "D": "2050"
+      },
+      "correct": "C",
+      "key_points": [
+        "By 2045. From 185 thousand t CO2e (2023), the goals are 95 (-49%) by 2030, 40 (-78%) by 2040 and zero by 2045."
+      ],
+      "model_answer": "By 2045. From 185 thousand t CO2e (2023), the goals are 95 (-49%) by 2030, 40 (-78%) by 2040 and zero by 2045.",
+      "hint1": "It's earlier than 2050.",
+      "hint2": "The intermediate goals are 2030 and 2040.",
+      "source_pages": "FRA p23",
+      "status": "draft",
+      "session_label": "Guest lecture: Fraport (Frankfurt Airport)"
+    },
+    {
+      "id": "FRA-05",
+      "session": 33,
+      "year": 2026,
+      "topic": "Climate action at FRA",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Which measures cut Frankfurt Airport's scope 1 and 2 emissions from about 159,500 t (2024) to about 109,200 t (2025)?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Power purchase agreements (PPAs) for green power: about 89,400 t CO2e saved",
+        "About 90% green energy from solar and wind",
+        "Photovoltaic plants: about 1,000 t saved",
+        "Electrifying the ground handling fleet (28%) and 680 charging stations"
+      ],
+      "model_answer": "Mainly green power: PPAs saved about 89,400 t CO2e and about 90% of the energy now comes from solar and wind. On top: photovoltaics (about 1,000 t), electrifying 28% of the ground handling fleet and 680 charging stations.",
+      "hint1": "The biggest lever is how the airport buys its electricity.",
+      "hint2": "PPAs.",
+      "source_pages": "FRA p24",
+      "status": "draft",
+      "session_label": "Guest lecture: Fraport (Frankfurt Airport)"
+    },
+    {
+      "id": "FRA-06",
+      "session": 33,
+      "year": 2026,
+      "topic": "Renewable power at FRA",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Where will most of Frankfurt Airport's renewable electricity come from from mid-2026?",
+      "options": {
+        "A": "On-site solar (over 90%)",
+        "B": "Wind power via PPAs (over 90%), with up to 10% on-site solar",
+        "C": "Hydropower imports",
+        "D": "Biogas from airport waste"
+      },
+      "correct": "B",
+      "key_points": [
+        "Over 90% from wind power through PPAs (onshore with Centrica since 2003, a new offshore park from H2 2026), and up to 10% from on-site solar, e.g. the 2.8 km PV plant along the runway."
+      ],
+      "model_answer": "Over 90% from wind power through PPAs (onshore with Centrica since 2003, a new offshore park from H2 2026), and up to 10% from on-site solar, e.g. the 2.8 km PV plant along the runway.",
+      "hint1": "The airport can't produce most of it on its own site.",
+      "hint2": "Think contracts with wind parks.",
+      "source_pages": "FRA p25",
+      "status": "draft",
+      "session_label": "Guest lecture: Fraport (Frankfurt Airport)"
+    },
+    {
+      "id": "FRA-07",
+      "session": 33,
+      "year": 2026,
+      "topic": "Fraport business segments",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Which Fraport business segment earned the largest share of revenue in 2025?",
+      "options": {
+        "A": "Aviation",
+        "B": "Ground handling",
+        "C": "Retail & real estate",
+        "D": "International activities & services"
+      },
+      "correct": "D",
+      "key_points": [
+        "International activities & services, with 37.9% (1,682 million €). Aviation 30.3%, ground handling 19.6%, retail & real estate 12.5%."
+      ],
+      "model_answer": "International activities & services, with 37.9% (1,682 million €). Aviation 30.3%, ground handling 19.6%, retail & real estate 12.5%.",
+      "hint1": "Fraport runs airports all over the world.",
+      "hint2": "Almost 50% is earned abroad.",
+      "source_pages": "FRA p7",
+      "status": "draft",
+      "session_label": "Guest lecture: Fraport (Frankfurt Airport)"
+    },
+    {
+      "id": "SOV-01",
+      "session": 34,
+      "year": 2026,
+      "topic": "Which drive saves most CO2",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "Well-to-wheel, which option cuts the most CO2 compared with diesel?",
+      "options": {
+        "A": "HVO100 (up to 85%)",
+        "B": "BEV on German grid mix (about 40%)",
+        "C": "BEV on certified green electricity (about 90%)",
+        "D": "They're all about the same"
+      },
+      "correct": "C",
+      "key_points": [
+        "A BEV on certified green electricity, about 90%. HVO100 saves up to 85%, while a BEV on the German grid mix saves only about 40%."
+      ],
+      "model_answer": "A BEV on certified green electricity, about 90%. HVO100 saves up to 85%, while a BEV on the German grid mix saves only about 40%.",
+      "hint1": "The electricity source makes a huge difference.",
+      "hint2": "Green power beats grey power.",
+      "source_pages": "SOV p14",
+      "status": "draft",
+      "session_label": "Guest lecture: Sovereign Speed"
+    },
+    {
+      "id": "SOV-02",
+      "session": 34,
+      "year": 2026,
+      "topic": "Grey vs green electricity",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "On the Hamburg–Frankfurt example route, how much CO2e do diesel, BEV with grey power, BEV with green power and HVO100 emit? What's the lesson?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Diesel about 582 kg CO2e",
+        "BEV with grey electricity about 365 kg, BEV with green electricity about 41 kg",
+        "HVO100 about 137 kg",
+        "Lesson: a BEV only cuts emissions sharply if it runs on green electricity"
+      ],
+      "model_answer": "Diesel about 582 kg, BEV on grey power about 365 kg, BEV on green power about 41 kg, HVO100 about 137 kg. An e-truck is only really clean if the electricity is.",
+      "hint1": "Compare the two BEV numbers.",
+      "hint2": "Grey vs green makes almost a 9x difference.",
+      "source_pages": "SOV p15",
+      "status": "draft",
+      "session_label": "Guest lecture: Sovereign Speed"
+    },
+    {
+      "id": "SOV-03",
+      "session": 34,
+      "year": 2026,
+      "topic": "Agenda 42 for 42",
+      "type": "Open",
+      "difficulty": "easy",
+      "question": "What are Sovereign's climate targets under 'Agenda 42 for 42'?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Cut scope 1 and 2 emissions by 42% by 2030",
+        "Cut scope 3 emissions by 25% by 2030",
+        "Net zero by 2042"
+      ],
+      "model_answer": "Scope 1&2 down 42% and scope 3 down 25% by 2030, and net zero by 2042.",
+      "hint1": "The name gives away two numbers.",
+      "hint2": "42% and 2042.",
+      "source_pages": "SOV p8",
+      "status": "draft",
+      "session_label": "Guest lecture: Sovereign Speed"
+    },
+    {
+      "id": "SOV-04",
+      "session": 34,
+      "year": 2026,
+      "topic": "Biggest reduction lever",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "In Sovereign's reduction plan up to 2030, which single measure contributes most to the 42% cut of its corporate carbon footprint?",
+      "options": {
+        "A": "Eco-driving",
+        "B": "HVO100 (renewable diesel)",
+        "C": "Electric duty vehicles",
+        "D": "SAF"
+      },
+      "correct": "B",
+      "key_points": [
+        "HVO100: it accounts for 21.3 percentage points of the 42% cut by 2030. Electric vehicles add 4.6, eco-driving 3.6 and SAF 0.74."
+      ],
+      "model_answer": "HVO100: it accounts for 21.3 percentage points of the 42% cut by 2030. Electric vehicles add 4.6, eco-driving 3.6 and SAF 0.74.",
+      "hint1": "It's a fuel switch, not a new vehicle.",
+      "hint2": "Renewable diesel made from waste.",
+      "source_pages": "SOV p10",
+      "status": "draft",
+      "session_label": "Guest lecture: Sovereign Speed"
+    },
+    {
+      "id": "SOV-05",
+      "session": 34,
+      "year": 2026,
+      "topic": "Book & claim",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "What is 'book & claim' for HVO100, and why do shippers use it?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "A market-based measure that decouples the environmental benefit of low-emission transport from the physical flow of goods",
+        "The HVO100 isn't necessarily used in the vehicle carrying the shipment, but the reduction is allocated to the shipment",
+        "Customers get a CO2e reduction on shipment level with a third-party allocation statement, aligned with ISO 14083 / Smart Freight Centre",
+        "SBTi recognises it as a valid way to meet corporate decarbonisation targets"
+      ],
+      "model_answer": "It's a market-based measure: the CO2 benefit of HVO100 is decoupled from the physical goods, so it's not necessarily burned in the truck carrying your shipment, but the reduction is allocated to it with a third-party statement (ISO 14083 / Smart Freight Centre). SBTi accepts it for corporate targets.",
+      "hint1": "The fuel and the shipment don't have to meet.",
+      "hint2": "Think of it like buying green power certificates.",
+      "source_pages": "SOV p17, p19",
+      "status": "draft",
+      "session_label": "Guest lecture: Sovereign Speed"
+    },
+    {
+      "id": "SOV-06",
+      "session": 34,
+      "year": 2026,
+      "topic": "TCO long haul vs local",
+      "type": "Open",
+      "difficulty": "hard",
+      "question": "Why is a BEV cheaper than diesel in Sovereign's long-haul case, but more expensive in local traffic?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Long haul: BEV net TCO about 113.6-114.8 k€ vs 138.3 k€ for diesel",
+        "Mainly because of the toll exemption for BEVs (toll is the largest cost block for diesel, about 43 k€ a year)",
+        "Local traffic has no toll, so this lever disappears: BEV about 71.9-81.9 k€ vs 46.1 k€ for diesel",
+        "In local traffic leasing dominates (68-84% of cost), so utilisation is the lever"
+      ],
+      "model_answer": "In long haul the BEV wins (about 114 k€ vs 138 k€ a year) mainly because it's toll-exempt, and toll is diesel's biggest cost block (about 43 k€). Local tours have no toll, so the BEV loses (72-82 k€ vs 46 k€): there leasing makes up 68-84% of the cost, and utilisation is the lever.",
+      "hint1": "Which cost item exists on the motorway but not in local traffic?",
+      "hint2": "Toll.",
+      "source_pages": "SOV p23, p24, p25",
+      "status": "draft",
+      "session_label": "Guest lecture: Sovereign Speed"
+    },
+    {
+      "id": "SOV-07",
+      "session": 34,
+      "year": 2026,
+      "topic": "Toll exemption",
+      "type": "MC",
+      "difficulty": "medium",
+      "question": "According to Sovereign, until when are battery-electric trucks exempt from German road toll?",
+      "options": {
+        "A": "End of 2026",
+        "B": "30 June 2028",
+        "C": "30 June 2031",
+        "D": "Permanently"
+      },
+      "correct": "C",
+      "key_points": [
+        "Until 30 June 2031. Without the exemption a BEV would cost about 18-19 k€ a year more, so it's a policy lever, while the power price is a procurement lever the company controls."
+      ],
+      "model_answer": "Until 30 June 2031. Without the exemption a BEV would cost about 18-19 k€ a year more, so it's a policy lever, while the power price is a procurement lever the company controls.",
+      "hint1": "It's in the next decade.",
+      "hint2": "2031.",
+      "source_pages": "SOV p24",
+      "status": "draft",
+      "session_label": "Guest lecture: Sovereign Speed"
+    },
+    {
+      "id": "SOV-08",
+      "session": 34,
+      "year": 2026,
+      "topic": "What makes BEV work",
+      "type": "Open",
+      "difficulty": "easy",
+      "question": "According to Sovereign, what does it take to make battery-electric trucking work with a customer?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "A jointly defined operating concept, not a standard price tender",
+        "Clear communication and mutual commitment",
+        "Flexibility on operational adjustments",
+        "Openness to align together"
+      ],
+      "model_answer": "A jointly defined operating concept instead of a standard price tender, clear communication and mutual commitment, flexibility on operational changes, and openness to align together.",
+      "hint1": "It's more about the relationship than the truck.",
+      "hint2": "Not a normal tender.",
+      "source_pages": "SOV p21",
+      "status": "draft",
+      "session_label": "Guest lecture: Sovereign Speed"
+    },
+    {
+      "id": "SOV-09",
+      "session": 34,
+      "year": 2026,
+      "topic": "Cost per tonne CO2 saved",
+      "type": "MC",
+      "difficulty": "hard",
+      "question": "Which option had the lowest (even negative) cost per tonne of CO2 saved in Sovereign's analysis?",
+      "options": {
+        "A": "BEV in local traffic with own infrastructure",
+        "B": "BEV in long haul",
+        "C": "HVO100 at a 20 ct/l premium",
+        "D": "They all cost over 1,000 €/t"
+      },
+      "correct": "B",
+      "key_points": [
+        "BEV in long haul: about -250 €/t (without own infrastructure) and -238 €/t (with), so it saves money. BEV in local traffic costs about 1,119-1,550 €/t; HVO100 about 5.5-78 €/t depending on its price premium."
+      ],
+      "model_answer": "BEV in long haul: about -250 €/t (without own infrastructure) and -238 €/t (with), so it saves money. BEV in local traffic costs about 1,119-1,550 €/t; HVO100 about 5.5-78 €/t depending on its price premium.",
+      "hint1": "A negative cost means it saves money while cutting CO2.",
+      "hint2": "The toll exemption helps here.",
+      "source_pages": "SOV p26",
+      "status": "draft",
+      "session_label": "Guest lecture: Sovereign Speed"
+    },
+    {
+      "id": "INT-01",
+      "session": 201,
+      "year": 2026,
+      "topic": "The main GSLS finding",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "What is the headline finding of the first Global Sustainable Logistics Survey?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Logistics providers and shippers rate the 21 solutions almost identically and consider nearly all of them effective",
+        "The gap is not in knowledge but in practice: too few effective solutions get beyond pilot projects",
+        "So the question is no longer whether or what, but how and how fast"
+      ],
+      "model_answer": "Providers and shippers rate the 21 solutions almost the same and think nearly all of them work. The gap isn't knowledge but practice: too few move beyond pilots. The question is no longer whether or what, but how and how fast.",
+      "hint1": "It challenges the idea that the industry doesn't know what to do.",
+      "hint2": "Knowledge vs practice.",
+      "source_pages": "GSLS interview",
+      "status": "draft",
+      "session_label": "Reading: GSLS interview (2026)"
+    },
+    {
+      "id": "INT-02",
+      "session": 201,
+      "year": 2026,
+      "topic": "Survey scale",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "How many professionals took part in the first GSLS, and from how many countries?",
+      "options": {
+        "A": "About 300 from 20 countries",
+        "B": "1,085 from 64 countries",
+        "C": "5,000 from 100 countries",
+        "D": "10,000 from 12 countries"
+      },
+      "correct": "B",
+      "key_points": [
+        "1,085 professionals from 64 countries (and 12 UN subregions). It's the first of an annual series through the UN Decade of Sustainable Transport (2026-2035)."
+      ],
+      "model_answer": "1,085 professionals from 64 countries (and 12 UN subregions). It's the first of an annual series through the UN Decade of Sustainable Transport (2026-2035).",
+      "hint1": "Just over a thousand people.",
+      "hint2": "64 countries.",
+      "source_pages": "GSLS interview",
+      "status": "draft",
+      "session_label": "Reading: GSLS interview (2026)"
+    },
+    {
+      "id": "INT-03",
+      "session": 201,
+      "year": 2026,
+      "topic": "Infrastructure bottleneck",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Where are the biggest gaps between how effective solutions are rated and how widely they're adopted, and why?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Low-carbon fuels, fuelling and charging infrastructure, and fleet electrification",
+        "What holds them back is feasibility, not conviction",
+        "Charging networks, terminals and rail capacity depend on planning, permits and grid connections, so they move slower than the vehicles",
+        "Grid capacity and affordable power are likely to become the bottleneck in 2027"
+      ],
+      "model_answer": "In low-carbon fuels, fuelling and charging infrastructure, and fleet electrification. It's about feasibility, not conviction: trucks get cheaper fast, but charging, terminals and rail need planning, permits and grid connections, so grid capacity and affordable power become the bottleneck.",
+      "hint1": "The trucks are ready faster than something else.",
+      "hint2": "Think permits and grid connections.",
+      "source_pages": "GSLS interview",
+      "status": "draft",
+      "session_label": "Reading: GSLS interview (2026)"
+    },
+    {
+      "id": "INT-04",
+      "session": 201,
+      "year": 2026,
+      "topic": "Internal carbon pricing",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Why does the GSLS call carbon pricing one of its biggest surprises, and why does an internal carbon price make sense now?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "It's rated effective and needs no public authority or infrastructure, yet it's among the least adopted solutions",
+        "From 2028 the EU's second Emissions Trading System will price road transport fuels",
+        "An internal carbon price lets companies test investment decisions against that future cost now",
+        "Without a transition plan, fleets risk vehicles losing value before the end of their useful life"
+      ],
+      "model_answer": "It's rated effective and any company can do it alone, yet hardly anyone does. With the EU's second ETS pricing road fuels from 2028, an internal carbon price lets firms test investments against that future cost now, instead of ending up with trucks that lose value early.",
+      "hint1": "It's effective and easy to start, but rarely used.",
+      "hint2": "Think of the EU ETS 2 from 2028.",
+      "source_pages": "GSLS interview",
+      "status": "draft",
+      "session_label": "Reading: GSLS interview (2026)"
+    },
+    {
+      "id": "INT-05",
+      "session": 201,
+      "year": 2026,
+      "topic": "Skills",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "Which skills does the GSLS identify as critical and scarce, and what's different about Europe?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Three technical skills: emissions calculation and reporting, knowledge of sustainable transport technology, and digital sustainability tools",
+        "Education and training is rated the most feasible solution, yet adoption lags",
+        "In Western Europe 43% report a shortage of systems thinking (vs about 19% elsewhere)",
+        "35-38% in Northern and Western Europe report a lack of boardroom engagement"
+      ],
+      "model_answer": "Emissions calculation and reporting, sustainable transport technology, and digital sustainability tools. Training is the most feasible solution but under-used. Europe's issue is different: 43% in Western Europe lack systems thinking (vs about 19% elsewhere) and 35-38% in Northern and Western Europe lack boardroom engagement, so the priority is boards acting on the numbers.",
+      "hint1": "Three technical skills, then a European twist.",
+      "hint2": "Systems thinking and the boardroom.",
+      "source_pages": "GSLS interview",
+      "status": "draft",
+      "session_label": "Reading: GSLS interview (2026)"
+    },
+    {
+      "id": "INT-06",
+      "session": 201,
+      "year": 2026,
+      "topic": "Adaptation",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "What does the GSLS say about climate adaptation in logistics?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "83% believe adaptation will require a fundamental redesign of logistics networks, but only 45% think current efforts are adequate",
+        "Extreme heat is the most pressing climate risk in every mode and region",
+        "77% see adaptation as aligned with decarbonisation rather than competing with it",
+        "Most effective measures: climate-proofing infrastructure, scenario-based risk assessment and digital risk monitoring",
+        "Long-lived assets (trucks 8-15 years, vessels 25-30) must be specified for the future climate"
+      ],
+      "model_answer": "83% expect adaptation to need a fundamental network redesign, but only 45% think efforts are adequate. Extreme heat is the top risk everywhere, and 77% see adaptation and decarbonisation as aligned. The best measures are climate-proofing infrastructure, scenario-based risk assessment and digital risk monitoring, and since trucks run 8-15 years and vessels 25-30, new assets must be built for the climate they'll face.",
+      "hint1": "There's a gap between expectation and readiness.",
+      "hint2": "83% vs 45%.",
+      "source_pages": "GSLS interview",
+      "status": "draft",
+      "session_label": "Reading: GSLS interview (2026)"
+    },
+    {
+      "id": "INT-07",
+      "session": 201,
+      "year": 2026,
+      "topic": "Most feasible solution",
+      "type": "MC",
+      "difficulty": "easy",
+      "question": "Which of the 21 solutions did GSLS respondents rate as the most feasible?",
+      "options": {
+        "A": "Fleet electrification",
+        "B": "Low-carbon fuels",
+        "C": "Education and training",
+        "D": "Internal carbon pricing"
+      },
+      "correct": "C",
+      "key_points": [
+        "Education and training. It's relatively cheap and strengthens every other solution, yet adoption still lags."
+      ],
+      "model_answer": "Education and training. It's relatively cheap and strengthens every other solution, yet adoption still lags.",
+      "hint1": "It's about people, not technology.",
+      "hint2": "It strengthens all the other solutions.",
+      "source_pages": "GSLS interview",
+      "status": "draft",
+      "session_label": "Reading: GSLS interview (2026)"
+    },
+    {
+      "id": "INT-08",
+      "session": 201,
+      "year": 2026,
+      "topic": "Advice for managers",
+      "type": "Open",
+      "difficulty": "medium",
+      "question": "What does the GSLS advise managers to do instead of waiting for clear policy?",
+      "options": null,
+      "correct": null,
+      "key_points": [
+        "Invest ahead of legislation rather than wait for it",
+        "Start by electrifying frequent, regular, full-load routes that don't rely on public charging",
+        "Prioritise public infrastructure at hubs and busy corridors",
+        "Coordinate, e.g. through buyers' alliances that pool demand, and de-risk investment with offtake agreements and guarantees"
+      ],
+      "model_answer": "Invest ahead of legislation. Start with frequent, regular, full-load routes that don't need public charging, focus public infrastructure on hubs and busy corridors, and coordinate: buyers' alliances that pool demand, plus offtake agreements and guarantees to de-risk investment.",
+      "hint1": "Waiting is described as risky.",
+      "hint2": "Which routes are easiest to electrify first?",
+      "source_pages": "GSLS interview",
+      "status": "draft",
+      "session_label": "Reading: GSLS interview (2026)"
+    }
+  ]
+}

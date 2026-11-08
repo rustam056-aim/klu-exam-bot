@@ -3,6 +3,7 @@
 import bank from '../data/questions_s1_s2_2026.json';
 import videos from '../data/questions_videos_2026.json';
 import readings from '../data/questions_readings_2026.json';
+import s3guests from '../data/questions_s3_guests_2026.json'; // Session 3, guest lectures, GSLS interview
 import videoTimes from '../data/video_times_2026.json'; // where in Alan's lecture each answer comes up (seconds)
 
 type Question = {
@@ -40,6 +41,7 @@ const ALL = [
   ...(bank as { questions: Question[] }).questions,
   ...(videos as { questions: Question[] }).questions,
   ...(readings as { questions: Question[] }).questions,
+  ...(s3guests as { questions: Question[] }).questions,
 ];
 const timeOf = (q: Question): number | undefined => (videoTimes as Record<string, number>)[q.id];
 const speedOf = (env: Env) => {

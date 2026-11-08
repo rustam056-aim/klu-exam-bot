@@ -20,10 +20,25 @@ const VIDEO_TITLES: Record<string, string> = {
   '67': "Combined effect of all carbon-saving measures",
 }
 
+const GUEST_DECKS: Record<string, string> = {
+  MAN: 'Guest lecture by MAN Truck & Bus, “Decarbonisation of logistics”',
+  TEC: 'Guest lecture by Tecvia, “Decarbonisation in fleet operations”',
+  FRA: 'Guest lecture by Fraport, “Frankfurt Airport”',
+  SOV: 'Guest lecture by Sovereign Speed',
+}
+
 // "S1 p28" -> "Session 1, page 28"; "S2 p33, p34" -> "Session 2, pages 33 and 34"
 export function formatSource(source: string): string {
   const video = source.match(/^Video (\d+)/)?.[1]
   if (video) return `Alan McKinnon’s video “${VIDEO_TITLES[video] ?? video}”`
+  const deck = source.match(/^(MAN|TEC|FRA|SOV) /)?.[1]
+  if (deck) {
+    const pages = [...source.matchAll(/p(\d+)/g)].map((m) => m[1])
+    return `${GUEST_DECKS[deck]}${pages.length ? `, page${pages.length > 1 ? 's' : ''} ${pages.join(', ')}` : ''}`
+  }
+  if (source.startsWith('GSLS interview')) {
+    return 'Interview “Mind the gap: logistics in 2027” with Laura Huefano Torres and Johannes Meuer (GSLS 2026)'
+  }
   if (source.startsWith('Elkington 2018')) {
     const pages = [...source.matchAll(/p(\d+)/g)].map((m) => m[1])
     return `Elkington’s article “25 Years Ago I Coined the Phrase Triple Bottom Line”${pages.length ? `, page ${pages.join(' and ')}` : ''}`
@@ -65,13 +80,14 @@ export function opening(verdict: Verdict, id: string): string {
   return list[h % list.length]
 }
 
-// Slide images for a source like "S1 p15, p17" (only this year's session decks have them).
+// Slide images for a source like "S1 p15, p17" or "MAN p16" (this year's session decks and guest lectures).
 export function slideImages(source: string): { src: string; caption: string }[] {
-  const session = source.match(/^S(\d+)/)?.[1]
-  if (!session) return []
+  const code = source.match(/^(S\d+|MAN|TEC|FRA|SOV) /)?.[1]
+  if (!code) return []
+  const name = code.startsWith('S') && code !== 'SOV' ? `Session ${code.slice(1)}` : GUEST_DECKS[code].split(',')[0]
   return [...source.matchAll(/p(\d+)/g)].map((m) => ({
-    src: `/slides/S${session}-${m[1]}.webp${accessQuery()}`,
-    caption: `Session ${session}, page ${m[1]}`,
+    src: `/slides/${code}-${m[1]}.webp${accessQuery()}`,
+    caption: `${name}, page ${m[1]}`,
   }))
 }
 
