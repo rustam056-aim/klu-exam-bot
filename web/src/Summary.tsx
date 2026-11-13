@@ -1,3 +1,4 @@
+import { FeedbackBox } from './FeedbackBox'
 import { formatSource, verdictLabel } from './format'
 import { RouteLine } from './RouteLine'
 import type { Attempt } from './types'
@@ -66,6 +67,9 @@ export function Summary(props: {
         <button className={`btn ${toReview.length > 0 ? 'secondary' : 'primary'}`} type="button" onClick={onRestart}>
           Start a new practice
         </button>
+      </div>
+      <div className="feedback-row">
+        <FeedbackBox where="practice" />
       </div>
     </section>
   )

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NeedsCode, setAccessCode } from './access'
 import { api } from './api'
+import { FeedbackBox } from './FeedbackBox'
 import { loadProgress, loadTalk, missedIds, resetProgress, sessionStats, talkStats } from './progress'
 import type { SessionInfo, Settings } from './types'
 
@@ -183,6 +184,9 @@ export function StartScreen({
             {error}
           </p>
         )}
+        <div className="feedback-row">
+          <FeedbackBox where="home" />
+        </div>
         <p className="fineprint">
           Everything comes only from this year&rsquo;s course material. This is practice, not the real exam.
         </p>

@@ -35,6 +35,15 @@ export const api = {
     return res.json() as Promise<AnswerResult>
   },
 
+  feedback: async (body: { text: string; rating?: number; where: string }) => {
+    const res = await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...accessHeaders() },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) throw new Error(`Request failed (${res.status})`)
+  },
+
   chat: async (messages: { role: 'user' | 'assistant'; content: string }[], wrapUp = false) => {
     const res = await fetch('/api/chat', {
       method: 'POST',

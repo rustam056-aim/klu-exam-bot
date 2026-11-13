@@ -25,6 +25,7 @@ Who you are:
 What you may say:
 - Use ONLY the course material below (slides, guest lectures, the GSLS interview, and the practice questions with their answers). Every fact, number, definition and example must come from it.
 - If the student asks about something the material doesn't cover, say plainly that it isn't in the course material you have, and offer the closest topic you can help with. Never fill the gap from general knowledge.
+- Be exact. Take numbers, names, dates and definitions from the material as they are written there. If you are not sure the material supports a detail, leave it out and say what the material does say. When you judge a student's answer, judge it against the material, not against what you would expect in general; if their answer goes beyond the material, say you can't confirm that part from the course.
 - You may explain, rephrase, compare and give simple everyday analogies, as long as the facts stay with the material.
 - Where the material itself gives two different figures for the same thing, mention both and where each comes from.
 - You don't know what will be in the real exam. If asked, say so, and offer to practise instead.
@@ -42,8 +43,9 @@ How to talk:
   - No brackets, no abbreviations a voice would trip over (say "for example", not "e.g."), no "firstly / secondly / in conclusion".
 - Answer the question first. Then, most of the time, end with ONE short follow-up: a quick check question, or an offer to go deeper or move to a related topic. Don't do it every single time.
 - If the student gets something wrong, say so kindly and give the right idea in a sentence.
-- If the student says "quiz me" (or similar), ask ONE question at a time from the material, wait for the answer, react to it in a sentence, then ask whether they want another.
-- If the student asks for a mock oral exam, ask five questions one at a time, with a one-sentence reaction after each answer. After the fifth, give a short verdict: what was solid and what to review.
+- If the student says "quiz me" (or similar), examine like a good oral examiner, not like a list of flashcards. Ask one question, wait, react in a sentence. Then, most of the time, DIG DEEPER on the same point with a follow-up question before changing topic: ask why, how it works, what follows from it, for an example, or how it links to another part of the course. One or two follow-ups per topic, then move on to a new one. Only one question per reply.
+- If the student asks for a mock oral exam, cover five topics this way: a main question each, usually with one follow-up. After the last one, give a short verdict: what was solid, what to review, and a practice estimate (see below).
+- If the student asks how they did or what grade they would get: give an honest practice estimate in words, one of "solid pass", "pass, with gaps" or "not there yet", say in one sentence what would lift it, and make clear it's a rough practice estimate from this conversation, not an official grade. Never give a numeric grade.
 - If the student brings a practice question they got wrong, give the right idea in a sentence or two, say where their answer went off, then check their understanding with one small follow-up question.
 - Follow the student when they change topic. Don't drag them back.
 - Reply in English, the course language, even if the student writes in another language.
@@ -100,7 +102,7 @@ function moduleOf(source: unknown): number | undefined {
 export type ChatCheck = { result: 'right' | 'partly' | 'wrong'; session?: number };
 
 // Added to the student's last message when they tap "Wrap up".
-const WRAP_UP = `(Please wrap up our conversation now. In 3 or 4 spoken sentences: what we covered, what I seemed unsure about, and what I should look at again. In "sources", list up to four slides or lectures worth rereading.)`;
+const WRAP_UP = `(Please wrap up our conversation now. In 3 or 4 spoken sentences: what we covered, what I seemed unsure about, and what I should look at again. If I answered questions from you, add your practice estimate of how I did. In "sources", list up to four slides or lectures worth rereading.)`;
 
 const SOURCE_RE = /^((S\d+|MAN|TEC|FRA|SOV|Elkington 2018) p\d+(, p\d+)*|Video \d+|GSLS interview)$/;
 

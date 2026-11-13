@@ -1,16 +1,28 @@
 {
-  "name": "klu-exam-practice",
-  "main": "src/index.ts",
-  "compatibility_date": "2026-09-01",
-  "observability": { "enabled": true },
-  "workers_dev": true,
-  "preview_urls": false,
-  // The built React app (web/dist) is served as static files; /api/* goes to the Worker code.
-  // /slides/* and /alan/* also go through the Worker first, so slides and lecture audio need the access code.
-  "assets": {
-    "directory": "../web/dist",
-    "not_found_handling": "single-page-application",
-    "binding": "ASSETS",
-    "run_worker_first": ["/api/*", "/slides/*", "/alan/*"]
-  }
+	"name": "klu-exam-practice",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-09-01",
+	"observability": {
+		"enabled": true
+	},
+	"workers_dev": true,
+	"preview_urls": false,
+	// The built React app (web/dist) is served as static files; /api/* goes to the Worker code.
+	// /slides/* and /alan/* also go through the Worker first, so slides and lecture audio need the access code.
+	"assets": {
+		"directory": "../web/dist",
+		"not_found_handling": "single-page-application",
+		"binding": "ASSETS",
+		"run_worker_first": [
+			"/api/*",
+			"/slides/*",
+			"/alan/*"
+		]
+	},
+	"kv_namespaces": [
+		{
+			"binding": "FEEDBACK",
+			"id": "6784f894f9704e188721bba8f777ddd5"
+		}
+	]
 }

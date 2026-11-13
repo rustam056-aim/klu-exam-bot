@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from './api'
 import { formatSource, slideImages } from './format'
+import { FeedbackBox } from './FeedbackBox'
 import { MicHelpBox } from './MicButton'
 import { saveTalkAnswer } from './progress'
 import { ArrowIcon, LectureClip, MicIcon, Slides, SpeakerIcon, StopIcon } from './QuestionView'
 import { Tutor } from './Tutor'
 import { clock, useRecorder } from './useRecorder'
-import { onSpeakingChange, speak, stopSpeaking, unlockAudio } from './voice'
+import { chime, onSpeakingChange, speak, stopSpeaking, unlockAudio } from './voice'
 import type { ChatMessage, ChatSeed } from './types'
 
 // "Talk to Johannes": a conversation with the course tutor.
@@ -52,6 +53,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
   const [note, setNote] = useState<string | null>(null)
   const [speaking, setSpeaking] = useState(false)
   const [score, setScore] = useState({ answered: 0, right: 0 }) // his questions in this talk
+  const [slideOpen, setSlideOpen] = useState(false) // Talk view: the slide shows only when asked for
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const mounted = useRef(true)
@@ -69,9 +71,13 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
   const recRef = useRef(rec)
   recRef.current = rec
 
-  // Hands-free: when he has finished talking, open the mic for the student's turn.
+  // Auto mic: when he has finished talking, open the mic for the student's turn, with a soft
+  // "your turn" sound so it's clear when to talk.
   function listenIfHandsFree() {
-    if (mounted.current && now.current.handsFree && now.current.view === 'call') recRef.current.start()
+    if (mounted.current && now.current.handsFree && now.current.view === 'call') {
+      chime()
+      recRef.current.start()
+    }
   }
 
   // Reads a reply aloud. True when he got to the end (false: stopped, interrupted, or no sound).
@@ -89,6 +95,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
     setBusy(true)
     setError(null)
     setNote(null)
+    setSlideOpen(false)
     try {
       const res = await api.chat(
         history.filter((m) => !m.local).map((m) => ({ role: m.role, content: m.text })),
@@ -165,6 +172,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
       return
     }
     if (speaking) stopSpeaking()
+    chime()
     rec.start()
   }
 
@@ -314,7 +322,12 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
           <Tutor
             big
             state={tutorState}
-            labels={{ idle: 'Johannes · AI tutor', speaking: 'Talking…', listening: 'Listening…', thinking: 'Thinking…' }}
+            labels={{
+              idle: 'Tap the mic to talk',
+              speaking: 'Johannes is talking',
+              listening: 'Your turn, I’m listening',
+              thinking: 'Thinking…',
+            }}
           />
           {lastUser && <p className="call-you">You: {lastUser.text}</p>}
           {busy ? (
@@ -332,12 +345,36 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
           )}
           {!busy && lastTutor?.sources && lastTutor.sources.length > 0 && (
             <div className="call-source">
-              <p className="source">From the course: {lastTutor.sources.map(formatSource).join(' · ')}</p>
-              {slideSource && <Slides source={slideSource} />}
+              {/* The slide is a hint you ask for, not something that pops up by itself. */}
+              {slideSource && !slideOpen && (
+                <button className="btn ghost sm" type="button" onClick={() => setSlideOpen(true)}>
+                  Show the slide
+                </button>
+              )}
+              {(slideOpen || !slideSource) && (
+                <p className="source">From the course: {lastTutor.sources.map(formatSource).join(' · ')}</p>
+              )}
+              {slideSource && slideOpen && <Slides source={slideSource} />}
             </div>
           )}
           {starters}
           {problems}
+          {last?.wrap && <FeedbackBox where="talk" compact />}
+          {fresh && (
+            <p className="note chat-note">
+              {handsFree ? (
+                <>
+                  <strong>Auto mic is on:</strong> the mic opens by itself each time Johannes finishes (you&rsquo;ll
+                  hear a soft tone). Just answer, he notices when you stop. Tap the button any time to interrupt him.
+                  Prefer to tap for every turn? Switch it off bottom left.
+                </>
+              ) : (
+                <>
+                  <strong>Auto mic is off:</strong> tap the button to talk, and tap again when you&rsquo;re done.
+                </>
+              )}
+            </p>
+          )}
           {smallPrint}
 
           {/* Bottom bar: one big button, like a call. */}
@@ -351,7 +388,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
                 onClick={() => setHandsFree(!handsFree)}
               >
                 <span className="switch-track" aria-hidden="true" />
-                Hands-free
+                Auto mic
               </button>
             </div>
             <div className="dock-main">
@@ -368,15 +405,17 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
               <span className="dock-label" aria-live="polite">
                 {recording
                   ? handsFree
-                    ? `Listening · ${clock(rec.seconds)} · just talk`
-                    : `Listening · ${clock(rec.seconds)} · tap when you’re done`
+                    ? `${clock(rec.seconds)} · just talk, I’ll notice when you stop`
+                    : `${clock(rec.seconds)} · tap when you’re done`
                   : rec.state === 'working'
                     ? 'Got it…'
                     : busy
                       ? 'Thinking…'
                       : speaking
                         ? 'Tap to interrupt'
-                        : 'Tap to talk'}
+                        : handsFree
+                          ? 'Tap once, then just talk'
+                          : 'Tap to talk'}
               </span>
             </div>
             <div className="dock-side dock-right">
@@ -433,6 +472,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
           {starters}
           {smallPrint}
           {problems}
+          {last?.wrap && <FeedbackBox where="talk" compact />}
           <div ref={endRef} className="chat-end" />
 
           {/* Bottom bar: type, or tap the mic and say it. */}

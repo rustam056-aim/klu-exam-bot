@@ -32,8 +32,42 @@ export function onSpeakingChange(listener: Listener): () => void {
   }
 }
 
+// A soft two-note "your turn" sound when the microphone opens, so you know when to talk
+// without watching the screen.
+let tones: AudioContext | null = null
+
+export function chime() {
+  try {
+    if (!tones || tones.state !== 'running') return
+    const t = tones.currentTime
+    for (const [freq, at] of [
+      [660, 0],
+      [880, 0.09],
+    ]) {
+      const osc = tones.createOscillator()
+      const gain = tones.createGain()
+      osc.frequency.value = freq
+      gain.gain.setValueAtTime(0.0001, t + at)
+      gain.gain.exponentialRampToValueAtTime(0.06, t + at + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + at + 0.09)
+      osc.connect(gain).connect(tones.destination)
+      osc.start(t + at)
+      osc.stop(t + at + 0.1)
+    }
+  } catch {
+    /* no sound cue on this browser */
+  }
+}
+
 // Call this inside a tap or click, before any waiting, so a spoken reply may start on its own later.
 export function unlockAudio() {
+  try {
+    const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    if (Ctx && !tones) tones = new Ctx()
+    if (tones && tones.state === 'suspended') void tones.resume()
+  } catch {
+    /* the chime is optional */
+  }
   if (!player || unlocked || playing) return
   player.src = SILENCE
   player

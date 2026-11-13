@@ -2041,3 +2041,69 @@ h2 {
     grid-row: 2;
   }
 }
+
+/* ---------- Feedback box ---------- */
+.feedback-row {
+  margin-top: 28px;
+}
+
+.feedback-box {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  margin-top: 0;
+  text-align: left;
+}
+
+.feedback-box .note {
+  margin-top: -6px;
+}
+
+.feedback-box .open {
+  width: 100%;
+  margin-top: 0;
+}
+
+.feedback-box .actions {
+  margin-top: 4px;
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+}
+
+.stars button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: none;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--line);
+  cursor: pointer;
+  transition: color 150ms ease, transform 100ms ease;
+}
+
+.stars button.is-on {
+  color: #e0a21a;
+}
+
+.stars button:hover {
+  transform: scale(1.12);
+}
+
+.feedback-thanks {
+  font-weight: 650;
+  color: var(--good);
+}
+
+.call .feedback-open,
+.call .feedback-box,
+.call .feedback-thanks {
+  margin-top: 18px;
+}
+
+.call .chat-note + .chat-note {
+  margin-top: 8px;
+}

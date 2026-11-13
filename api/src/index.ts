@@ -39,6 +39,17 @@ export interface Env {
   ACCESS_CODE?: string; // if set, every /api call (except health) needs header x-access-code
   ONLY_APPROVED?: string; // set to "true" before students get access
   ASSETS?: { fetch: (req: Request) => Promise<Response> }; // the built web app, incl. slide images
+  // Student feedback from the "What should be better?" box (Cloudflare KV, see wrangler.jsonc).
+  // Without it, feedback only shows up in the Worker logs.
+  FEEDBACK?: {
+    put: (key: string, value: string, options?: { metadata?: unknown }) => Promise<void>;
+    list: (options?: { prefix?: string; limit?: number; cursor?: string }) => Promise<{
+      keys: { name: string; metadata?: unknown }[];
+      list_complete: boolean;
+      cursor?: string;
+    }>;
+  };
+  ADMIN_CODE?: string; // secret for reading the feedback at /api/feedback/list?admin=...
 }
 
 const ALL = [
@@ -47,6 +58,7 @@ const ALL = [
   ...(readings as { questions: Question[] }).questions,
   ...(s3guests as { questions: Question[] }).questions,
 ];
+type FeedbackItem = { at: string; rating?: number; where: string; text: string };
 const timeOf = (q: Question): number | undefined => (videoTimes as Record<string, number>)[q.id];
 const speedOf = (value: string | undefined, fallback: number) => {
   const n = Number(value);
@@ -237,6 +249,38 @@ export default {
       return new Response(body.slice(from, to + 1), { status: 206, headers });
     }
 
+    // GET /api/feedback/list?admin=CODE  what students wrote, newest first, as a simple page.
+    // Opened in a browser by Rustam / Prof. Meuer, so it uses its own secret instead of the access header.
+    if (path === '/api/feedback/list') {
+      if (!env.ADMIN_CODE || url.searchParams.get('admin') !== env.ADMIN_CODE) return json({ error: 'not found' }, 404);
+      if (!env.FEEDBACK) return new Response('Feedback storage is not set up yet (see CLAUDE.md).', { status: 503 });
+      const items: FeedbackItem[] = [];
+      let cursor: string | undefined;
+      do {
+        const page = await env.FEEDBACK.list({ prefix: 'fb:', limit: 1000, cursor });
+        for (const k of page.keys) if (k.metadata) items.push(k.metadata as FeedbackItem);
+        cursor = page.list_complete ? undefined : page.cursor;
+      } while (cursor);
+      items.reverse();
+      const esc = (t: unknown) =>
+        String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+      const rated = items.filter((i) => i.rating);
+      const average = rated.length ? (rated.reduce((n, i) => n + (i.rating ?? 0), 0) / rated.length).toFixed(1) : 'none yet';
+      const rows = items
+        .map(
+          (i) =>
+            `<tr><td>${esc(i.at.slice(0, 16).replace('T', ' '))}</td><td>${i.rating ? esc(i.rating) + ' / 5' : ''}</td><td>${esc(i.where)}</td><td>${esc(i.text)}</td></tr>`,
+        )
+        .join('');
+      return new Response(
+        `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Practice bot feedback</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;margin:24px;color:#232323}table{border-collapse:collapse;width:100%}td,th{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid #ddd}td:nth-child(-n+3){white-space:nowrap;color:#555}</style>
+<h1>Practice bot feedback</h1><p>${items.length} entries, average rating: ${average}. Times are UTC. Newest first.</p>
+<table><tr><th>When</th><th>Rating</th><th>Where</th><th>What they wrote</th></tr>${rows}</table>`,
+        { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } },
+      );
+    }
+
     // Access code: keeps strangers from using up the AI and voice credits.
     if (env.ACCESS_CODE && path.startsWith('/api/')) {
       const given = (req.headers.get('x-access-code') ?? '').trim().toLowerCase();
@@ -337,6 +381,28 @@ export default {
         source: q.source_pages,
         sourceTime: timeOf(q),
       });
+    }
+
+    // POST /api/feedback  { "text": "...", "rating"?: 1-5, "where"?: "talk" } -> { ok: true }
+    // No names, no IP address: just what they wrote, the stars, and which part of the tool they were in.
+    if (path === '/api/feedback' && req.method === 'POST') {
+      const body = (await req.json().catch(() => null)) as { text?: unknown; rating?: unknown; where?: unknown } | null;
+      const rating = Number(body?.rating);
+      const item: FeedbackItem = {
+        at: new Date().toISOString(),
+        rating: Number.isInteger(rating) && rating >= 1 && rating <= 5 ? rating : undefined,
+        where: typeof body?.where === 'string' ? body.where.slice(0, 30) : '',
+        text: typeof body?.text === 'string' ? body.text.trim().slice(0, 600) : '',
+      };
+      if (!item.text && !item.rating) return json({ error: 'need a rating or some text' }, 400);
+      // KV keeps at most 1024 bytes next to a key; trim long non-English text to fit.
+      while (new TextEncoder().encode(JSON.stringify(item)).length > 1000) item.text = item.text.slice(0, -20);
+      console.log('Feedback:', JSON.stringify(item));
+      if (env.FEEDBACK) {
+        const key = `fb:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+        await env.FEEDBACK.put(key, '', { metadata: item }).catch((err) => console.log('Feedback not saved:', String(err)));
+      }
+      return json({ ok: true });
     }
 
     // POST /api/chat  { "messages": [{ "role": "user", "content": "..." }, ...], "wrapUp"?: true } -> { reply, sources }
