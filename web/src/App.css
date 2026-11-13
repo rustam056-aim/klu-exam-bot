@@ -2107,3 +2107,18 @@ h2 {
 .call .chat-note + .chat-note {
   margin-top: 8px;
 }
+
+/* Always listening: the mic is on and waiting. A slow, quiet ring so it's clear it hears you. */
+.round-live {
+  background: linear-gradient(180deg, #7a2a4a, var(--steel));
+  color: var(--on-steel);
+}
+
+.round-live::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid rgb(106 31 61 / 0.35);
+  animation: ring 2.4s ease-out infinite;
+}

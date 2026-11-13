@@ -416,11 +416,13 @@ export default {
         return json(await chatWithClaude(turns, qs, env, body?.wrapUp === true));
       } catch (err) {
         console.log('Chat failed:', String(err));
-        return json({ error: 'chat failed' }, 502);
+        // A short reason helps when someone sends a screenshot of the error.
+        const reason = String(err).match(/Claude (\d{3})/)?.[1] ?? 'empty';
+        return json({ error: 'chat failed', reason }, 502);
       }
     }
 
-    // POST /api/transcribe  body = recorded audio (webm/mp4/ogg) -> { text }
+    // POST /api/transcribe  body = recorded audio (webm/mp4/ogg, or wav from the always-on mic) -> { text }
     // Speech to text with ElevenLabs Scribe v2.
     if (path === '/api/transcribe' && req.method === 'POST') {
       if (!env.ELEVENLABS_API_KEY) return json({ error: 'voice is not set up' }, 503);
@@ -428,7 +430,7 @@ export default {
       const audio = await req.arrayBuffer();
       if (audio.byteLength === 0) return json({ error: 'empty recording' }, 400);
       if (audio.byteLength > 6_000_000) return json({ error: 'recording too long' }, 413);
-      const ext = type.includes('mp4') ? 'mp4' : type.includes('ogg') ? 'ogg' : 'webm';
+      const ext = type.includes('wav') ? 'wav' : type.includes('mp4') ? 'mp4' : type.includes('ogg') ? 'ogg' : 'webm';
       const form = new FormData();
       form.append('file', new Blob([audio], { type }), `answer.${ext}`);
       form.append('model_id', 'scribe_v2');

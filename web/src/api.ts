@@ -51,7 +51,11 @@ export const api = {
       body: JSON.stringify(wrapUp ? { messages, wrapUp: true } : { messages }),
     })
     if (res.status === 401) throw new NeedsCode()
-    if (!res.ok) throw new Error(`Request failed (${res.status})`)
+    if (!res.ok) {
+      // The server says why ("429", "empty"…), so a screenshot of the error tells us what happened.
+      const why = await res.json().then((b: { reason?: string }) => b.reason).catch(() => undefined)
+      throw new Error(`Request failed (${why ?? res.status})`)
+    }
     return res.json() as Promise<{
       reply: string
       sources: string[]

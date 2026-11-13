@@ -21,6 +21,8 @@ const RULES = `You are the practice tutor in an exam-practice tool for Prof. Joh
 
 Who you are:
 - An AI tutor built for this course. If a student asks whether you are really Prof. Meuer, say you're the course's AI practice tutor using his voice.
+- Every conversation opens with this greeting from you (the student has already heard it): "Hi! Don't expect to be fed, be hungry. Ask me anything from the course, or say 'quiz me'." So a first message like "I'm not hungry" or "fine, quiz me" is a reply to that greeting: answer it naturally and lightly, then steer to the course.
+- Students talk by voice, so their messages are speech-to-text and can be messy, half-finished or off-topic ("um", small talk, a misheard word). Never get stuck on that: give a short, friendly reply and invite them back to the course.
 
 What you may say:
 - Use ONLY the course material below (slides, guest lectures, the GSLS interview, and the practice questions with their answers). Every fact, number, definition and example must come from it.
@@ -156,27 +158,45 @@ export async function chatWithClaude(
   if (wrapUp) {
     turns = turns.map((t, i) => (i === turns.length - 1 ? { ...t, content: `${t.content}\n\n${WRAP_UP}` } : t));
   }
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': env.ANTHROPIC_API_KEY!,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: env.ANTHROPIC_CHAT_MODEL || env.ANTHROPIC_MODEL || 'claude-haiku-5-5',
-      max_tokens: 500,
-      system: [
-        { type: 'text', text: RULES },
-        { type: 'text', text: knowledge(questions), cache_control: { type: 'ephemeral' } },
-      ],
-      tools: [REPLY_TOOL],
-      tool_choice: { type: 'tool', name: 'reply' },
-      messages: turns,
-    }),
-  });
+  const base = env.ANTHROPIC_MODEL || 'claude-haiku-5-5';
+  const chosen = env.ANTHROPIC_CHAT_MODEL || base;
+  const request = (model: string) =>
+    fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': env.ANTHROPIC_API_KEY!,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 800,
+        system: [
+          { type: 'text', text: RULES },
+          { type: 'text', text: knowledge(questions), cache_control: { type: 'ephemeral' } },
+        ],
+        tools: [REPLY_TOOL],
+        tool_choice: { type: 'tool', name: 'reply' },
+        messages: turns,
+      }),
+    });
+  let used = chosen;
+  let res = await request(used);
+  // A busy moment at Anthropic (429/5xx): wait a little and try once more.
+  if (res.status === 429 || res.status >= 500) {
+    console.log(`Chat: Claude ${res.status}, trying again`);
+    await new Promise((r) => setTimeout(r, 800));
+    res = await request(used);
+  }
+  // A conversation model that this account can't use (wrong name, not enabled): fall back to the
+  // grading model, so a test with ANTHROPIC_CHAT_MODEL can never break the conversation.
+  if (!res.ok && chosen !== base && [400, 403, 404].includes(res.status)) {
+    console.log(`Chat model ${chosen} failed (${res.status}): ${(await res.text()).slice(0, 200)}; using ${base}`);
+    used = base;
+    res = await request(used);
+  }
   if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const data = (await res.json()) as {
+  let data = (await res.json()) as {
     content?: {
       type: string;
       input?: { text?: unknown; sources?: unknown; check?: { result?: unknown; source?: unknown } };
@@ -189,7 +209,16 @@ export async function chatWithClaude(
     `Chat tokens: new ${data.usage?.input_tokens ?? '?'}, cached ${data.usage?.cache_read_input_tokens ?? 0}, ` +
       `cache written ${data.usage?.cache_creation_input_tokens ?? 0}, out ${data.usage?.output_tokens ?? '?'}`,
   );
-  const call = data.content?.find((c) => c.type === 'tool_use');
+  let call = data.content?.find((c) => c.type === 'tool_use');
+  // Very rarely the reply comes back empty: ask once more before giving up.
+  if (typeof call?.input?.text !== 'string' || !call.input.text.trim()) {
+    console.log(`Chat: empty reply (${JSON.stringify(data).slice(0, 300)}), trying again`);
+    const again = await request(used);
+    if (again.ok) {
+      data = (await again.json()) as typeof data;
+      call = data.content?.find((c) => c.type === 'tool_use');
+    }
+  }
   // Plain spoken text only: drop any markdown that slipped in.
   const reply = (typeof call?.input?.text === 'string' ? call.input.text : '')
     .replace(/[*_#`]+/g, '')

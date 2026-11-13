@@ -80,7 +80,34 @@ export function unlockAudio() {
     })
 }
 
+// The always-on mic hears the student start to talk while the tutor is speaking. It pauses him first
+// and only stops him for good once it's clear the student really said something (not just a cough,
+// or his own voice coming back through the speakers).
+let pausedAt: number | null = null
+
+export function pauseSpeaking(): boolean {
+  if (!player || !playing || player.paused) return false
+  pausedAt = generation
+  player.pause()
+  setSpeaking(false)
+  return true
+}
+
+export function resumeSpeaking() {
+  if (!player || pausedAt === null || pausedAt !== generation) return
+  pausedAt = null
+  setSpeaking(true)
+  player.play().catch(() => stopSpeaking())
+}
+
+// The shared Web Audio context, started during a tap (unlockAudio). The always-on mic uses it too.
+export function audioContext(): AudioContext | null {
+  if (!tones) unlockAudio()
+  return tones
+}
+
 export function stopSpeaking() {
+  pausedAt = null
   generation++
   if (player && playing) player.pause()
   playing = false

@@ -7,13 +7,23 @@ import { saveTalkAnswer } from './progress'
 import { ArrowIcon, LectureClip, MicIcon, Slides, SpeakerIcon, StopIcon } from './QuestionView'
 import { Tutor } from './Tutor'
 import { clock, useRecorder } from './useRecorder'
-import { chime, onSpeakingChange, speak, stopSpeaking, unlockAudio } from './voice'
+import { soundsLikeEcho, useLiveMic } from './liveMic'
+import {
+  chime,
+  onSpeakingChange,
+  pauseSpeaking,
+  resumeSpeaking,
+  speak,
+  stopSpeaking,
+  transcribe,
+  unlockAudio,
+} from './voice'
 import type { ChatMessage, ChatSeed } from './types'
 
 // "Talk to Johannes": a conversation with the course tutor.
 // Two ways to use it, sharing one conversation:
-//   Talk: like a call. He speaks, you answer out loud; with hands-free on, the mic opens by itself
-//         after he finishes and closes when you stop talking. Tap the button to interrupt him.
+//   Talk: like a call. Tap once and the mic stays on ("Hands-free"): just talk, he notices when
+//         you stop, and you can interrupt him simply by talking. With it off: tap to talk, tap to send.
 //   Type: a normal chat with a text box (and a mic button).
 // The tutor answers only from the course material. Nothing is saved: the conversation lives in
 // this tab and is gone when you leave.
@@ -45,15 +55,23 @@ function remembered(key: string, fallback: boolean) {
 
 export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatSeed }) {
   const [view, setView] = useState<'call' | 'chat'>('call')
-  const [handsFree, setHandsFree] = useState(() => remembered('handsFree', true))
+  const [handsFree, setHandsFree] = useState(() => remembered('alwaysListening', true))
+  const [transcribing, setTranscribing] = useState(false) // always-on mic: turning speech into text
   const [messages, setMessages] = useState<ChatMessage[]>(seed ? [] : [GREETING])
   const [draft, setDraft] = useState('')
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusyState] = useState(false)
+  const busyRef = useRef(false)
+  const setBusy = (value: boolean) => {
+    busyRef.current = value
+    setBusyState(value)
+  }
   const [error, setError] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
   const [speaking, setSpeaking] = useState(false)
   const [score, setScore] = useState({ answered: 0, right: 0 }) // his questions in this talk
   const [slideOpen, setSlideOpen] = useState(false) // Talk view: the slide shows only when asked for
+  const messagesRef = useRef(messages)
+  messagesRef.current = messages
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const mounted = useRef(true)
@@ -64,20 +82,56 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
 
   useEffect(() => onSpeakingChange(setSpeaking), [])
 
-  const rec = useRecorder((said) => void send(said, true), {
-    autoStop: handsFree && view === 'call',
-    onNothing: () => setNote('I’m here when you’re ready. Tap the mic to talk.'),
-  })
-  const recRef = useRef(rec)
-  recRef.current = rec
+  // Tap to talk, tap to send: the Type view's mic, and Talk with "Hands-free" off.
+  const rec = useRecorder((said) => void send(said, true))
 
-  // Auto mic: when he has finished talking, open the mic for the student's turn, with a soft
-  // "your turn" sound so it's clear when to talk.
-  function listenIfHandsFree() {
-    if (mounted.current && now.current.handsFree && now.current.view === 'call') {
-      chime()
-      recRef.current.start()
+  // Hands-free: the mic stays on during the call. When the student starts talking while
+  // Johannes speaks, he pauses; if it was really the student (not a cough, not his own echo),
+  // he stops and listens, otherwise he carries on.
+  const pausedForStudent = useRef(false)
+  const live = useLiveMic({
+    onSpeechStart: () => {
+      setNote(null)
+      pausedForStudent.current = pauseSpeaking()
+    },
+    onFalseStart: () => {
+      if (pausedForStudent.current) resumeSpeaking()
+      pausedForStudent.current = false
+    },
+    onUtterance: (wav) => void heard(wav),
+  })
+  const liveRef = useRef(live)
+  liveRef.current = live
+
+  async function heard(wav: Blob) {
+    const wasPaused = pausedForStudent.current
+    pausedForStudent.current = false
+    liveRef.current.mute(true)
+    setTranscribing(true)
+    let text = ''
+    try {
+      text = (await transcribe(wav)).trim()
+    } catch {
+      if (mounted.current) setNote('That didn’t come through. Say it again?')
     }
+    if (!mounted.current) return
+    setTranscribing(false)
+    const his = [...messagesRef.current].reverse().find((m) => m.role === 'assistant')?.text ?? ''
+    if (!text || (wasPaused && soundsLikeEcho(text, his))) {
+      // Nothing real: carry on where he was.
+      if (wasPaused) resumeSpeaking()
+      liveRef.current.mute(false)
+      return
+    }
+    stopSpeaking()
+    await send(text, true)
+    liveRef.current.mute(false)
+  }
+
+  // When he has finished talking: a soft "your turn" tone (the mic is already on).
+  function yourTurn() {
+    if (!mounted.current || now.current.view !== 'call') return
+    if (liveRef.current.on) chime()
   }
 
   // Reads a reply aloud. True when he got to the end (false: stopped, interrupted, or no sound).
@@ -110,17 +164,18 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
       }
       setMessages([...history, { role: 'assistant', text: res.reply, sources: res.sources, wrap: wrapUp }])
       setBusy(false)
-      if (speakIt && (await say(res.reply))) listenIfHandsFree()
-    } catch {
+      if (speakIt && (await say(res.reply))) yourTurn()
+    } catch (err) {
       if (!mounted.current) return
-      setError('That didn’t go through. Try again.')
+      const reason = err instanceof Error ? err.message.match(/\((\w+)\)/)?.[1] : undefined
+      setError(`That didn’t go through${reason ? ` (code ${reason})` : ''}. Try again.`)
       setBusy(false)
     }
   }
 
   async function send(text: string, byVoice = false, wrapUp = false) {
     const said = text.trim()
-    if (!said || busy) return
+    if (!said || busyRef.current) return
     stopSpeaking()
     const next: ChatMessage[] = [...messages, { role: 'user', text: said }]
     setMessages(next)
@@ -138,9 +193,11 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
       }
     } else {
       void say(GREETING.text).then((done) => {
-        if (done) listenIfHandsFree()
+        if (done) yourTurn()
       })
     }
+    // Hands-free: the mic goes on right away, so the student can even cut into the greeting.
+    if (now.current.handsFree) live.start()
     return () => {
       mounted.current = false
       stopSpeaking()
@@ -150,7 +207,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
 
   useEffect(() => {
     try {
-      localStorage.setItem('handsFree', handsFree ? 'on' : 'off')
+      localStorage.setItem('alwaysListening', handsFree ? 'on' : 'off')
     } catch {
       /* private mode: just don't remember it */
     }
@@ -161,12 +218,41 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
     if (view === 'chat') endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages, busy, error, view])
 
-  const recording = rec.state === 'recording'
+  // The mic listens only while it's the student's turn: not while we wait for his reply or turn
+  // speech into text; while he talks it only reacts to clear speech (so his own voice can't cut him off).
+  useEffect(() => {
+    live.mute(busy || transcribing)
+    live.strict(speaking)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busy, transcribing, speaking])
 
-  // The big button: talk, finish talking, or cut him off and talk.
+  const recording = rec.state === 'recording'
+  const liveOn = view === 'call' && handsFree && live.on
+
+  // The big button.
+  //   Hands-free, mic on:  while he talks = interrupt him; otherwise = pause the mic.
+  //   Hands-free, mic off: switch it on.
+  //   Tap-to-talk:               talk / send.
   function bigTap() {
     unlockAudio()
     setNote(null)
+    if (view === 'call' && handsFree) {
+      if (live.state === 'hearing') {
+        live.flush() // done talking: send it now
+        return
+      }
+      if (live.on && speaking) {
+        stopSpeaking()
+        return
+      }
+      if (live.on) live.stop()
+      else {
+        if (speaking) stopSpeaking()
+        chime()
+        live.start()
+      }
+      return
+    }
     if (recording) {
       rec.stop()
       return
@@ -189,7 +275,16 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
     return () => window.removeEventListener('keydown', onKey)
   })
 
-  const tutorState = recording ? 'listening' : busy || rec.state === 'working' ? 'thinking' : speaking ? 'speaking' : 'idle'
+  const tutorState =
+    recording || live.state === 'hearing'
+      ? 'listening'
+      : busy || transcribing || rec.state === 'working'
+        ? 'thinking'
+        : speaking
+          ? 'speaking'
+          : liveOn
+            ? 'listening'
+            : 'idle'
   const userTurns = messages.filter((m) => m.role === 'user').length
   const fresh = userTurns === 0
   const last = messages[messages.length - 1]
@@ -241,6 +336,17 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
         </p>
       )}
       {note && <p className="note">{note}</p>}
+      {live.help && (
+        <MicHelpBox
+          help={live.help}
+          onRetry={live.start}
+          onDismiss={() => {
+            live.dismissHelp()
+            setView('chat')
+            window.setTimeout(() => inputRef.current?.focus(), 50)
+          }}
+        />
+      )}
       {rec.help && (
         <MicHelpBox
           help={rec.help}
@@ -259,7 +365,11 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
     <section className={`chat chat-${view}`}>
       <div className="chat-head">
         <div className="seg" role="tablist" aria-label="How you talk to the tutor">
-          <button type="button" role="tab" aria-selected={view === 'call'} onClick={() => setView('call')}>
+          <button type="button" role="tab" aria-selected={view === 'call'} onClick={() => {
+              unlockAudio()
+              setView('call')
+              if (handsFree) live.start()
+            }}>
             Talk
           </button>
           <button
@@ -268,6 +378,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
             aria-selected={view === 'chat'}
             onClick={() => {
               if (recording) rec.cancel()
+              live.stop()
               setView('chat')
             }}
           >
@@ -304,6 +415,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
               onClick={() => {
                 stopSpeaking()
                 rec.cancel()
+                live.drop()
                 setMessages([GREETING])
                 setScore({ answered: 0, right: 0 })
                 setError(null)
@@ -323,9 +435,9 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
             big
             state={tutorState}
             labels={{
-              idle: 'Tap the mic to talk',
-              speaking: 'Johannes is talking',
-              listening: 'Your turn, I’m listening',
+              idle: handsFree ? 'Tap the mic once to start' : 'Tap the mic to talk',
+              speaking: liveOn ? 'Johannes is talking, just talk to cut in' : 'Johannes is talking',
+              listening: live.state === 'hearing' || recording ? 'I’m listening…' : 'Your turn, just talk',
               thinking: 'Thinking…',
             }}
           />
@@ -364,13 +476,13 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
             <p className="note chat-note">
               {handsFree ? (
                 <>
-                  <strong>Auto mic is on:</strong> the mic opens by itself each time Johannes finishes (you&rsquo;ll
-                  hear a soft tone). Just answer, he notices when you stop. Tap the button any time to interrupt him.
-                  Prefer to tap for every turn? Switch it off bottom left.
+                  <strong>Hands-free:</strong> tap the mic once and it stays on for the whole talk. Just
+                  answer, he notices when you stop. Want to cut in? Just start talking. Headphones work best, so he
+                  doesn&rsquo;t hear himself. Prefer to tap for every turn? Switch off Hands-free, bottom left.
                 </>
               ) : (
                 <>
-                  <strong>Auto mic is off:</strong> tap the button to talk, and tap again when you&rsquo;re done.
+                  <strong>Hands-free is off:</strong> tap the button to talk, and tap again when you&rsquo;re done.
                 </>
               )}
             </p>
@@ -385,37 +497,73 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
                 type="button"
                 role="switch"
                 aria-checked={handsFree}
-                onClick={() => setHandsFree(!handsFree)}
+                onClick={() => {
+                  if (handsFree) live.stop()
+                  else rec.cancel()
+                  setHandsFree(!handsFree)
+                }}
               >
                 <span className="switch-track" aria-hidden="true" />
-                Auto mic
+                Hands-free
               </button>
             </div>
             <div className="dock-main">
               <button
                 type="button"
-                className={`round round-${busy ? 'working' : rec.state}`}
+                className={`round round-${
+                  busy || transcribing
+                    ? 'working'
+                    : live.state === 'hearing'
+                      ? 'recording'
+                      : liveOn
+                        ? 'live'
+                        : rec.state
+                }`}
                 onClick={bigTap}
-                disabled={busy || rec.state === 'working'}
-                aria-pressed={recording}
-                aria-label={recording ? 'Done talking' : speaking ? 'Interrupt and talk' : 'Talk'}
+                disabled={busy || transcribing || rec.state === 'working' || live.state === 'starting'}
+                aria-pressed={recording || liveOn}
+                aria-label={
+                  handsFree
+                    ? live.state === 'hearing'
+                      ? 'Done, send it'
+                      : liveOn
+                      ? speaking
+                        ? 'Stop him'
+                        : 'Pause the mic'
+                      : 'Turn the mic on'
+                    : recording
+                      ? 'Done talking'
+                      : speaking
+                        ? 'Interrupt and talk'
+                        : 'Talk'
+                }
               >
                 <MicIcon recording={recording} />
               </button>
               <span className="dock-label" aria-live="polite">
-                {recording
-                  ? handsFree
-                    ? `${clock(rec.seconds)} · just talk, I’ll notice when you stop`
-                    : `${clock(rec.seconds)} · tap when you’re done`
+                {handsFree
+                  ? transcribing
+                    ? 'Got it…'
+                    : busy
+                      ? 'Thinking…'
+                      : live.state === 'starting'
+                        ? 'Starting the mic…'
+                        : live.state === 'hearing'
+                          ? 'Listening… tap when done'
+                          : liveOn
+                            ? speaking
+                              ? 'Just talk to cut in'
+                              : 'Mic on · just talk'
+                            : 'Tap once, then just talk'
+                  : recording
+                  ? `${clock(rec.seconds)} · tap when you’re done`
                   : rec.state === 'working'
                     ? 'Got it…'
                     : busy
                       ? 'Thinking…'
                       : speaking
                         ? 'Tap to interrupt'
-                        : handsFree
-                          ? 'Tap once, then just talk'
-                          : 'Tap to talk'}
+                        : 'Tap to talk'}
               </span>
             </div>
             <div className="dock-side dock-right">
