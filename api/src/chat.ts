@@ -32,10 +32,12 @@ What you may say:
 
 How to talk:
 - Like a friendly professor in office hours, talking out loud. Warm, direct, a bit of humour is fine.
-- Short: 2 to 4 sentences. This is spoken, so no lists, no headings, no markdown, no emoji. Say numbers the way you'd say them aloud.
+- Short: 2 to 4 sentences. This is spoken, so no lists, no headings, no markdown, no emoji. Write numbers as digits with their unit (37%, 582 kg), and use at most two or three figures in one reply.
 - Answer the question first. Then, most of the time, end with ONE short follow-up: a quick check question, or an offer to go deeper or move to a related topic. Don't do it every single time.
 - If the student gets something wrong, say so kindly and give the right idea in a sentence.
 - If the student says "quiz me" (or similar), ask ONE question at a time from the material, wait for the answer, react to it in a sentence, then ask whether they want another.
+- If the student asks for a mock oral exam, ask five questions one at a time, with a one-sentence reaction after each answer. After the fifth, give a short verdict: what was solid and what to review.
+- If the student brings a practice question they got wrong, give the right idea in a sentence or two, say where their answer went off, then check their understanding with one small follow-up question.
 - Follow the student when they change topic. Don't drag them back.
 - Reply in English, the course language, even if the student writes in another language.
 - Never use: "Great question", "As an AI", "I'd be happy to", "Let's dive in", "It's important to note", or other filler.
@@ -59,6 +61,9 @@ const REPLY_TOOL = {
     required: ['text', 'sources'],
   },
 };
+
+// Added to the student's last message when they tap "Wrap up".
+const WRAP_UP = `(Please wrap up our conversation now. In 3 or 4 spoken sentences: what we covered, what I seemed unsure about, and what I should look at again. In "sources", list up to four slides or lectures worth rereading.)`;
 
 const SOURCE_RE = /^((S\d+|MAN|TEC|FRA|SOV|Elkington 2018) p\d+(, p\d+)*|Video \d+|GSLS interview)$/;
 
@@ -107,7 +112,11 @@ export async function chatWithClaude(
   turns: ChatTurn[],
   questions: ChatQuestion[],
   env: { ANTHROPIC_API_KEY?: string; ANTHROPIC_MODEL?: string; ANTHROPIC_CHAT_MODEL?: string },
+  wrapUp = false,
 ): Promise<{ reply: string; sources: string[] }> {
+  if (wrapUp) {
+    turns = turns.map((t, i) => (i === turns.length - 1 ? { ...t, content: `${t.content}\n\n${WRAP_UP}` } : t));
+  }
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -128,14 +137,28 @@ export async function chatWithClaude(
     }),
   });
   if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  const data = (await res.json()) as { content?: { type: string; input?: { text?: unknown; sources?: unknown } }[] };
+  const data = (await res.json()) as {
+    content?: { type: string; input?: { text?: unknown; sources?: unknown } }[];
+    usage?: { input_tokens?: number; cache_read_input_tokens?: number; cache_creation_input_tokens?: number; output_tokens?: number };
+  };
+  // Shows in the Cloudflare logs whether the course text came from the cache ("cached" should be
+  // about 50,000 on every message after the first; if it stays 0, each message costs full price).
+  console.log(
+    `Chat tokens: new ${data.usage?.input_tokens ?? '?'}, cached ${data.usage?.cache_read_input_tokens ?? 0}, ` +
+      `cache written ${data.usage?.cache_creation_input_tokens ?? 0}, out ${data.usage?.output_tokens ?? '?'}`,
+  );
   const call = data.content?.find((c) => c.type === 'tool_use');
-  const reply = typeof call?.input?.text === 'string' ? call.input.text.trim() : '';
+  // Plain spoken text only: drop any markdown that slipped in.
+  const reply = (typeof call?.input?.text === 'string' ? call.input.text : '')
+    .replace(/[*_#`]+/g, '')
+    .replace(/^\s*[-•]\s+/gm, '')
+    .replace(/\s+\n/g, '\n')
+    .trim();
   if (!reply) throw new Error('Claude returned no reply');
   const sources = (Array.isArray(call?.input?.sources) ? call!.input!.sources : [])
     .filter((s): s is string => typeof s === 'string')
     .map((s) => s.trim())
     .filter((s) => SOURCE_RE.test(s))
-    .slice(0, 2);
+    .slice(0, wrapUp ? 4 : 2);
   return { reply, sources };
 }

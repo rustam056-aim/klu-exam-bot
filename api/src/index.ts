@@ -32,6 +32,7 @@ export interface Env {
   ELEVENLABS_VOICE_ID?: string; // optional: another voice, e.g. the clone of Prof. Meuer
   ELEVENLABS_SPEED?: string; // optional: reading speed, 0.7 (slow) to 1.2 (fast); default 0.82
   ELEVENLABS_MODEL?: string; // optional: voice model; default eleven_multilingual_v2 (livelier), or eleven_flash_v2_5 (cheaper)
+  ELEVENLABS_CHAT_MODEL?: string; // optional: a faster/cheaper voice model just for the conversation, e.g. eleven_flash_v2_5
   ANTHROPIC_MODEL?: string; // optional: override the grading model
   ANTHROPIC_CHAT_MODEL?: string; // optional: a different model for the conversation mode
   ACCESS_CODE?: string; // if set, every /api call (except health) needs header x-access-code
@@ -49,6 +50,26 @@ const timeOf = (q: Question): number | undefined => (videoTimes as Record<string
 const speedOf = (env: Env) => {
   const n = Number(env.ELEVENLABS_SPEED);
   return Number.isFinite(n) && n > 0 ? Math.min(1.2, Math.max(0.7, n)) : 0.82;
+};
+// Course terms the voice tends to stumble over, written the way they should be said.
+const sayable = (text: string) =>
+  text
+    .replace(/CO₂/g, 'CO2')
+    .replace(/\bCO2e\b/g, 'CO2 equivalent')
+    .replace(/\bHVO100\b/g, 'HVO 100')
+    .replace(/\bSBTi\b/g, 'S B T i')
+    .replace(/\btkm\b/g, 'tonne-kilometres')
+    .replace(/\bkWh\b/g, 'kilowatt hours')
+    .replace(/(\d)\s?k€/g, '$1 thousand euros')
+    .replace(/€\/t\b/g, 'euros per tonne')
+    .replace(/≈/g, 'about ')
+    .replace(/≤/g, 'up to ');
+// Never stop the voice in the middle of a sentence: cut long text at the last sentence end.
+const speakable = (text: string, max = 900) => {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  const end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('? '), cut.lastIndexOf('! '));
+  return end > max * 0.5 ? cut.slice(0, end + 1) : cut;
 };
 const labelOf = (q: Question) => q.session_label ?? `Session ${q.session}`;
 const active = (env: Env) =>
@@ -317,15 +338,15 @@ export default {
       });
     }
 
-    // POST /api/chat  { "messages": [{ "role": "user", "content": "..." }, ...] } -> { reply, sources }
+    // POST /api/chat  { "messages": [{ "role": "user", "content": "..." }, ...], "wrapUp"?: true } -> { reply, sources }
     // Conversation with the tutor. It only knows the course material (see chat.ts).
     if (path === '/api/chat' && req.method === 'POST') {
       if (!env.ANTHROPIC_API_KEY) return json({ error: 'chat is not set up' }, 503);
-      const body = (await req.json().catch(() => null)) as { messages?: unknown } | null;
+      const body = (await req.json().catch(() => null)) as { messages?: unknown; wrapUp?: unknown } | null;
       const turns = cleanTurns(body?.messages);
       if (!turns) return json({ error: 'need messages ending with a user message' }, 400);
       try {
-        return json(await chatWithClaude(turns, qs, env));
+        return json(await chatWithClaude(turns, qs, env, body?.wrapUp === true));
       } catch (err) {
         console.log('Chat failed:', String(err));
         return json({ error: 'chat failed' }, 502);
@@ -359,13 +380,19 @@ export default {
       return json({ text: (data.text ?? '').trim() });
     }
 
-    // POST /api/speak  { "text": "..." } -> audio/mpeg
+    // POST /api/speak  { "text": "...", "chat"?: true, "previous"?: "...", "next"?: "..." } -> audio/mpeg
     // Text to speech, in Prof. Meuer's cloned voice when ELEVENLABS_VOICE_ID is set.
     if (path === '/api/speak' && req.method === 'POST') {
       if (!env.ELEVENLABS_API_KEY) return json({ error: 'voice is not set up' }, 503);
-      const body = (await req.json().catch(() => null)) as { text?: string } | null;
-      const text = body?.text?.trim().slice(0, 900);
+      const body = (await req.json().catch(() => null)) as {
+        text?: string;
+        chat?: boolean; // conversation mode: may use the faster voice model
+        previous?: string; // the sentence before / after, so a reply split in two still sounds like one
+        next?: string;
+      } | null;
+      const text = sayable(speakable(body?.text?.trim() ?? ''));
       if (!text) return json({ error: 'need text' }, 400);
+      const around = (t: unknown) => (typeof t === 'string' && t.trim() ? sayable(t.trim().slice(-300)) : undefined);
       const voice = env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
       const res = await fetch(
         `https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_128`,
@@ -382,7 +409,9 @@ export default {
           // closer to how Prof. Meuer talks (0.7 to 1.2, change with the ELEVENLABS_SPEED secret).
           body: JSON.stringify({
             text,
-            model_id: env.ELEVENLABS_MODEL || 'eleven_multilingual_v2',
+            previous_text: around(body?.previous),
+            next_text: typeof body?.next === 'string' && body.next.trim() ? sayable(body.next.trim().slice(0, 300)) : undefined,
+            model_id: (body?.chat && env.ELEVENLABS_CHAT_MODEL) || env.ELEVENLABS_MODEL || 'eleven_multilingual_v2',
             voice_settings: {
               stability: 0.35,
               similarity_boost: 0.8,

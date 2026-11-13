@@ -6,8 +6,8 @@ import { spokenChoice } from './spokenChoice'
 import { Tutor } from './Tutor'
 import { clock, useRecorder } from './useRecorder'
 import type { MicState } from './useRecorder'
-import { onSpeakingChange, speak, stopSpeaking } from './voice'
-import type { AnswerResult, Attempt, OpenResult, PublicQuestion, Verdict } from './types'
+import { onSpeakingChange, speak, stopSpeaking, unlockAudio } from './voice'
+import type { AnswerResult, Attempt, ChatSeed, OpenResult, PublicQuestion, Verdict } from './types'
 
 type Props = {
   question: PublicQuestion
@@ -16,6 +16,8 @@ type Props = {
   readAloud: boolean
   voice: boolean // voice mode: big mic at the bottom, answer by talking
   onDone: (attempt: Attempt) => void
+  // "Talk it through": leave for the conversation with this question in hand.
+  onTalk?: (attempt: Attempt, seed: ChatSeed) => void
 }
 
 // What gets read aloud: the question (with its options), and the feedback after checking.
@@ -42,7 +44,7 @@ function selfCheckVerdict(result: OpenResult, covered: Set<number>): Verdict {
   return covered.size === result.keyPoints.length ? 'correct' : 'partly'
 }
 
-export function QuestionView({ question, number, total, readAloud, voice, onDone }: Props) {
+export function QuestionView({ question, number, total, readAloud, voice, onDone, onTalk }: Props) {
   const [choice, setChoice] = useState<string | null>(null)
   const [text, setText] = useState('')
   const [heard, setHeard] = useState<string | null>(null) // voice mode: what the student said
@@ -319,6 +321,27 @@ export function QuestionView({ question, number, total, readAloud, voice, onDone
               setCovered(nextSet)
             }}
           />
+          {onTalk && verdict() !== 'correct' && (
+            <div className="actions talk-row">
+              <button
+                className="btn secondary"
+                type="button"
+                onClick={() => {
+                  stopSpeaking()
+                  unlockAudio() // so his first answer can start by itself, also on iPhones
+                  onTalk(
+                    { question, verdict: verdict(), source: result.source, hintsUsed: hints.length },
+                    {
+                      question: question.question,
+                      answer: isMC && choice ? `${choice}: ${question.options?.[choice] ?? ''}` : text.trim(),
+                    },
+                  )
+                }}
+              >
+                <ChatIcon /> Talk it through with Johannes
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -410,6 +433,17 @@ export function QuestionView({ question, number, total, readAloud, voice, onDone
         )}
       </div>
     </article>
+  )
+}
+
+function ChatIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+      <path
+        d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.6 3.9a.6.6 0 0 1-1-.46V16A2.5 2.5 0 0 1 4 13.5z"
+        fill="currentColor"
+      />
+    </svg>
   )
 }
 

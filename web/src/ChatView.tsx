@@ -1,182 +1,219 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from './api'
-import { formatSource } from './format'
+import { formatSource, slideImages } from './format'
 import { MicHelpBox } from './MicButton'
 import { ArrowIcon, LectureClip, MicIcon, Slides, SpeakerIcon, StopIcon } from './QuestionView'
 import { Tutor } from './Tutor'
 import { clock, useRecorder } from './useRecorder'
-import { onSpeakingChange, speak, stopSpeaking } from './voice'
-import type { ChatMessage } from './types'
+import { onSpeakingChange, speak, stopSpeaking, unlockAudio } from './voice'
+import type { ChatMessage, ChatSeed } from './types'
 
-// "Talk to Johannes": a conversation with the course tutor, by typing or by voice.
-// The tutor answers only from the course material, follows up, and can quiz the student.
-// Nothing is saved: the conversation lives in this tab and is gone when you leave.
+// "Talk to Johannes": a conversation with the course tutor.
+// Two ways to use it, sharing one conversation:
+//   Talk: like a call. He speaks, you answer out loud; with hands-free on, the mic opens by itself
+//         after he finishes and closes when you stop talking. Tap the button to interrupt him.
+//   Type: a normal chat with a text box (and a mic button).
+// The tutor answers only from the course material. Nothing is saved: the conversation lives in
+// this tab and is gone when you leave.
 
 const GREETING: ChatMessage = {
   role: 'assistant',
   local: true,
-  text: 'Hi! Ask me anything from the course, or say “quiz me” and I’ll ask the questions. What’s on your mind?',
+  text: 'Hi! Don’t expect to be fed, be hungry. Ask me anything from the course, or say “quiz me”.',
 }
 
 const STARTERS = [
   'Quiz me on carbon accounting',
-  'Explain Scope 1, 2 and 3 simply',
+  'Give me a mock oral exam',
   'Why is air freight so carbon-heavy?',
   'When does an electric truck pay off?',
 ]
 
-export function ChatView({ readAloud }: { readAloud: boolean }) {
-  const [messages, setMessages] = useState<ChatMessage[]>([GREETING])
+const seedText = (seed: ChatSeed) =>
+  `I got this practice question wrong and want to talk it through.\nQuestion: ${seed.question}\nMy answer: ${seed.answer || '(I skipped it)'}`
+
+function remembered(key: string, fallback: boolean) {
+  try {
+    const v = localStorage.getItem(key)
+    return v === null ? fallback : v === 'on'
+  } catch {
+    return fallback
+  }
+}
+
+export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatSeed }) {
+  const [view, setView] = useState<'call' | 'chat'>('call')
+  const [handsFree, setHandsFree] = useState(() => remembered('handsFree', true))
+  const [messages, setMessages] = useState<ChatMessage[]>(seed ? [] : [GREETING])
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [audioNote, setAudioNote] = useState<string | null>(null)
+  const [note, setNote] = useState<string | null>(null)
   const [speaking, setSpeaking] = useState(false)
-  const [typing, setTyping] = useState(false) // the mic can't be used: point to the text box
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  // Speak the next reply if the student used their voice, even with "Read aloud" off.
-  const voiceTurn = useRef(false)
+  const mounted = useRef(true)
+  const seeded = useRef(false)
+  // The latest values, for code that continues after a long wait (a reply, the end of a sentence).
+  const now = useRef({ view, handsFree, readAloud })
+  now.current = { view, handsFree, readAloud }
 
   useEffect(() => onSpeakingChange(setSpeaking), [])
-  useEffect(() => () => stopSpeaking(), [])
 
-  function say(text: string) {
-    setAudioNote(null)
-    speak(text).catch(() => setAudioNote('The audio couldn’t play. Tap “Listen” to try again.'))
+  const rec = useRecorder((said) => void send(said, true), {
+    autoStop: handsFree && view === 'call',
+    onNothing: () => setNote('I’m here when you’re ready. Tap the mic to talk.'),
+  })
+  const recRef = useRef(rec)
+  recRef.current = rec
+
+  // Hands-free: when he has finished talking, open the mic for the student's turn.
+  function listenIfHandsFree() {
+    if (mounted.current && now.current.handsFree && now.current.view === 'call') recRef.current.start()
   }
 
-  async function send(text: string, byVoice = false) {
-    const said = text.trim()
-    if (!said || busy) return
-    stopSpeaking()
-    voiceTurn.current = byVoice
-    const next: ChatMessage[] = [...messages, { role: 'user', text: said }]
-    setMessages(next)
-    setDraft('')
-    await ask(next)
+  // Reads a reply aloud. True when he got to the end (false: stopped, interrupted, or no sound).
+  async function say(text: string): Promise<boolean> {
+    setNote(null)
+    try {
+      return await speak(text, { chat: true })
+    } catch {
+      if (mounted.current) setNote('The sound didn’t start. Tap “Listen” to hear it.')
+      return false
+    }
   }
 
-  async function ask(history: ChatMessage[]) {
+  async function ask(history: ChatMessage[], speakIt: boolean, wrapUp = false) {
     setBusy(true)
     setError(null)
+    setNote(null)
     try {
-      const res = await api.chat(history.filter((m) => !m.local).map((m) => ({ role: m.role, content: m.text })))
-      setMessages([...history, { role: 'assistant', text: res.reply, sources: res.sources }])
-      if (readAloud || voiceTurn.current) say(res.reply)
+      const res = await api.chat(
+        history.filter((m) => !m.local).map((m) => ({ role: m.role, content: m.text })),
+        wrapUp,
+      )
+      if (!mounted.current) return
+      setMessages([...history, { role: 'assistant', text: res.reply, sources: res.sources, wrap: wrapUp }])
+      setBusy(false)
+      if (speakIt && (await say(res.reply))) listenIfHandsFree()
     } catch {
+      if (!mounted.current) return
       setError('That didn’t go through. Try again.')
-    } finally {
       setBusy(false)
     }
   }
 
-  const rec = useRecorder((said) => void send(said, true))
+  async function send(text: string, byVoice = false, wrapUp = false) {
+    const said = text.trim()
+    if (!said || busy) return
+    stopSpeaking()
+    const next: ChatMessage[] = [...messages, { role: 'user', text: said }]
+    setMessages(next)
+    setDraft('')
+    await ask(next, now.current.view === 'call' || now.current.readAloud || byVoice, wrapUp)
+  }
 
-  // Keep the newest message in view.
+  // On arrival: either talk through the question the student brought, or say hello.
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [messages, busy, error])
+    mounted.current = true
+    if (seed) {
+      if (!seeded.current) {
+        seeded.current = true
+        void send(seedText(seed))
+      }
+    } else {
+      void say(GREETING.text).then((done) => {
+        if (done) listenIfHandsFree()
+      })
+    }
+    return () => {
+      mounted.current = false
+      stopSpeaking()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('handsFree', handsFree ? 'on' : 'off')
+    } catch {
+      /* private mode: just don't remember it */
+    }
+  }, [handsFree])
+
+  // Type view: keep the newest message in sight.
+  useEffect(() => {
+    if (view === 'chat') endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [messages, busy, error, view])
+
+  const recording = rec.state === 'recording'
+
+  // The big button: talk, finish talking, or cut him off and talk.
+  function bigTap() {
+    unlockAudio()
+    setNote(null)
+    if (recording) {
+      rec.stop()
+      return
+    }
+    if (speaking) stopSpeaking()
+    rec.start()
+  }
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') stopSpeaking()
+      const tag = (e.target as HTMLElement).tagName
+      if (e.key === ' ' && view === 'call' && tag !== 'BUTTON' && tag !== 'TEXTAREA' && !busy && rec.state !== 'working') {
+        e.preventDefault()
+        bigTap()
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  })
 
-  const recording = rec.state === 'recording'
   const tutorState = recording ? 'listening' : busy || rec.state === 'working' ? 'thinking' : speaking ? 'speaking' : 'idle'
-  const fresh = messages.length === 1
-  const waitingForRetry = !!error && messages[messages.length - 1].role === 'user'
+  const userTurns = messages.filter((m) => m.role === 'user').length
+  const fresh = userTurns === 0
+  const last = messages[messages.length - 1]
+  const lastTutor = [...messages].reverse().find((m) => m.role === 'assistant')
+  const lastUser = [...messages].reverse().find((m) => m.role === 'user')
+  const waitingForRetry = !!error && last?.role === 'user'
+  const canWrapUp = userTurns >= 2 && !busy && !recording && last?.role === 'assistant' && !last.wrap
+  const slideSource = lastTutor?.sources?.find((s) => slideImages(s).length > 0)
 
-  return (
-    <section className="chat">
-      <div className="chat-head">
-        <Tutor
-          state={tutorState}
-          labels={{ idle: 'Talk to Johannes', speaking: 'Talking…', listening: 'Listening…', thinking: 'Thinking…' }}
-        />
-        <div className="chat-head-actions">
-          {speaking && (
-            <button className="btn secondary sm" type="button" onClick={stopSpeaking}>
-              <StopIcon /> Stop
-            </button>
-          )}
-          {!fresh && (
-            <button
-              className="btn ghost sm"
-              type="button"
-              onClick={() => {
-                stopSpeaking()
-                setMessages([GREETING])
-                setError(null)
-              }}
-              disabled={busy || recording}
-            >
-              New chat
-            </button>
-          )}
-        </div>
-      </div>
-
-      <ol className="chat-log" aria-live="polite">
-        {messages.map((m, i) => (
-          <li key={i} className={`msg msg-${m.role}`}>
-            <p className="msg-text">{m.text}</p>
-            {m.role === 'assistant' && !m.local && (
-              <div className="msg-extra">
-                <button className="btn ghost sm" type="button" onClick={() => say(m.text)}>
-                  <SpeakerIcon /> Listen
-                </button>
-                {m.sources && m.sources.length > 0 && (
-                  <details className="msg-sources">
-                    <summary>Where this comes from</summary>
-                    {m.sources.map((s) => (
-                      <div key={s}>
-                        <p className="source">{formatSource(s)}</p>
-                        <Slides source={s} />
-                        <LectureClip source={s} />
-                      </div>
-                    ))}
-                  </details>
-                )}
-              </div>
-            )}
-          </li>
-        ))}
-        {busy && (
-          <li className="msg msg-assistant msg-wait" aria-label="Thinking">
-            <span />
-            <span />
-            <span />
-          </li>
-        )}
-      </ol>
-
-      {fresh && (
-        <div className="starters">
-          {STARTERS.map((s) => (
-            <button key={s} className="btn secondary sm" type="button" onClick={() => void send(s)} disabled={busy}>
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
-      {fresh && (
-        <p className="note chat-note">
-          This is an AI tutor. It answers only from this year&rsquo;s course material and can still get things wrong,
-          so the slides have the last word. Please don&rsquo;t share personal details: what you say or type is sent
-          to Anthropic and ElevenLabs to create the reply, and isn&rsquo;t saved by this site.
-        </p>
-      )}
-
+  const starters = fresh && !busy && (
+    <div className="starters">
+      {STARTERS.map((s) => (
+        <button
+          key={s}
+          className="btn secondary sm"
+          type="button"
+          onClick={() => {
+            unlockAudio()
+            void send(s)
+          }}
+        >
+          {s}
+        </button>
+      ))}
+    </div>
+  )
+  const smallPrint = fresh && (
+    <p className="note chat-note">
+      This is an AI tutor. It answers only from this year&rsquo;s course material and can still get things wrong, so
+      the slides have the last word. Please don&rsquo;t share personal details: what you say or type is sent to
+      Anthropic and ElevenLabs to create the reply, and isn&rsquo;t saved by this site.
+    </p>
+  )
+  const problems = (
+    <>
       {error && (
         <div className="error-block" role="alert">
           <p>{error}</p>
           {waitingForRetry && (
-            <button className="btn primary sm" type="button" onClick={() => void ask(messages)}>
+            <button className="btn primary sm" type="button" onClick={() => void ask(messages, view === 'call' || readAloud)}>
               Try again
             </button>
           )}
@@ -187,73 +224,258 @@ export function ChatView({ readAloud }: { readAloud: boolean }) {
           {rec.error}
         </p>
       )}
-      {audioNote && <p className="note">{audioNote}</p>}
+      {note && <p className="note">{note}</p>}
       {rec.help && (
         <MicHelpBox
           help={rec.help}
           onRetry={rec.start}
           onDismiss={() => {
             rec.dismissHelp()
-            setTyping(true)
-            inputRef.current?.focus()
+            setView('chat')
+            window.setTimeout(() => inputRef.current?.focus(), 50)
           }}
         />
       )}
-      <div ref={endRef} className="chat-end" />
+    </>
+  )
 
-      {/* Bottom bar: type on the left, or tap the big mic and just talk. */}
-      <form
-        className="composer"
-        onSubmit={(e) => {
-          e.preventDefault()
-          void send(draft)
-        }}
-      >
-        <span className="composer-status" aria-live="polite">
-          {recording
-            ? `Listening · ${clock(rec.seconds)} · tap the mic when you’re done`
-            : rec.state === 'working'
-              ? 'Turning it into text…'
-              : busy
-                ? 'Thinking…'
-                : typing
-                  ? 'Type your question below'
-                  : 'Type, or tap the mic and talk'}
-        </span>
-        <div className="composer-row">
-          <label className="composer-field">
-            <span className="sr-only">Your message</span>
-            <textarea
-              ref={inputRef}
-              value={draft}
-              rows={1}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  void send(draft)
-                }
-              }}
-              placeholder="Ask about the course…"
-              disabled={recording}
-              maxLength={1500}
-            />
-            <button className="composer-send" type="submit" disabled={!draft.trim() || busy} aria-label="Send">
-              <ArrowIcon />
-            </button>
-          </label>
+  return (
+    <section className={`chat chat-${view}`}>
+      <div className="chat-head">
+        <div className="seg" role="tablist" aria-label="How you talk to the tutor">
+          <button type="button" role="tab" aria-selected={view === 'call'} onClick={() => setView('call')}>
+            Talk
+          </button>
           <button
             type="button"
-            className={`round round-${busy ? 'idle' : rec.state}`}
-            onClick={rec.toggle}
-            disabled={busy || rec.state === 'working'}
-            aria-pressed={recording}
-            aria-label={recording ? 'Stop and send' : 'Talk'}
+            role="tab"
+            aria-selected={view === 'chat'}
+            onClick={() => {
+              if (recording) rec.cancel()
+              setView('chat')
+            }}
           >
-            <MicIcon recording={recording} />
+            Type
           </button>
         </div>
-      </form>
+        <div className="chat-head-actions">
+          {view === 'chat' && speaking && (
+            <button className="btn secondary sm" type="button" onClick={stopSpeaking}>
+              <StopIcon /> Stop
+            </button>
+          )}
+          {canWrapUp && (
+            <button
+              className="btn secondary sm"
+              type="button"
+              onClick={() => {
+                unlockAudio()
+                void send('Let’s wrap up.', false, true)
+              }}
+            >
+              Wrap up
+            </button>
+          )}
+          {!fresh && (
+            <button
+              className="btn ghost sm"
+              type="button"
+              onClick={() => {
+                stopSpeaking()
+                rec.cancel()
+                setMessages([GREETING])
+                setError(null)
+                setNote(null)
+              }}
+              disabled={busy}
+            >
+              New chat
+            </button>
+          )}
+        </div>
+      </div>
+
+      {view === 'call' ? (
+        <div className="call">
+          <Tutor
+            big
+            state={tutorState}
+            labels={{ idle: 'Johannes · AI tutor', speaking: 'Talking…', listening: 'Listening…', thinking: 'Thinking…' }}
+          />
+          {lastUser && <p className="call-you">You: {lastUser.text}</p>}
+          {busy ? (
+            <p className="call-line call-wait" aria-label="Thinking">
+              <span />
+              <span />
+              <span />
+            </p>
+          ) : (
+            lastTutor && (
+              <p className="call-line" aria-live="polite">
+                {lastTutor.text}
+              </p>
+            )
+          )}
+          {!busy && lastTutor?.sources && lastTutor.sources.length > 0 && (
+            <div className="call-source">
+              <p className="source">From the course: {lastTutor.sources.map(formatSource).join(' · ')}</p>
+              {slideSource && <Slides source={slideSource} />}
+            </div>
+          )}
+          {starters}
+          {problems}
+          {smallPrint}
+
+          {/* Bottom bar: one big button, like a call. */}
+          <div className="dock" role="toolbar" aria-label="Voice controls">
+            <div className="dock-side">
+              <button
+                className={`switch ${handsFree ? 'is-on' : ''}`}
+                type="button"
+                role="switch"
+                aria-checked={handsFree}
+                onClick={() => setHandsFree(!handsFree)}
+              >
+                <span className="switch-track" aria-hidden="true" />
+                Hands-free
+              </button>
+            </div>
+            <div className="dock-main">
+              <button
+                type="button"
+                className={`round round-${busy ? 'working' : rec.state}`}
+                onClick={bigTap}
+                disabled={busy || rec.state === 'working'}
+                aria-pressed={recording}
+                aria-label={recording ? 'Done talking' : speaking ? 'Interrupt and talk' : 'Talk'}
+              >
+                <MicIcon recording={recording} />
+              </button>
+              <span className="dock-label" aria-live="polite">
+                {recording
+                  ? handsFree
+                    ? `Listening · ${clock(rec.seconds)} · just talk`
+                    : `Listening · ${clock(rec.seconds)} · tap when you’re done`
+                  : rec.state === 'working'
+                    ? 'Got it…'
+                    : busy
+                      ? 'Thinking…'
+                      : speaking
+                        ? 'Tap to interrupt'
+                        : 'Tap to talk'}
+              </span>
+            </div>
+            <div className="dock-side dock-right">
+              {speaking && (
+                <button className="btn secondary sm" type="button" onClick={stopSpeaking}>
+                  <StopIcon /> Stop
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <ol className="chat-log" aria-live="polite">
+            {messages.map((m, i) => (
+              <li key={i} className={`msg msg-${m.role}`}>
+                <p className="msg-text">{m.text}</p>
+                {m.role === 'assistant' && !m.local && (
+                  <div className="msg-extra">
+                    <button
+                      className="btn ghost sm"
+                      type="button"
+                      onClick={() => {
+                        unlockAudio()
+                        void say(m.text)
+                      }}
+                    >
+                      <SpeakerIcon /> Listen
+                    </button>
+                    {m.sources && m.sources.length > 0 && (
+                      <details className="msg-sources" open={m.wrap}>
+                        <summary>{m.wrap ? 'Look at these again' : 'Where this comes from'}</summary>
+                        {m.sources.map((s) => (
+                          <div key={s}>
+                            <p className="source">{formatSource(s)}</p>
+                            <Slides source={s} />
+                            <LectureClip source={s} />
+                          </div>
+                        ))}
+                      </details>
+                    )}
+                  </div>
+                )}
+              </li>
+            ))}
+            {busy && (
+              <li className="msg msg-assistant msg-wait" aria-label="Thinking">
+                <span />
+                <span />
+                <span />
+              </li>
+            )}
+          </ol>
+          {starters}
+          {smallPrint}
+          {problems}
+          <div ref={endRef} className="chat-end" />
+
+          {/* Bottom bar: type, or tap the mic and say it. */}
+          <form
+            className="composer"
+            onSubmit={(e) => {
+              e.preventDefault()
+              unlockAudio()
+              void send(draft)
+            }}
+          >
+            <span className="composer-status" aria-live="polite">
+              {recording
+                ? `Listening · ${clock(rec.seconds)} · tap the mic when you’re done`
+                : rec.state === 'working'
+                  ? 'Got it…'
+                  : busy
+                    ? 'Thinking…'
+                    : 'Type, or tap the mic and talk'}
+            </span>
+            <div className="composer-row">
+              <label className="composer-field">
+                <span className="sr-only">Your message</span>
+                <textarea
+                  ref={inputRef}
+                  value={draft}
+                  rows={1}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      unlockAudio()
+                      void send(draft)
+                    }
+                  }}
+                  placeholder="Ask about the course…"
+                  disabled={recording}
+                  maxLength={1500}
+                />
+                <button className="composer-send" type="submit" disabled={!draft.trim() || busy} aria-label="Send">
+                  <ArrowIcon />
+                </button>
+              </label>
+              <button
+                type="button"
+                className={`round round-${busy ? 'idle' : rec.state}`}
+                onClick={bigTap}
+                disabled={busy || rec.state === 'working'}
+                aria-pressed={recording}
+                aria-label={recording ? 'Stop and send' : 'Talk'}
+              >
+                <MicIcon recording={recording} />
+              </button>
+            </div>
+          </form>
+        </>
+      )}
     </section>
   )
 }

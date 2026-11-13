@@ -71,4 +71,8 @@ export type ChatMessage = {
   text: string
   sources?: string[] // e.g. ["S2 p14", "Video 65"]
   local?: boolean // shown on screen only (the greeting), never sent to the server
+  wrap?: boolean // the wrap-up at the end: its sources are "look at these again"
 }
+
+// A practice question the student wants to talk through with the tutor.
+export type ChatSeed = { question: string; answer: string }

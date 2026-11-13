@@ -35,11 +35,11 @@ export const api = {
     return res.json() as Promise<AnswerResult>
   },
 
-  chat: async (messages: { role: 'user' | 'assistant'; content: string }[]) => {
+  chat: async (messages: { role: 'user' | 'assistant'; content: string }[], wrapUp = false) => {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...accessHeaders() },
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify(wrapUp ? { messages, wrapUp: true } : { messages }),
     })
     if (res.status === 401) throw new NeedsCode()
     if (!res.ok) throw new Error(`Request failed (${res.status})`)

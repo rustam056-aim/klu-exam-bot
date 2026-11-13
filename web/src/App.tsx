@@ -3,13 +3,13 @@ import './App.css'
 import { api } from './api'
 import { ChatView } from './ChatView'
 import { saveAttempt } from './progress'
-import { stopSpeaking } from './voice'
+import { stopSpeaking, unlockAudio } from './voice'
 import { QuestionView } from './QuestionView'
 import { RouteLine } from './RouteLine'
 import type { Stop } from './RouteLine'
 import { StartScreen } from './StartScreen'
 import { Summary } from './Summary'
-import type { Attempt, PublicQuestion, Settings } from './types'
+import type { Attempt, ChatSeed, PublicQuestion, Settings } from './types'
 
 type Phase = 'start' | 'quiz' | 'summary' | 'chat'
 
@@ -21,6 +21,10 @@ export default function App() {
   const [current, setCurrent] = useState<PublicQuestion | null>(null)
   const [total, setTotal] = useState(10)
   const [error, setError] = useState<string | null>(null)
+  // The conversation: an optional question to talk through, and where "back" leads afterwards.
+  const [chatSeed, setChatSeed] = useState<ChatSeed | undefined>()
+  const [chatKey, setChatKey] = useState(0)
+  const [backTo, setBackTo] = useState<Phase>('start')
   const [readAloud, setReadAloud] = useState<boolean>(() => {
     try {
       return localStorage.getItem('readAloud') === 'on'
@@ -37,7 +41,8 @@ export default function App() {
     }
   }, [readAloud])
 
-  async function loadNext(done: Attempt[], s: Settings, onlyIds?: string[]) {
+  // inBackground: the student is in the conversation; get the next question ready without leaving it.
+  async function loadNext(done: Attempt[], s: Settings, onlyIds?: string[], inBackground = false) {
     setError(null)
     setCurrent(null)
     try {
@@ -49,7 +54,8 @@ export default function App() {
         only: onlyIds,
       })
       if (res.done) {
-        setPhase('summary')
+        if (inBackground) setBackTo('summary')
+        else setPhase('summary')
         return
       }
       setCurrent(res.question)
@@ -76,6 +82,26 @@ export default function App() {
     setAttempts(done)
     if (done.length >= total) setPhase('summary')
     else void loadNext(done, settings, only)
+  }
+
+  function openChat(seed?: ChatSeed) {
+    setChatSeed(seed)
+    setChatKey((k) => k + 1)
+    setPhase('chat')
+  }
+
+  // "Talk it through" on a question: count the answer, open the conversation, and line up the
+  // next question for when the student comes back.
+  function talkThrough(attempt: Attempt, seed: ChatSeed) {
+    saveAttempt(attempt)
+    const done = [...attempts, attempt]
+    setAttempts(done)
+    if (done.length >= total) setBackTo('summary')
+    else {
+      setBackTo('quiz')
+      void loadNext(done, settings, only, true)
+    }
+    openChat(seed)
   }
 
   const stops: Stop[] = Array.from({ length: total }, (_, i) =>
@@ -131,10 +157,10 @@ export default function App() {
                 type="button"
                 onClick={() => {
                   stopSpeaking()
-                  setPhase('start')
+                  setPhase(backTo)
                 }}
               >
-                End chat
+                {backTo === 'start' ? 'End chat' : 'Back to practice'}
               </button>
             )}
           </div>
@@ -143,10 +169,18 @@ export default function App() {
 
       <main className="app">
         {phase === 'start' && (
-          <StartScreen initial={settings} onStart={(s, ids) => start(s, ids)} onChat={() => setPhase('chat')} />
+          <StartScreen
+            initial={settings}
+            onStart={(s, ids) => start(s, ids)}
+            onChat={() => {
+              unlockAudio() // this click lets his greeting start by itself, also on iPhones
+              setBackTo('start')
+              openChat()
+            }}
+          />
         )}
 
-        {phase === 'chat' && <ChatView readAloud={readAloud} />}
+        {phase === 'chat' && <ChatView key={chatKey} readAloud={readAloud} seed={chatSeed} />}
 
         {phase === 'quiz' && (
           <>
@@ -168,6 +202,7 @@ export default function App() {
                 readAloud={readAloud || settings.voice}
                 voice={settings.voice}
                 onDone={record}
+                onTalk={talkThrough}
               />
             )}
           </>
