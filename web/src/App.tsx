@@ -11,7 +11,7 @@ import { StartScreen } from './StartScreen'
 import { Summary } from './Summary'
 import type { Attempt, ChatSeed, PublicQuestion, Settings } from './types'
 
-type Phase = 'start' | 'quiz' | 'summary' | 'chat'
+type Phase = 'start' | 'practice' | 'quiz' | 'summary' | 'chat'
 
 export default function App() {
   const [phase, setPhase] = useState<Phase>('start')
@@ -67,8 +67,7 @@ export default function App() {
   }
 
   function start(s: Settings, onlyIds?: string[]) {
-    // Quick 5 shouldn't change the length you picked for your own practice.
-    setSettings(s.quick ? { ...s, length: settings.length } : s)
+    setSettings(s)
     setOnly(onlyIds)
     setAttempts([])
     setTotal(onlyIds ? onlyIds.length : s.length)
@@ -168,8 +167,13 @@ export default function App() {
       </header>
 
       <main className="app">
-        {phase === 'start' && (
+        {(phase === 'start' || phase === 'practice') && (
           <StartScreen
+            screen={phase === 'start' ? 'home' : 'practice'}
+            onScreen={(screen) => {
+              setPhase(screen === 'home' ? 'start' : 'practice')
+              window.scrollTo(0, 0)
+            }}
             initial={settings}
             onStart={(s, ids) => start(s, ids)}
             onChat={() => {
@@ -212,7 +216,7 @@ export default function App() {
           <Summary
             attempts={attempts}
             onRetry={(ids) => start({ ...settings, session: 'all', difficulty: 'mixed', quick: false }, ids)}
-            onRestart={() => setPhase('start')}
+            onRestart={() => setPhase('practice')}
           />
         )}
       </main>

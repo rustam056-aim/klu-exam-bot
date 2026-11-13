@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { NeedsCode, setAccessCode } from './access'
 import { api } from './api'
-import { loadProgress, missedIds, resetProgress, sessionStats } from './progress'
+import { loadProgress, loadTalk, missedIds, resetProgress, sessionStats, talkStats } from './progress'
 import type { SessionInfo, Settings } from './types'
 
 type Option<T extends string> = { value: T; label: string }
@@ -34,17 +34,25 @@ function Choice<T extends string>(props: {
   )
 }
 
+// The first two screens:
+//   home     = pick one of two ways to study: talk to Johannes, or practise by module
+//   practice = the modules (sessions, guest lectures, readings) with your progress on each
 export function StartScreen({
+  screen,
   initial,
   onStart,
   onChat,
+  onScreen,
 }: {
+  screen: 'home' | 'practice'
   initial: Settings
   onStart: (s: Settings, onlyIds?: string[]) => void
   onChat: () => void
+  onScreen: (screen: 'home' | 'practice') => void
 }) {
-  const [settings, setSettings] = useState({ ...initial, quick: false })
+  const [settings, setSettings] = useState({ ...initial, length: initial.lengthPref ?? initial.length, quick: false })
   const [progress, setProgress] = useState(loadProgress)
+  const [talk, setTalk] = useState(loadTalk)
   const [sessions, setSessions] = useState<SessionInfo[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [needCode, setNeedCode] = useState(false)
@@ -108,52 +116,100 @@ export function StartScreen({
     )
   }
 
-  const sessionOptions: Option<string>[] = [
-    { value: 'all', label: 'All sessions' },
-    ...(sessions ?? []).map((s) => ({ value: String(s.session), label: s.label ?? `Session ${s.session}` })),
-  ]
+  const all = sessions ?? []
+  const totalQuestions = all.reduce((n, s) => n + s.count, 0)
+  const tried = Object.keys(progress).length
+  const right = Object.values(progress).filter((p) => p.verdict === 'correct').length
+  const talked = talkStats(talk)
+  const missed = missedIds(progress)
 
-  // How many questions match the chosen session + difficulty, so the length options fit.
-  const picked = (sessions ?? []).filter((s) => settings.session === 'all' || String(s.session) === settings.session)
-  const available = picked.reduce(
-    (sum, s) =>
-      sum + (settings.difficulty === 'mixed' ? s.count : (s.byDifficulty?.[settings.difficulty] ?? s.count)),
-    0,
-  )
-  const ALL = 999 // "All" stays "All" when you switch to a bigger session
-  const length = Math.min(settings.length, available)
-  const lengthOptions: Option<string>[] = [
-    ...[5, 10, 15].filter((n) => n < available).map((n) => ({ value: String(n), label: String(n) })),
-    ...(available > 0 ? [{ value: String(available), label: `All ${available}` }] : []),
-  ]
+  if (screen === 'home') {
+    return (
+      <section className="start">
+        <h1>Practise for the Sustainable Logistics exam</h1>
+        <p className="lede">Two ways to get ready. Pick one, switch whenever you like.</p>
+
+        <div className="modes">
+          <button className="card mode" type="button" disabled={!sessions} onClick={onChat}>
+            <span className="card-icon card-icon-talk" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="26" height="26">
+                <path
+                  d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.6 3.9a.6.6 0 0 1-1-.46V16A2.5 2.5 0 0 1 4 13.5z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+            <span className="mode-title">
+              Talk to Johannes <span className="tag">AI tutor</span>
+            </span>
+            <span className="mode-text">
+              A conversation about the course, out loud or typed. Ask anything, let him quiz you, or do a mock oral
+              exam.
+            </span>
+            <span className="mode-stat">
+              {talked.answered > 0
+                ? `So far: ${talked.right} of ${talked.answered} of his questions right`
+                : 'He answers in Prof. Meuer’s voice'}
+            </span>
+            <span className="btn primary mode-go">Start talking</span>
+          </button>
+
+          <button className="card mode" type="button" disabled={!sessions} onClick={() => onScreen('practice')}>
+            <span className="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                <path d="M9 6h11M9 12h11M9 18h11" />
+                <circle cx="4.5" cy="6" r="1.3" fill="currentColor" stroke="none" />
+                <circle cx="4.5" cy="12" r="1.3" fill="currentColor" stroke="none" />
+                <circle cx="4.5" cy="18" r="1.3" fill="currentColor" stroke="none" />
+              </svg>
+            </span>
+            <span className="mode-title">Practise by module</span>
+            <span className="mode-text">
+              Exam-style questions, session by session, with feedback, the slide it comes from, and your progress.
+            </span>
+            <span className="mode-stat">
+              {tried > 0
+                ? `So far: ${tried} of ${totalQuestions} questions tried, ${right} right`
+                : sessions
+                  ? `${totalQuestions} questions in ${all.length} modules`
+                  : 'Loading…'}
+            </span>
+            <span className="btn primary mode-go">Choose a module</span>
+          </button>
+        </div>
+
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+        <p className="fineprint">
+          Everything comes only from this year&rsquo;s course material. This is practice, not the real exam.
+        </p>
+      </section>
+    )
+  }
+
+  // ---------- Practise by module ----------
+  const ALL = 999 // "All" stays "All" for whichever module you start
+  const availableIn = (s: SessionInfo) =>
+    settings.difficulty === 'mixed' ? s.count : (s.byDifficulty?.[settings.difficulty] ?? s.count)
+  const lengthLabel = settings.length >= ALL ? 'all questions' : `${settings.length} questions`
+  const difficultyLabel = settings.difficulty === 'mixed' ? 'mixed difficulty' : settings.difficulty
+  const startModule = (session: string, available: number) => {
+    if (available > 0) {
+      onStart({ ...settings, session, length: Math.min(settings.length, available), lengthPref: settings.length, quick: false })
+    }
+  }
+  const everything = all.reduce((n, s) => n + availableIn(s), 0)
 
   return (
     <section className="start">
-      <h1>Practise for the Sustainable Logistics exam</h1>
-      <p className="lede">
-        Answer questions from this year&rsquo;s course material, get feedback right away, and see what to review
-        before the exam.
-      </p>
-
-      <div className="card quick-card">
-        <span className="card-icon card-icon-talk" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="24" height="24">
-            <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.6 3.9a.6.6 0 0 1-1-.46V16A2.5 2.5 0 0 1 4 13.5z" fill="currentColor" />
-          </svg>
-        </span>
-        <div className="quick-text">
-          <h2>
-            Talk to Johannes <span className="tag">AI tutor</span>
-          </h2>
-          <p>
-            Ask anything from the course, by typing or talking. It answers in Prof. Meuer&rsquo;s voice, follows up,
-            and can quiz you.
-          </p>
-        </div>
-        <button className="btn primary" type="button" disabled={!sessions} onClick={onChat}>
-          Start talking
-        </button>
-      </div>
+      <button className="btn ghost sm back" type="button" onClick={() => onScreen('home')}>
+        <span aria-hidden="true">←</span> Back
+      </button>
+      <h1>Practise by module</h1>
+      <p className="lede">Pick a module to start. Your progress stays in this browser.</p>
 
       <div className="card quick-card">
         <span className="card-icon" aria-hidden="true">
@@ -169,138 +225,149 @@ export function StartScreen({
           className="btn primary"
           type="button"
           disabled={!sessions}
-          onClick={() => onStart({ ...settings, session: 'all', difficulty: 'mixed', length: 5, quick: true })}
+          onClick={() =>
+            onStart({ ...settings, session: 'all', difficulty: 'mixed', length: 5, lengthPref: settings.length, quick: true })
+          }
         >
           Start Quick 5
         </button>
       </div>
 
-      <form
-        className="card settings"
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (length > 0) onStart({ ...settings, length, quick: false })
-        }}
-      >
-        <h2>Your own practice</h2>
-        <Choice
-          legend="Sessions"
-          name="session"
-          value={settings.session}
-          options={sessionOptions}
-          onChange={(session) => setSettings({ ...settings, session })}
-        />
-        <Choice
-          legend="Difficulty"
-          name="difficulty"
-          value={settings.difficulty}
-          options={[
-            { value: 'mixed', label: 'Mixed' },
-            { value: 'easy', label: 'Easy' },
-            { value: 'medium', label: 'Medium' },
-            { value: 'hard', label: 'Hard' },
-          ]}
-          onChange={(difficulty) => setSettings({ ...settings, difficulty })}
-        />
-        {sessions && available === 0 ? (
-          <p className="choice-note">No {settings.difficulty} questions here yet. Try another difficulty.</p>
-        ) : (
-          <Choice
-            legend="Questions"
-            name="length"
-            value={String(length)}
-            options={lengthOptions}
-            onChange={(n) => setSettings({ ...settings, length: Number(n) === available ? ALL : Number(n) })}
-          />
-        )}
-        <Choice
-          legend="How you answer"
-          name="mode"
-          value={settings.voice ? 'voice' : 'type'}
-          options={[
-            { value: 'type', label: 'Type and tap' },
-            { value: 'voice', label: 'Talk (voice mode)' },
-          ]}
-          onChange={(m) => setSettings({ ...settings, voice: m === 'voice' })}
-        />
-        <p className="choice-note">
-          {settings.voice
-            ? 'Questions are read out. Tap the big mic, answer out loud, and you hear the feedback.'
-            : 'You can still say your answer with the mic button, and switch on Read aloud at the top.'}
-        </p>
+      <div className="card">
+        <div className="modules-head">
+          <h2>Modules</h2>
+          <details className="options">
+            <summary>
+              Options: {difficultyLabel}, {lengthLabel}, {settings.voice ? 'talking' : 'typing'}
+            </summary>
+            <div className="settings options-body">
+              <Choice
+                legend="Difficulty"
+                name="difficulty"
+                value={settings.difficulty}
+                options={[
+                  { value: 'mixed', label: 'Mixed' },
+                  { value: 'easy', label: 'Easy' },
+                  { value: 'medium', label: 'Medium' },
+                  { value: 'hard', label: 'Hard' },
+                ]}
+                onChange={(difficulty) => setSettings({ ...settings, difficulty })}
+              />
+              <Choice
+                legend="Questions per round"
+                name="length"
+                value={String(settings.length >= ALL ? ALL : settings.length)}
+                options={[
+                  { value: '5', label: '5' },
+                  { value: '10', label: '10' },
+                  { value: '15', label: '15' },
+                  { value: String(ALL), label: 'All' },
+                ]}
+                onChange={(n) => setSettings({ ...settings, length: Number(n) })}
+              />
+              <Choice
+                legend="How you answer"
+                name="mode"
+                value={settings.voice ? 'voice' : 'type'}
+                options={[
+                  { value: 'type', label: 'Type and tap' },
+                  { value: 'voice', label: 'Talk (voice mode)' },
+                ]}
+                onChange={(m) => setSettings({ ...settings, voice: m === 'voice' })}
+              />
+            </div>
+          </details>
+        </div>
+
+        <ul className="modules">
+          <li>
+            <button className="module" type="button" disabled={!sessions || everything === 0} onClick={() => startModule('all', everything)}>
+              <span className="module-name">Everything, mixed</span>
+              <ModuleBar right={right} tried={tried} count={totalQuestions} />
+              <span className="module-count">{tried === 0 ? `${totalQuestions} questions` : `${right} of ${totalQuestions} right`}</span>
+              <span className="module-go" aria-hidden="true">→</span>
+            </button>
+          </li>
+          {all.map((s) => {
+            const st = sessionStats(progress, s.session)
+            const withJohannes = talkStats(talk, s.session)
+            const available = availableIn(s)
+            return (
+              <li key={s.session}>
+                <button
+                  className="module"
+                  type="button"
+                  disabled={available === 0}
+                  onClick={() => startModule(String(s.session), available)}
+                >
+                  <span className="module-name">
+                    {s.label ?? `Session ${s.session}`}
+                    {withJohannes.answered > 0 && (
+                      <small>
+                        With Johannes: {withJohannes.right} of {withJohannes.answered} right
+                      </small>
+                    )}
+                  </span>
+                  <ModuleBar right={st.right} tried={st.tried} count={s.count} />
+                  <span className="module-count">
+                    {available === 0
+                      ? `no ${settings.difficulty} questions`
+                      : st.tried === 0
+                        ? `${s.count} questions`
+                        : `${st.right} of ${s.count} right`}
+                  </span>
+                  <span className="module-go" aria-hidden="true">→</span>
+                </button>
+              </li>
+            )
+          })}
+        </ul>
 
         {error && (
           <p className="error" role="alert">
             {error}
           </p>
         )}
-        <button className="btn primary" type="submit" disabled={!sessions || available === 0}>
-          Start practice
-        </button>
-      </form>
-
-      {sessions && Object.keys(progress).length > 0 && (
-        <ProgressPanel
-          sessions={sessions}
-          progress={progress}
-          onPractiseMissed={(ids) => onStart({ ...settings, session: 'all', difficulty: 'mixed', quick: false }, ids)}
-          onReset={() => {
-            resetProgress()
-            setProgress({})
-          }}
-        />
-      )}
+        {(missed.length > 0 || tried > 0 || talked.answered > 0) && (
+          <div className="actions">
+            {missed.length > 0 && (
+              <button
+                className="btn secondary"
+                type="button"
+                onClick={() =>
+                  onStart({ ...settings, session: 'all', difficulty: 'mixed', lengthPref: settings.length, quick: false }, missed)
+                }
+              >
+                Practise the {missed.length} you missed
+              </button>
+            )}
+            <button
+              className="btn ghost"
+              type="button"
+              onClick={() => {
+                resetProgress()
+                setProgress({})
+                setTalk([])
+              }}
+            >
+              Reset my progress
+            </button>
+          </div>
+        )}
+      </div>
 
       <p className="fineprint">Questions come only from the course material. This is practice, not the real exam.</p>
     </section>
   )
 }
 
-// "Your progress": how much of each session you've tried and got right (kept in this browser only).
-function ProgressPanel(props: {
-  sessions: SessionInfo[]
-  progress: ReturnType<typeof loadProgress>
-  onPractiseMissed: (ids: string[]) => void
-  onReset: () => void
-}) {
-  const { sessions, progress, onPractiseMissed, onReset } = props
-  const missed = missedIds(progress)
+// Green = right, amber = tried but not right yet.
+function ModuleBar({ right, tried, count }: { right: number; tried: number; count: number }) {
+  const pct = (n: number) => `${count > 0 ? (100 * n) / count : 0}%`
   return (
-    <section className="card progress" aria-label="Your progress">
-      <h2>Your progress</h2>
-      <ul>
-        {sessions.map((s) => {
-          const { tried, right } = sessionStats(progress, s.session)
-          const label = s.label ?? `Session ${s.session}`
-          return (
-            <li key={s.session}>
-              <span className="progress-label">{label}</span>
-              <span
-                className="progress-bar"
-                role="img"
-                aria-label={`${right} right and ${tried - right} not yet, out of ${s.count}`}
-              >
-                <span className="progress-right" style={{ width: `${(100 * right) / s.count}%` }} />
-                <span className="progress-tried" style={{ width: `${(100 * (tried - right)) / s.count}%` }} />
-              </span>
-              <span className="progress-count">
-                {tried === 0 ? 'not started' : `${tried} of ${s.count} tried · ${right} right`}
-              </span>
-            </li>
-          )
-        })}
-      </ul>
-      <div className="actions">
-        {missed.length > 0 && (
-          <button className="btn secondary" type="button" onClick={() => onPractiseMissed(missed)}>
-            Practise the {missed.length} you missed
-          </button>
-        )}
-        <button className="btn ghost" type="button" onClick={onReset}>
-          Start over
-        </button>
-      </div>
-      <p className="note">Saved in this browser only. Nobody else sees it.</p>
-    </section>
+    <span className="progress-bar" role="img" aria-label={`${right} right and ${tried - right} not yet, out of ${count}`}>
+      <span className="progress-right" style={{ width: pct(right) }} />
+      <span className="progress-tried" style={{ width: pct(tried - right) }} />
+    </span>
   )
 }

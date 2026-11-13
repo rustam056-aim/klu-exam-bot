@@ -33,6 +33,13 @@ What you may say:
 How to talk:
 - Like a friendly professor in office hours, talking out loud. Warm, direct, a bit of humour is fine.
 - Short: 2 to 4 sentences. This is spoken, so no lists, no headings, no markdown, no emoji. Write numbers as digits with their unit (37%, 582 kg), and use at most two or three figures in one reply.
+- Write for the ear, the way people really talk, because a voice reads this out:
+  - Contractions always (it's, you're, that's, don't). Everyday words. Mostly short sentences, with a longer one now and then so it doesn't sound chopped.
+  - Start the way a person would: "Right, so...", "Okay.", "Hmm, not quite.", "Yeah, exactly.", "Good one." Vary it; never the same opener twice in a row, and often no opener at all.
+  - React to what the student just said before you explain ("Ah, the classic mix-up." / "You're close.").
+  - Use a comma or a dash for a natural pause, and a question mark when you're really asking. One exclamation mark at most.
+  - Don't read out a definition like a textbook. Say it the way you'd explain it across a table, with a tiny example from the material where there is one.
+  - No brackets, no abbreviations a voice would trip over (say "for example", not "e.g."), no "firstly / secondly / in conclusion".
 - Answer the question first. Then, most of the time, end with ONE short follow-up: a quick check question, or an offer to go deeper or move to a related topic. Don't do it every single time.
 - If the student gets something wrong, say so kindly and give the right idea in a sentence.
 - If the student says "quiz me" (or similar), ask ONE question at a time from the material, wait for the answer, react to it in a sentence, then ask whether they want another.
@@ -41,6 +48,10 @@ How to talk:
 - Follow the student when they change topic. Don't drag them back.
 - Reply in English, the course language, even if the student writes in another language.
 - Never use: "Great question", "As an AI", "I'd be happy to", "Let's dive in", "It's important to note", or other filler.
+
+Tracking how the student is doing:
+- Fill in "check" ONLY when the student's last message was an answer to a question you had asked them (in a quiz, a mock oral exam, or a check question). right = the core idea is there, partly = half of it, wrong = missed it or said "I don't know". Put the source code of the material that question was about in "check.source".
+- Leave "check" out in every other case: when they ask you something, change topic, or just chat.
 
 Sources:
 - In "sources", list the one or two places in the material your reply mainly rests on, written exactly like the codes in the material: "S1 p28", "MAN p16", "Video 65", "Elkington 2018 p5", "GSLS interview". Leave it empty for small talk or when nothing was used.`;
@@ -57,10 +68,36 @@ const REPLY_TOOL = {
         items: { type: 'string' },
         description: 'Up to two source codes the reply rests on, e.g. "S2 p14" or "Video 65".',
       },
+      check: {
+        type: 'object',
+        description: 'Only when the student just answered a question you had asked: how they did.',
+        properties: {
+          result: { type: 'string', enum: ['right', 'partly', 'wrong'] },
+          source: { type: 'string', description: 'Source code the question was about, e.g. "S2 p14".' },
+        },
+        required: ['result'],
+      },
     },
     required: ['text', 'sources'],
   },
 };
+
+// Which part of the course a source code belongs to (the same numbers as the practice modules).
+const GUESTS: Record<string, number> = { MAN: 31, TEC: 32, FRA: 33, SOV: 34 };
+function moduleOf(source: unknown): number | undefined {
+  if (typeof source !== 'string') return undefined;
+  const s = source.trim();
+  const session = s.match(/^S(\d+) /)?.[1];
+  if (session) return Number(session);
+  const guest = s.match(/^(MAN|TEC|FRA|SOV) /)?.[1];
+  if (guest) return GUESTS[guest];
+  if (s.startsWith('Video ')) return 100;
+  if (s.startsWith('Elkington')) return 200;
+  if (s.startsWith('GSLS')) return 201;
+  return undefined;
+}
+
+export type ChatCheck = { result: 'right' | 'partly' | 'wrong'; session?: number };
 
 // Added to the student's last message when they tap "Wrap up".
 const WRAP_UP = `(Please wrap up our conversation now. In 3 or 4 spoken sentences: what we covered, what I seemed unsure about, and what I should look at again. In "sources", list up to four slides or lectures worth rereading.)`;
@@ -113,7 +150,7 @@ export async function chatWithClaude(
   questions: ChatQuestion[],
   env: { ANTHROPIC_API_KEY?: string; ANTHROPIC_MODEL?: string; ANTHROPIC_CHAT_MODEL?: string },
   wrapUp = false,
-): Promise<{ reply: string; sources: string[] }> {
+): Promise<{ reply: string; sources: string[]; check?: ChatCheck }> {
   if (wrapUp) {
     turns = turns.map((t, i) => (i === turns.length - 1 ? { ...t, content: `${t.content}\n\n${WRAP_UP}` } : t));
   }
@@ -138,7 +175,10 @@ export async function chatWithClaude(
   });
   if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const data = (await res.json()) as {
-    content?: { type: string; input?: { text?: unknown; sources?: unknown } }[];
+    content?: {
+      type: string;
+      input?: { text?: unknown; sources?: unknown; check?: { result?: unknown; source?: unknown } };
+    }[];
     usage?: { input_tokens?: number; cache_read_input_tokens?: number; cache_creation_input_tokens?: number; output_tokens?: number };
   };
   // Shows in the Cloudflare logs whether the course text came from the cache ("cached" should be
@@ -160,5 +200,10 @@ export async function chatWithClaude(
     .map((s) => s.trim())
     .filter((s) => SOURCE_RE.test(s))
     .slice(0, wrapUp ? 4 : 2);
-  return { reply, sources };
+  const result = call?.input?.check?.result;
+  const check: ChatCheck | undefined =
+    !wrapUp && (result === 'right' || result === 'partly' || result === 'wrong')
+      ? { result, session: moduleOf(call?.input?.check?.source) ?? moduleOf(sources[0]) }
+      : undefined;
+  return { reply, sources, check };
 }

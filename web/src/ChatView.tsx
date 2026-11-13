@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from './api'
 import { formatSource, slideImages } from './format'
 import { MicHelpBox } from './MicButton'
+import { saveTalkAnswer } from './progress'
 import { ArrowIcon, LectureClip, MicIcon, Slides, SpeakerIcon, StopIcon } from './QuestionView'
 import { Tutor } from './Tutor'
 import { clock, useRecorder } from './useRecorder'
@@ -50,6 +51,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
   const [error, setError] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
   const [speaking, setSpeaking] = useState(false)
+  const [score, setScore] = useState({ answered: 0, right: 0 }) // his questions in this talk
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const mounted = useRef(true)
@@ -93,6 +95,12 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
         wrapUp,
       )
       if (!mounted.current) return
+      if (res.check) {
+        // He had asked a question and the student answered: keep the score.
+        saveTalkAnswer(res.check)
+        const right = res.check.result === 'right' ? 1 : 0
+        setScore((s) => ({ answered: s.answered + 1, right: s.right + right }))
+      }
       setMessages([...history, { role: 'assistant', text: res.reply, sources: res.sources, wrap: wrapUp }])
       setBusy(false)
       if (speakIt && (await say(res.reply))) listenIfHandsFree()
@@ -259,6 +267,11 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
           </button>
         </div>
         <div className="chat-head-actions">
+          {score.answered > 0 && (
+            <span className="tag score-tag" title="His questions you answered in this talk">
+              {score.right} of {score.answered} right
+            </span>
+          )}
           {view === 'chat' && speaking && (
             <button className="btn secondary sm" type="button" onClick={stopSpeaking}>
               <StopIcon /> Stop
@@ -284,6 +297,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
                 stopSpeaking()
                 rec.cancel()
                 setMessages([GREETING])
+                setScore({ answered: 0, right: 0 })
                 setError(null)
                 setNote(null)
               }}

@@ -29,6 +29,7 @@ export function saveAttempt(a: Attempt) {
 export function resetProgress() {
   try {
     localStorage.removeItem(KEY)
+    localStorage.removeItem('talk-progress-v1')
   } catch {
     /* nothing to reset */
   }
@@ -43,4 +44,34 @@ export function missedIds(p: Progress): string[] {
 export function sessionStats(p: Progress, session: number) {
   const seen = Object.values(p).filter((s) => s.session === session)
   return { tried: seen.length, right: seen.filter((s) => s.verdict === 'correct').length }
+}
+
+// ---------- Talking with Johannes ----------
+// When he asks a question in the conversation and the student answers, he notes how it went.
+// Kept in this browser only, like the practice progress.
+const TALK_KEY = 'talk-progress-v1'
+
+export type TalkAnswer = { result: 'right' | 'partly' | 'wrong'; session?: number; at: number }
+
+export function loadTalk(): TalkAnswer[] {
+  try {
+    const list = JSON.parse(localStorage.getItem(TALK_KEY) ?? '[]') as TalkAnswer[]
+    return Array.isArray(list) ? list : []
+  } catch {
+    return []
+  }
+}
+
+export function saveTalkAnswer(answer: { result: TalkAnswer['result']; session?: number }) {
+  const list = [...loadTalk(), { ...answer, at: Date.now() }].slice(-400)
+  try {
+    localStorage.setItem(TALK_KEY, JSON.stringify(list))
+  } catch {
+    /* private mode: lasts for this visit only */
+  }
+}
+
+export function talkStats(list: TalkAnswer[], session?: number) {
+  const mine = session === undefined ? list : list.filter((a) => a.session === session)
+  return { answered: mine.length, right: mine.filter((a) => a.result === 'right').length }
 }

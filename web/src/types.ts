@@ -56,6 +56,7 @@ export type Settings = {
   length: number
   voice: boolean // voice mode: big mic, answers by speaking, everything read aloud
   quick?: boolean // Quick 5: multiple choice only
+  lengthPref?: number // the "questions per round" the student picked (length is cut to what a module has)
 }
 
 export type SessionInfo = {

@@ -32,7 +32,8 @@ export interface Env {
   ELEVENLABS_VOICE_ID?: string; // optional: another voice, e.g. the clone of Prof. Meuer
   ELEVENLABS_SPEED?: string; // optional: reading speed, 0.7 (slow) to 1.2 (fast); default 0.82
   ELEVENLABS_MODEL?: string; // optional: voice model; default eleven_multilingual_v2 (livelier), or eleven_flash_v2_5 (cheaper)
-  ELEVENLABS_CHAT_MODEL?: string; // optional: a faster/cheaper voice model just for the conversation, e.g. eleven_flash_v2_5
+  ELEVENLABS_CHAT_MODEL?: string; // optional: another voice model just for the conversation (falls back to the standard one if it fails)
+  ELEVENLABS_CHAT_SPEED?: string; // optional: talking speed in the conversation, 0.7 to 1.2; default 0.95
   ANTHROPIC_MODEL?: string; // optional: override the grading model
   ANTHROPIC_CHAT_MODEL?: string; // optional: a different model for the conversation mode
   ACCESS_CODE?: string; // if set, every /api call (except health) needs header x-access-code
@@ -47,9 +48,9 @@ const ALL = [
   ...(s3guests as { questions: Question[] }).questions,
 ];
 const timeOf = (q: Question): number | undefined => (videoTimes as Record<string, number>)[q.id];
-const speedOf = (env: Env) => {
-  const n = Number(env.ELEVENLABS_SPEED);
-  return Number.isFinite(n) && n > 0 ? Math.min(1.2, Math.max(0.7, n)) : 0.82;
+const speedOf = (value: string | undefined, fallback: number) => {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.min(1.2, Math.max(0.7, n)) : fallback;
 };
 // Course terms the voice tends to stumble over, written the way they should be said.
 const sayable = (text: string) =>
@@ -394,34 +395,43 @@ export default {
       if (!text) return json({ error: 'need text' }, 400);
       const around = (t: unknown) => (typeof t === 'string' && t.trim() ? sayable(t.trim().slice(-300)) : undefined);
       const voice = env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
-      const res = await fetch(
-        `https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_128`,
-        {
+      const standard = env.ELEVENLABS_MODEL || 'eleven_multilingual_v2';
+      const model = (body?.chat && env.ELEVENLABS_CHAT_MODEL) || standard;
+      const tts = (payload: Record<string, unknown>) =>
+        fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_128`, {
           method: 'POST',
           headers: {
-            'xi-api-key': env.ELEVENLABS_API_KEY,
+            'xi-api-key': env.ELEVENLABS_API_KEY!,
             'content-type': 'application/json',
             accept: 'audio/mpeg',
           },
-          // Multilingual v2 sounds livelier than Flash (what you hear on the ElevenLabs site), but costs
-          // about twice the credits; set ELEVENLABS_MODEL=eleven_flash_v2_5 to go back to cheap and fast.
-          // Lower stability + a bit of style = more energy in the voice. speed 0.82 = a bit slower,
-          // closer to how Prof. Meuer talks (0.7 to 1.2, change with the ELEVENLABS_SPEED secret).
-          body: JSON.stringify({
-            text,
-            previous_text: around(body?.previous),
-            next_text: typeof body?.next === 'string' && body.next.trim() ? sayable(body.next.trim().slice(0, 300)) : undefined,
-            model_id: (body?.chat && env.ELEVENLABS_CHAT_MODEL) || env.ELEVENLABS_MODEL || 'eleven_multilingual_v2',
-            voice_settings: {
-              stability: 0.35,
-              similarity_boost: 0.8,
-              style: 0.3,
-              use_speaker_boost: true,
-              speed: speedOf(env),
-            },
-          }),
-        },
-      );
+          body: JSON.stringify(payload),
+        });
+      // Lower stability + some style = more life in the voice. In the conversation he talks a bit
+      // more freely and at a more natural pace than when he reads a question out
+      // (speed 0.7 to 1.2: ELEVENLABS_SPEED for reading, ELEVENLABS_CHAT_SPEED for talking).
+      const settings = body?.chat
+        ? { stability: 0.3, similarity_boost: 0.8, style: 0.45, use_speaker_boost: true, speed: speedOf(env.ELEVENLABS_CHAT_SPEED, 0.95) }
+        : { stability: 0.35, similarity_boost: 0.8, style: 0.3, use_speaker_boost: true, speed: speedOf(env.ELEVENLABS_SPEED, 0.82) };
+      const full = (model_id: string) => ({
+        text,
+        previous_text: around(body?.previous),
+        next_text: typeof body?.next === 'string' && body.next.trim() ? sayable(body.next.trim().slice(0, 300)) : undefined,
+        model_id,
+        voice_settings: settings,
+      });
+      // Newer voice models don't all take the same settings. So: try the chosen model with everything,
+      // then the chosen model with the bare text, and if it still says no, fall back to the standard
+      // model. That way trying out a new model can never leave the tutor without a voice.
+      let res = await tts(full(model));
+      if (!res.ok && res.status >= 400 && res.status < 500 && res.status !== 401 && res.status !== 429) {
+        console.log(`Voice model ${model} refused the settings (${res.status}): ${(await res.text()).slice(0, 200)}`);
+        res = await tts({ text, model_id: model });
+        if (!res.ok && model !== standard) {
+          console.log(`Voice model ${model} failed (${res.status}), using ${standard}: ${(await res.text()).slice(0, 200)}`);
+          res = await tts(full(standard));
+        }
+      }
       if (!res.ok || !res.body) {
         console.log('ElevenLabs text-to-speech failed', res.status, (await res.text()).slice(0, 300));
         return json({ error: 'speech failed' }, 502);

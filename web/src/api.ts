@@ -43,6 +43,10 @@ export const api = {
     })
     if (res.status === 401) throw new NeedsCode()
     if (!res.ok) throw new Error(`Request failed (${res.status})`)
-    return res.json() as Promise<{ reply: string; sources: string[] }>
+    return res.json() as Promise<{
+      reply: string
+      sources: string[]
+      check?: { result: 'right' | 'partly' | 'wrong'; session?: number } // he asked, the student answered
+    }>
   },
 }
