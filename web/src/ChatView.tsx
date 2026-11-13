@@ -472,21 +472,6 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
           {starters}
           {problems}
           {last?.wrap && <FeedbackBox where="talk" compact />}
-          {fresh && (
-            <p className="note chat-note">
-              {handsFree ? (
-                <>
-                  <strong>Hands-free:</strong> tap the mic once and it stays on for the whole talk. Just
-                  answer, he notices when you stop. Want to cut in? Just start talking. Headphones work best, so he
-                  doesn&rsquo;t hear himself. Prefer to tap for every turn? Switch off Hands-free, bottom left.
-                </>
-              ) : (
-                <>
-                  <strong>Hands-free is off:</strong> tap the button to talk, and tap again when you&rsquo;re done.
-                </>
-              )}
-            </p>
-          )}
           {smallPrint}
 
           {/* Bottom bar: one big button, like a call. */}
