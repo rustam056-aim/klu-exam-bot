@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import { api } from './api'
+import { ChatView } from './ChatView'
 import { saveAttempt } from './progress'
 import { stopSpeaking } from './voice'
 import { QuestionView } from './QuestionView'
@@ -10,7 +11,7 @@ import { StartScreen } from './StartScreen'
 import { Summary } from './Summary'
 import type { Attempt, PublicQuestion, Settings } from './types'
 
-type Phase = 'start' | 'quiz' | 'summary'
+type Phase = 'start' | 'quiz' | 'summary' | 'chat'
 
 export default function App() {
   const [phase, setPhase] = useState<Phase>('start')
@@ -124,12 +125,28 @@ export default function App() {
                 End practice
               </button>
             )}
+            {phase === 'chat' && (
+              <button
+                className="btn secondary sm"
+                type="button"
+                onClick={() => {
+                  stopSpeaking()
+                  setPhase('start')
+                }}
+              >
+                End chat
+              </button>
+            )}
           </div>
         </div>
       </header>
 
       <main className="app">
-        {phase === 'start' && <StartScreen initial={settings} onStart={(s, ids) => start(s, ids)} />}
+        {phase === 'start' && (
+          <StartScreen initial={settings} onStart={(s, ids) => start(s, ids)} onChat={() => setPhase('chat')} />
+        )}
+
+        {phase === 'chat' && <ChatView readAloud={readAloud} />}
 
         {phase === 'quiz' && (
           <>

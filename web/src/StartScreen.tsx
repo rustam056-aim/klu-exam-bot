@@ -37,9 +37,11 @@ function Choice<T extends string>(props: {
 export function StartScreen({
   initial,
   onStart,
+  onChat,
 }: {
   initial: Settings
   onStart: (s: Settings, onlyIds?: string[]) => void
+  onChat: () => void
 }) {
   const [settings, setSettings] = useState({ ...initial, quick: false })
   const [progress, setProgress] = useState(loadProgress)
@@ -132,6 +134,26 @@ export function StartScreen({
         Answer questions from this year&rsquo;s course material, get feedback right away, and see what to review
         before the exam.
       </p>
+
+      <div className="card quick-card">
+        <span className="card-icon card-icon-talk" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="24" height="24">
+            <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.6 3.9a.6.6 0 0 1-1-.46V16A2.5 2.5 0 0 1 4 13.5z" fill="currentColor" />
+          </svg>
+        </span>
+        <div className="quick-text">
+          <h2>
+            Talk to Johannes <span className="tag">AI tutor</span>
+          </h2>
+          <p>
+            Ask anything from the course, by typing or talking. It answers in Prof. Meuer&rsquo;s voice, follows up,
+            and can quiz you.
+          </p>
+        </div>
+        <button className="btn primary" type="button" disabled={!sessions} onClick={onChat}>
+          Start talking
+        </button>
+      </div>
 
       <div className="card quick-card">
         <span className="card-icon" aria-hidden="true">

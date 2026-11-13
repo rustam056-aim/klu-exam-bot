@@ -1,10 +1,11 @@
-// Practice bot API: picks questions, gives hints, checks answers.
+// Practice bot API: picks questions, gives hints, checks answers, and runs the tutor conversation.
 // Rule: everything comes from data/*.json (the course question bank). No outside knowledge.
 import bank from '../data/questions_s1_s2_2026.json';
 import videos from '../data/questions_videos_2026.json';
 import readings from '../data/questions_readings_2026.json';
 import s3guests from '../data/questions_s3_guests_2026.json'; // Session 3, guest lectures, GSLS interview
 import videoTimes from '../data/video_times_2026.json'; // where in Alan's lecture each answer comes up (seconds)
+import { chatWithClaude, cleanTurns } from './chat'; // "Talk to Johannes" conversation
 
 type Question = {
   id: string;
@@ -32,6 +33,7 @@ export interface Env {
   ELEVENLABS_SPEED?: string; // optional: reading speed, 0.7 (slow) to 1.2 (fast); default 0.82
   ELEVENLABS_MODEL?: string; // optional: voice model; default eleven_multilingual_v2 (livelier), or eleven_flash_v2_5 (cheaper)
   ANTHROPIC_MODEL?: string; // optional: override the grading model
+  ANTHROPIC_CHAT_MODEL?: string; // optional: a different model for the conversation mode
   ACCESS_CODE?: string; // if set, every /api call (except health) needs header x-access-code
   ONLY_APPROVED?: string; // set to "true" before students get access
   ASSETS?: { fetch: (req: Request) => Promise<Response> }; // the built web app, incl. slide images
@@ -313,6 +315,21 @@ export default {
         source: q.source_pages,
         sourceTime: timeOf(q),
       });
+    }
+
+    // POST /api/chat  { "messages": [{ "role": "user", "content": "..." }, ...] } -> { reply, sources }
+    // Conversation with the tutor. It only knows the course material (see chat.ts).
+    if (path === '/api/chat' && req.method === 'POST') {
+      if (!env.ANTHROPIC_API_KEY) return json({ error: 'chat is not set up' }, 503);
+      const body = (await req.json().catch(() => null)) as { messages?: unknown } | null;
+      const turns = cleanTurns(body?.messages);
+      if (!turns) return json({ error: 'need messages ending with a user message' }, 400);
+      try {
+        return json(await chatWithClaude(turns, qs, env));
+      } catch (err) {
+        console.log('Chat failed:', String(err));
+        return json({ error: 'chat failed' }, 502);
+      }
     }
 
     // POST /api/transcribe  body = recorded audio (webm/mp4/ogg) -> { text }

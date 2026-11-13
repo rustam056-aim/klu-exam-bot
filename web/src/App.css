@@ -12,6 +12,11 @@
   padding-bottom: 190px; /* room for the bottom bar */
 }
 
+.page-chat .app {
+  padding-top: 0;
+  padding-bottom: 190px; /* room for the message bar */
+}
+
 /* KLU band at the top: white logo box + red tag, like the KLU site */
 .topbar {
   position: relative;
@@ -1259,11 +1264,13 @@ h2 {
     display: none;
   }
 
-  .page-quiz .brand-tag {
+  .page-quiz .brand-tag,
+  .page-chat .brand-tag {
     display: none;
   }
 
-  .page-quiz .switch-label {
+  .page-quiz .switch-label,
+  .page-chat .switch-label {
     display: none;
   }
 
@@ -1356,5 +1363,318 @@ h2 {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* ---------- Talk to Johannes: the conversation ---------- */
+.card-icon-talk {
+  background: var(--steel);
+  color: var(--on-steel);
+}
+
+.quick-text h2 .tag {
+  margin-left: 6px;
+  vertical-align: 2px;
+}
+
+.chat {
+  animation: fade 280ms ease-out both; /* no transform here: the message bar is position: fixed */
+}
+
+/* The tutor stays in view while you scroll, so you always see listening / thinking / talking. */
+.chat-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 -20px;
+  padding: 12px 20px;
+  background: rgb(245 240 240 / 0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgb(106 31 61 / 0.08);
+}
+
+.chat-head .tutor {
+  flex-direction: row;
+  gap: 12px;
+  margin: 0;
+}
+
+.chat-head .tutor-orb {
+  width: 52px;
+  height: 52px;
+  gap: 4px;
+  box-shadow: 0 0 0 5px rgb(106 31 61 / 0.07);
+}
+
+.chat-head .tutor-orb::after {
+  inset: -7px;
+}
+
+.chat-head .tutor-orb span {
+  width: 4px;
+  height: 8px;
+}
+
+.chat-head .tutor-speaking .tutor-orb span {
+  animation-name: talk-small;
+}
+
+@keyframes talk-small {
+  0%,
+  100% {
+    height: 8px;
+  }
+  50% {
+    height: 22px;
+  }
+}
+
+.chat-head .tutor-label {
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.chat-head-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.chat-log {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.msg {
+  max-width: min(84%, 560px);
+  padding: 12px 16px;
+  border-radius: 20px;
+  line-height: 1.5;
+  animation: rise 220ms ease-out both;
+}
+
+.msg-user {
+  justify-self: end;
+  border-bottom-right-radius: 6px;
+  background: var(--steel);
+  color: var(--on-steel);
+}
+
+.msg-assistant {
+  justify-self: start;
+  border-bottom-left-radius: 6px;
+  background: var(--card);
+  border: 1px solid rgb(106 140 96 / 0.14);
+}
+
+.msg-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.msg-extra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px 10px;
+  margin: 6px 0 -4px -10px;
+}
+
+.msg-extra .btn.sm {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 0.875rem;
+}
+
+.msg-sources {
+  flex: 1 1 220px;
+  padding-left: 10px;
+  font-size: 0.875rem;
+}
+
+.msg-sources .slide-thumb span {
+  display: none; /* the line above the picture already says which slide it is */
+}
+
+.msg-sources summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.msg-sources .source {
+  margin-top: 6px;
+}
+
+.msg-sources .slides,
+.msg-sources .clip {
+  margin-top: 8px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.msg-sources .slides-title {
+  display: none;
+}
+
+.msg-wait {
+  display: inline-flex;
+  gap: 5px;
+  padding: 16px 18px;
+}
+
+.msg-wait span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-2);
+  animation: think 1.2s ease-in-out infinite;
+}
+
+.msg-wait span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.msg-wait span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.starters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.chat-note {
+  max-width: 60ch;
+  margin-top: 16px;
+}
+
+.chat-end {
+  height: 1px;
+  scroll-margin-bottom: 190px;
+}
+
+.composer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: grid;
+  gap: 8px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 34px 20px calc(16px + env(safe-area-inset-bottom));
+  background: linear-gradient(to bottom, rgb(238 243 234 / 0), var(--paper-end) 26px);
+}
+
+.composer-status {
+  justify-self: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.composer-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.composer-field {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  min-height: 56px;
+  padding: 6px 6px 6px 20px;
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition: border-color 200ms ease;
+}
+
+.composer-field:focus-within {
+  border-color: var(--steel);
+}
+
+.composer-field textarea {
+  flex: 1;
+  min-height: 42px;
+  max-height: 120px;
+  padding: 9px 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  resize: none;
+  line-height: 1.45;
+  field-sizing: content;
+}
+
+.composer-send {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--steel);
+  color: var(--on-steel);
+  cursor: pointer;
+  transition: opacity 200ms ease, transform 80ms ease;
+}
+
+.composer-send svg {
+  width: 22px;
+  height: 22px;
+}
+
+.composer-send:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.composer-send:not(:disabled):active {
+  transform: scale(0.94);
+}
+
+.composer .round {
+  flex: none;
+  width: 60px;
+  height: 60px;
+}
+
+.composer .round svg {
+  width: 26px;
+  height: 26px;
+}
+
+@media (max-width: 560px) {
+  .chat-head {
+    margin: 0 -16px;
+    padding: 10px 16px;
+  }
+
+  .msg {
+    max-width: 92%;
+  }
+
+  .composer {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }

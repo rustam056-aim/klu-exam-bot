@@ -64,3 +64,11 @@ export type SessionInfo = {
   count: number
   byDifficulty?: Record<string, number>
 }
+
+// One line in the "Talk to Johannes" conversation.
+export type ChatMessage = {
+  role: 'user' | 'assistant'
+  text: string
+  sources?: string[] // e.g. ["S2 p14", "Video 65"]
+  local?: boolean // shown on screen only (the greeting), never sent to the server
+}

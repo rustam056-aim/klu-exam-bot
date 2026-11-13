@@ -9,7 +9,15 @@ const label: Record<TutorState, string> = {
   thinking: 'Thinking…',
 }
 
-export function Tutor({ state, big = false }: { state: TutorState; big?: boolean }) {
+export function Tutor({
+  state,
+  big = false,
+  labels,
+}: {
+  state: TutorState
+  big?: boolean
+  labels?: Partial<Record<TutorState, string>> // the conversation uses its own wording
+}) {
   return (
     <div className={`tutor tutor-${state} ${big ? 'tutor-big' : ''}`}>
       <div className="tutor-orb" aria-hidden="true">
@@ -19,7 +27,7 @@ export function Tutor({ state, big = false }: { state: TutorState; big?: boolean
         <span />
       </div>
       <span className="tutor-label" aria-live="polite">
-        {label[state]}
+        {labels?.[state] ?? label[state]}
       </span>
     </div>
   )

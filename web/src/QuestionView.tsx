@@ -413,7 +413,7 @@ export function QuestionView({ question, number, total, readAloud, voice, onDone
   )
 }
 
-function SpeakerIcon() {
+export function SpeakerIcon() {
   return (
     <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" />
@@ -422,7 +422,7 @@ function SpeakerIcon() {
   )
 }
 
-function StopIcon() {
+export function StopIcon() {
   return (
     <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
       <rect x="5" y="5" width="14" height="14" rx="2.5" fill="currentColor" />
@@ -438,7 +438,7 @@ function CheckIcon() {
   )
 }
 
-function MicIcon({ recording }: { recording: boolean }) {
+export function MicIcon({ recording }: { recording: boolean }) {
   if (recording) {
     return (
       <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
@@ -454,7 +454,7 @@ function MicIcon({ recording }: { recording: boolean }) {
   )
 }
 
-function ArrowIcon() {
+export function ArrowIcon() {
   return (
     <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
       <path d="M5 12h13M13 6l6 6-6 6" />
@@ -463,7 +463,7 @@ function ArrowIcon() {
 }
 
 // "See the slide": the page the answer comes from, right under the feedback. Tap to see it big.
-function Slides({ source }: { source: string }) {
+export function Slides({ source }: { source: string }) {
   const [open, setOpen] = useState<string | null>(null)
   const [broken, setBroken] = useState<Set<string>>(new Set())
   const slides = slideImages(source).filter((s) => !broken.has(s.src))
@@ -497,7 +497,7 @@ function Slides({ source }: { source: string }) {
 }
 
 // "Hear it from Alan": the lecture the answer comes from, starting around the right part.
-function LectureClip({ source, at }: { source: string; at?: number }) {
+export function LectureClip({ source, at }: { source: string; at?: number }) {
   const clip = lectureAudio(source)
   const [broken, setBroken] = useState(false)
   if (!clip || broken) return null
