@@ -19,7 +19,7 @@ type Callbacks = {
 
 const RATE = 16000 // what the clip is saved at (plenty for speech, small to upload)
 const PRE_ROLL_MS = 500 // keep this much from just before the speech started, so no word is cut off
-const PAUSE_MS = 1400 // this much quiet after speech = "I'm done"
+const PAUSE_MS = 1100 // this much quiet after speech = "I'm done"
 const MAX_MS = 40000 // one turn can't run longer than this
 
 export function useLiveMic(callbacks: Callbacks) {

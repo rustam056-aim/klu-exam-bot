@@ -207,7 +207,7 @@ const json = (data: unknown, status = 200) =>
   });
 
 export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
     const path = url.pathname;
     const qs = active(env);
@@ -409,11 +409,35 @@ export default {
     // Conversation with the tutor. It only knows the course material (see chat.ts).
     if (path === '/api/chat' && req.method === 'POST') {
       if (!env.ANTHROPIC_API_KEY) return json({ error: 'chat is not set up' }, 503);
-      const body = (await req.json().catch(() => null)) as { messages?: unknown; wrapUp?: unknown } | null;
+      const body = (await req.json().catch(() => null)) as { messages?: unknown; wrapUp?: unknown; stream?: unknown } | null;
       const turns = cleanTurns(body?.messages);
       if (!turns) return json({ error: 'need messages ending with a user message' }, 400);
+      const wrapUp = body?.wrapUp === true;
+      // stream: one JSON line per event, so the voice can start on the first sentence:
+      //   {"type":"first","text":"..."}  then  {"type":"done", reply, sources, check, rest}  (or {"type":"error","reason"})
+      if (body?.stream === true) {
+        const pipe = new TransformStream<Uint8Array, Uint8Array>();
+        const writer = pipe.writable.getWriter();
+        const encoder = new TextEncoder();
+        const line = (obj: unknown) => writer.write(encoder.encode(JSON.stringify(obj) + '\n'));
+        const work = (async () => {
+          try {
+            const result = await chatWithClaude(turns, qs, env, wrapUp, (text) => void line({ type: 'first', text }));
+            await line({ type: 'done', ...result });
+          } catch (err) {
+            console.log('Chat failed:', String(err));
+            await line({ type: 'error', reason: String(err).match(/Claude (\d{3})/)?.[1] ?? 'empty' });
+          } finally {
+            await writer.close();
+          }
+        })();
+        ctx?.waitUntil(work);
+        return new Response(pipe.readable, {
+          headers: { 'content-type': 'application/x-ndjson; charset=utf-8', 'cache-control': 'no-store' },
+        });
+      }
       try {
-        return json(await chatWithClaude(turns, qs, env, body?.wrapUp === true));
+        return json(await chatWithClaude(turns, qs, env, wrapUp));
       } catch (err) {
         console.log('Chat failed:', String(err));
         // A short reason helps when someone sends a screenshot of the error.

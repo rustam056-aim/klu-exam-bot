@@ -7,3 +7,6 @@ materials/
 
 # Alan McKinnon lecture audio: deployed from this Mac only, never on GitHub
 web/public/alan/
+
+# Alan McKinnon transcripts for the tutor (made by scripts/build-alan-notes.mjs), never on GitHub
+api/data/private/

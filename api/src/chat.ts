@@ -2,6 +2,8 @@
 // The tutor only knows what is in the course: this year's slides (data/course_notes_2026.json),
 // the GSLS interview, and the question bank with its model answers. No outside knowledge.
 import notes from '../data/course_notes_2026.json';
+// Alan McKinnon's video transcripts: git-ignored, made by scripts/build-alan-notes.mjs (see CLAUDE.md).
+import alan from '../data/private/alan_transcripts.json';
 
 export type ChatQuestion = {
   topic: string;
@@ -35,7 +37,7 @@ What you may say:
 
 How to talk:
 - Like a friendly professor in office hours, talking out loud. Warm, direct, a bit of humour is fine.
-- Short: 2 to 4 sentences. This is spoken, so no lists, no headings, no markdown, no emoji. Write numbers as digits with their unit (37%, 582 kg), and use at most two or three figures in one reply.
+- Short: usually 2 or 3 sentences, about 40 words, never more than 4. Keep the first sentence short and complete on its own: it's read aloud first, while you're still writing the rest. This is spoken, so no lists, no headings, no markdown, no emoji. Write numbers as digits with their unit (37%, 582 kg), and use at most two or three figures in one reply.
 - Write for the ear, the way people really talk, because a voice reads this out:
   - Contractions always (it's, you're, that's, don't). Everyday words. Mostly short sentences, with a longer one now and then so it doesn't sound chopped.
   - Start the way a person would: "Right, so...", "Okay.", "Hmm, not quite.", "Yeah, exactly.", "Good one." Vary it; never the same opener twice in a row, and often no opener at all.
@@ -45,7 +47,7 @@ How to talk:
   - No brackets, no abbreviations a voice would trip over (say "for example", not "e.g."), no "firstly / secondly / in conclusion".
 - Answer the question first. Then, most of the time, end with ONE short follow-up: a quick check question, or an offer to go deeper or move to a related topic. Don't do it every single time.
 - If the student gets something wrong, say so kindly and give the right idea in a sentence.
-- If the student says "quiz me" (or similar), examine like a good oral examiner, not like a list of flashcards. Ask one question, wait, react in a sentence. Then, most of the time, DIG DEEPER on the same point with a follow-up question before changing topic: ask why, how it works, what follows from it, for an example, or how it links to another part of the course. One or two follow-ups per topic, then move on to a new one. Only one question per reply.
+- If the student says "quiz me" (or similar), examine like a good oral examiner, not like a list of flashcards. Ask one question, wait, react in a sentence. Then, most of the time, DIG DEEPER on the same point with a follow-up question before changing topic: ask why, how it works, what follows from it, for an example, or how it links to another part of the course. One or two follow-ups per topic, then move on to a new one. Only one question per reply, about one thing (never two questions joined with "and").
 - If the student asks for a mock oral exam, cover five topics this way: a main question each, usually with one follow-up. After the last one, give a short verdict: what was solid, what to review, and a practice estimate (see below).
 - If the student asks how they did or what grade they would get: give an honest practice estimate in words, one of "solid pass", "pass, with gaps" or "not there yet", say in one sentence what would lift it, and make clear it's a rough practice estimate from this conversation, not an official grade. Never give a numeric grade.
 - If the student brings a practice question they got wrong, give the right idea in a sentence or two, say where their answer went off, then check their understanding with one small follow-up question.
@@ -66,7 +68,7 @@ const REPLY_TOOL = {
   input_schema: {
     type: 'object',
     properties: {
-      text: { type: 'string', description: 'What to say: 2 to 4 short spoken sentences, plain text.' },
+      text: { type: 'string', description: 'What to say: 2 or 3 short spoken sentences (never more than 4), plain text.' },
       sources: {
         type: 'array',
         items: { type: 'string' },
@@ -120,6 +122,12 @@ function knowledge(questions: ChatQuestion[]): string {
     parts.push(`\n## ${s.title} (cite as ${paged ? `"${s.code} p<page>"` : `"${s.code}"`})`);
     for (const p of s.pages) parts.push(paged ? `[${s.code} p${p.page}] ${p.text}` : p.text);
   }
+  parts.push(
+    `\n## Alan McKinnon's lecture videos, full transcripts (cite as "Video <number>"). These are all the videos of his in the course.`,
+  );
+  for (const v of (alan as { videos: { number: number; title: string; text: string }[] }).videos) {
+    parts.push(`[Video ${String(v.number).padStart(2, "0")}] ${v.title}: ${v.text}`);
+  }
   parts.push('\n## Practice questions with the course answers (cite the code in brackets)');
   for (const q of questions) {
     const where = q.session_label ?? `Session ${q.session}`;
@@ -149,18 +157,127 @@ export function cleanTurns(input: unknown): ChatTurn[] | null {
   return turns;
 }
 
+type ToolInput = { text?: unknown; sources?: unknown; check?: { result?: unknown; source?: unknown } };
+type Usage = { input_tokens?: number; cache_read_input_tokens?: number; cache_creation_input_tokens?: number; output_tokens?: number };
+
+// Plain spoken text only: drop any markdown that slipped in.
+function spoken(text: string): string {
+  return text
+    .replace(/[*_#`]+/g, '')
+    .replace(/^\s*[-•]\s+/gm, '')
+    .replace(/\s+\n/g, '\n')
+    .trim();
+}
+
+// While the reply is still being written, find its first sentence, so it can be read aloud
+// before the rest is done. `json` is the tool input so far (unfinished JSON).
+export function firstSentence(json: string): string | null {
+  const at = json.search(/"text"\s*:\s*"/);
+  if (at < 0) return null;
+  const from = json.indexOf('"', json.indexOf(':', at)) + 1;
+  let raw = '';
+  for (let i = from; i < json.length; i++) {
+    const c = json[i];
+    if (c === '\\') {
+      if (i + 1 >= json.length) break; // escape not complete yet
+      if (json[i + 1] === 'u' && i + 6 > json.length) break;
+      raw += json.slice(i, json[i + 1] === 'u' ? i + 6 : i + 2);
+      i += json[i + 1] === 'u' ? 5 : 1;
+      continue;
+    }
+    if (c === '"') break; // end of the text
+    raw += c;
+  }
+  let text: string;
+  try {
+    text = JSON.parse(`"${raw}"`) as string;
+  } catch {
+    return null;
+  }
+  // A sentence end followed by the start of the next one (so "15.5" or "e.g." don't count).
+  const m = text.match(/^([\s\S]{12,240}?[.!?])\s+["“(]?[A-Z0-9]/);
+  return m ? spoken(m[1]) : null;
+}
+
+function logUsage(usage: Usage | undefined) {
+  // Shows in the Cloudflare logs whether the course text came from the cache ("cached" should be
+  // about 60,000 on every message after the first; if it stays 0, each message costs full price).
+  console.log(
+    `Chat tokens: new ${usage?.input_tokens ?? '?'}, cached ${usage?.cache_read_input_tokens ?? 0}, ` +
+      `cache written ${usage?.cache_creation_input_tokens ?? 0}, out ${usage?.output_tokens ?? '?'}`,
+  );
+}
+
+// Reads Anthropic's event stream: tells `onFirst` the first sentence as soon as it's there and
+// returns the finished tool input.
+async function readStream(res: Response, onFirst: (sentence: string) => void): Promise<ToolInput | undefined> {
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let json = '';
+  let told = false;
+  const usage: Usage = {};
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let nl: number;
+    while ((nl = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, nl).trim();
+      buffer = buffer.slice(nl + 1);
+      if (!line.startsWith('data:')) continue;
+      let ev: {
+        type?: string;
+        delta?: { type?: string; partial_json?: string };
+        message?: { usage?: Usage };
+        usage?: Usage;
+        error?: { message?: string };
+      };
+      try {
+        ev = JSON.parse(line.slice(5));
+      } catch {
+        continue;
+      }
+      if (ev.type === 'message_start') Object.assign(usage, ev.message?.usage);
+      if (ev.type === 'message_delta') Object.assign(usage, ev.usage);
+      if (ev.type === 'error') throw new Error(`Claude stream: ${ev.error?.message ?? 'error'}`);
+      if (ev.type === 'content_block_delta' && ev.delta?.type === 'input_json_delta') {
+        json += ev.delta.partial_json ?? '';
+        if (!told) {
+          const first = firstSentence(json);
+          if (first) {
+            told = true;
+            onFirst(first);
+          }
+        }
+      }
+    }
+  }
+  logUsage(usage);
+  try {
+    return json ? (JSON.parse(json) as ToolInput) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export type ChatResult = { reply: string; sources: string[]; check?: ChatCheck; first?: string; rest?: string };
+
+// One conversation turn. With `onFirst`, the reply is streamed: the first sentence is handed over
+// as soon as Claude has written it (so the voice can start), and the result says what's left to read.
 export async function chatWithClaude(
   turns: ChatTurn[],
   questions: ChatQuestion[],
   env: { ANTHROPIC_API_KEY?: string; ANTHROPIC_MODEL?: string; ANTHROPIC_CHAT_MODEL?: string },
   wrapUp = false,
-): Promise<{ reply: string; sources: string[]; check?: ChatCheck }> {
+  onFirst?: (sentence: string) => void,
+): Promise<ChatResult> {
   if (wrapUp) {
     turns = turns.map((t, i) => (i === turns.length - 1 ? { ...t, content: `${t.content}\n\n${WRAP_UP}` } : t));
   }
   const base = env.ANTHROPIC_MODEL || 'claude-haiku-5-5';
   const chosen = env.ANTHROPIC_CHAT_MODEL || base;
-  const request = (model: string) =>
+  const request = (model: string, stream: boolean) =>
     fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -171,6 +288,7 @@ export async function chatWithClaude(
       body: JSON.stringify({
         model,
         max_tokens: 800,
+        stream,
         system: [
           { type: 'text', text: RULES },
           { type: 'text', text: knowledge(questions), cache_control: { type: 'ephemeral' } },
@@ -180,61 +298,59 @@ export async function chatWithClaude(
         messages: turns,
       }),
     });
+  const streaming = !!onFirst;
   let used = chosen;
-  let res = await request(used);
+  let res = await request(used, streaming);
   // A busy moment at Anthropic (429/5xx): wait a little and try once more.
   if (res.status === 429 || res.status >= 500) {
     console.log(`Chat: Claude ${res.status}, trying again`);
     await new Promise((r) => setTimeout(r, 800));
-    res = await request(used);
+    res = await request(used, streaming);
   }
   // A conversation model that this account can't use (wrong name, not enabled): fall back to the
   // grading model, so a test with ANTHROPIC_CHAT_MODEL can never break the conversation.
   if (!res.ok && chosen !== base && [400, 403, 404].includes(res.status)) {
     console.log(`Chat model ${chosen} failed (${res.status}): ${(await res.text()).slice(0, 200)}; using ${base}`);
     used = base;
-    res = await request(used);
+    res = await request(used, streaming);
   }
   if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  let data = (await res.json()) as {
-    content?: {
-      type: string;
-      input?: { text?: unknown; sources?: unknown; check?: { result?: unknown; source?: unknown } };
-    }[];
-    usage?: { input_tokens?: number; cache_read_input_tokens?: number; cache_creation_input_tokens?: number; output_tokens?: number };
-  };
-  // Shows in the Cloudflare logs whether the course text came from the cache ("cached" should be
-  // about 50,000 on every message after the first; if it stays 0, each message costs full price).
-  console.log(
-    `Chat tokens: new ${data.usage?.input_tokens ?? '?'}, cached ${data.usage?.cache_read_input_tokens ?? 0}, ` +
-      `cache written ${data.usage?.cache_creation_input_tokens ?? 0}, out ${data.usage?.output_tokens ?? '?'}`,
-  );
-  let call = data.content?.find((c) => c.type === 'tool_use');
-  // Very rarely the reply comes back empty: ask once more before giving up.
-  if (typeof call?.input?.text !== 'string' || !call.input.text.trim()) {
-    console.log(`Chat: empty reply (${JSON.stringify(data).slice(0, 300)}), trying again`);
-    const again = await request(used);
+
+  let first: string | undefined;
+  let input: ToolInput | undefined;
+  if (streaming) {
+    input = await readStream(res, (sentence) => {
+      first = sentence;
+      onFirst!(sentence);
+    });
+  } else {
+    const data = (await res.json()) as { content?: { type: string; input?: ToolInput }[]; usage?: Usage };
+    logUsage(data.usage);
+    input = data.content?.find((c) => c.type === 'tool_use')?.input;
+  }
+  // Very rarely the reply comes back empty: ask once more (without streaming) before giving up.
+  if (!first && (typeof input?.text !== 'string' || !input.text.trim())) {
+    console.log('Chat: empty reply, trying again');
+    const again = await request(used, false);
     if (again.ok) {
-      data = (await again.json()) as typeof data;
-      call = data.content?.find((c) => c.type === 'tool_use');
+      const data = (await again.json()) as { content?: { type: string; input?: ToolInput }[]; usage?: Usage };
+      input = data.content?.find((c) => c.type === 'tool_use')?.input;
     }
   }
-  // Plain spoken text only: drop any markdown that slipped in.
-  const reply = (typeof call?.input?.text === 'string' ? call.input.text : '')
-    .replace(/[*_#`]+/g, '')
-    .replace(/^\s*[-•]\s+/gm, '')
-    .replace(/\s+\n/g, '\n')
-    .trim();
-  if (!reply) throw new Error('Claude returned no reply');
-  const sources = (Array.isArray(call?.input?.sources) ? call!.input!.sources : [])
+  const reply = spoken(typeof input?.text === 'string' ? input.text : '');
+  if (!reply) throw new Error(first ? 'Claude stream broke off' : 'Claude returned no reply');
+  const sources = (Array.isArray(input?.sources) ? input!.sources : [])
     .filter((s): s is string => typeof s === 'string')
     .map((s) => s.trim())
     .filter((s) => SOURCE_RE.test(s))
     .slice(0, wrapUp ? 4 : 2);
-  const result = call?.input?.check?.result;
+  const result = input?.check?.result;
   const check: ChatCheck | undefined =
     !wrapUp && (result === 'right' || result === 'partly' || result === 'wrong')
-      ? { result, session: moduleOf(call?.input?.check?.source) ?? moduleOf(sources[0]) }
+      ? { result, session: moduleOf(input?.check?.source) ?? moduleOf(sources[0]) }
       : undefined;
-  return { reply, sources, check };
+  if (!first) return { reply, sources, check };
+  // What's left to read after the first sentence (already being spoken).
+  const rest = reply.startsWith(first) ? reply.slice(first.length).trim() : reply;
+  return { reply, sources, check, first, rest };
 }

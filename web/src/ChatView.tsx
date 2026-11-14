@@ -14,6 +14,7 @@ import {
   pauseSpeaking,
   resumeSpeaking,
   speak,
+  speakInParts,
   stopSpeaking,
   transcribe,
   unlockAudio,
@@ -56,7 +57,8 @@ function remembered(key: string, fallback: boolean) {
 export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatSeed }) {
   const [view, setView] = useState<'call' | 'chat'>('call')
   const [handsFree, setHandsFree] = useState(() => remembered('alwaysListening', true))
-  const [transcribing, setTranscribing] = useState(false) // always-on mic: turning speech into text
+  const [transcribing, setTranscribing] = useState(false)
+  const [partial, setPartial] = useState<string | null>(null) // his first sentence, while the rest is written // always-on mic: turning speech into text
   const [messages, setMessages] = useState<ChatMessage[]>(seed ? [] : [GREETING])
   const [draft, setDraft] = useState('')
   const [busy, setBusyState] = useState(false)
@@ -125,7 +127,6 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
     }
     stopSpeaking()
     await send(text, true)
-    liveRef.current.mute(false)
   }
 
   // When he has finished talking: a soft "your turn" tone (the mic is already on).
@@ -150,11 +151,26 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
     setError(null)
     setNote(null)
     setSlideOpen(false)
+    // His voice starts on the first sentence while the rest is still being written.
+    const rest = { finish: (_text: string) => undefined as void }
+    const voice: { current: Promise<boolean> | null } = { current: null }
     try {
       const res = await api.chat(
         history.filter((m) => !m.local).map((m) => ({ role: m.role, content: m.text })),
         wrapUp,
+        (first) => {
+          if (!mounted.current) return
+          setPartial(first)
+          if (!speakIt) return
+          const remaining = new Promise<string>((resolve) => (rest.finish = resolve))
+          voice.current = speakInParts(first, remaining).catch(() => {
+            if (mounted.current) setNote('The sound didn’t start. Tap “Listen” to hear it.')
+            return false
+          })
+        },
       )
+      rest.finish(res.rest ?? '')
+      setPartial(null)
       if (!mounted.current) return
       if (res.check) {
         // He had asked a question and the student answered: keep the score.
@@ -164,8 +180,11 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
       }
       setMessages([...history, { role: 'assistant', text: res.reply, sources: res.sources, wrap: wrapUp }])
       setBusy(false)
-      if (speakIt && (await say(res.reply))) yourTurn()
+      if (speakIt && (await (voice.current ?? say(res.reply)))) yourTurn()
     } catch (err) {
+      rest.finish('')
+      if (voice.current) stopSpeaking()
+      setPartial(null)
       if (!mounted.current) return
       const reason = err instanceof Error ? err.message.match(/\((\w+)\)/)?.[1] : undefined
       setError(`That didn’t go through${reason ? ` (code ${reason})` : ''}. Try again.`)
@@ -218,11 +237,16 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
     if (view === 'chat') endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages, busy, error, view])
 
-  // The mic listens only while it's the student's turn: not while we wait for his reply or turn
-  // speech into text; while he talks it only reacts to clear speech (so his own voice can't cut him off).
+  // The mic listens only while it's the student's turn: not while we wait for his reply, turn speech
+  // into text, or while he talks (through speakers the mic would hear him and cut him off; to cut in,
+  // tap the button). It opens again a moment after he stops, once his voice has faded from the room.
   useEffect(() => {
-    live.mute(busy || transcribing)
-    live.strict(speaking)
+    if (busy || transcribing || speaking) {
+      live.mute(true)
+      return
+    }
+    const t = window.setTimeout(() => live.mute(false), 350)
+    return () => window.clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busy, transcribing, speaking])
 
@@ -242,7 +266,8 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
         return
       }
       if (live.on && speaking) {
-        stopSpeaking()
+        stopSpeaking() // cut in: the mic opens a moment later
+        chime()
         return
       }
       if (live.on) live.stop()
@@ -278,10 +303,10 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
   const tutorState =
     recording || live.state === 'hearing'
       ? 'listening'
-      : busy || transcribing || rec.state === 'working'
-        ? 'thinking'
-        : speaking
-          ? 'speaking'
+      : speaking
+        ? 'speaking'
+        : busy || transcribing || rec.state === 'working'
+          ? 'thinking'
           : liveOn
             ? 'listening'
             : 'idle'
@@ -289,7 +314,6 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
   const fresh = userTurns === 0
   const last = messages[messages.length - 1]
   const lastTutor = [...messages].reverse().find((m) => m.role === 'assistant')
-  const lastUser = [...messages].reverse().find((m) => m.role === 'user')
   const waitingForRetry = !!error && last?.role === 'user'
   const canWrapUp = userTurns >= 2 && !busy && !recording && last?.role === 'assistant' && !last.wrap
   const slideSource = lastTutor?.sources?.find((s) => slideImages(s).length > 0)
@@ -436,13 +460,16 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
             state={tutorState}
             labels={{
               idle: handsFree ? 'Tap the mic once to start' : 'Tap the mic to talk',
-              speaking: liveOn ? 'Johannes is talking, just talk to cut in' : 'Johannes is talking',
+              speaking: 'Johannes is talking',
               listening: live.state === 'hearing' || recording ? 'I’m listening…' : 'Your turn, just talk',
               thinking: 'Thinking…',
             }}
           />
-          {lastUser && <p className="call-you">You: {lastUser.text}</p>}
-          {busy ? (
+          {busy && partial ? (
+            <p className="call-line" aria-live="polite">
+              {partial}
+            </p>
+          ) : busy ? (
             <p className="call-line call-wait" aria-label="Thinking">
               <span />
               <span />
@@ -496,7 +523,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
               <button
                 type="button"
                 className={`round round-${
-                  busy || transcribing
+                  (busy && !speaking) || transcribing
                     ? 'working'
                     : live.state === 'hearing'
                       ? 'recording'
@@ -505,17 +532,17 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
                         : rec.state
                 }`}
                 onClick={bigTap}
-                disabled={busy || transcribing || rec.state === 'working' || live.state === 'starting'}
+                disabled={(busy && !speaking) || transcribing || rec.state === 'working' || live.state === 'starting'}
                 aria-pressed={recording || liveOn}
                 aria-label={
                   handsFree
-                    ? live.state === 'hearing'
-                      ? 'Done, send it'
-                      : liveOn
-                      ? speaking
-                        ? 'Stop him'
-                        : 'Pause the mic'
-                      : 'Turn the mic on'
+                    ? speaking
+                      ? 'Stop him'
+                      : live.state === 'hearing'
+                        ? 'Done, send it'
+                        : liveOn
+                          ? 'Pause the mic'
+                          : 'Turn the mic on'
                     : recording
                       ? 'Done talking'
                       : speaking
@@ -529,25 +556,25 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
                 {handsFree
                   ? transcribing
                     ? 'Got it…'
-                    : busy
+                    : speaking
+                      ? 'Tap to cut in'
+                      : busy
                       ? 'Thinking…'
                       : live.state === 'starting'
                         ? 'Starting the mic…'
                         : live.state === 'hearing'
                           ? 'Listening… tap when done'
                           : liveOn
-                            ? speaking
-                              ? 'Just talk to cut in'
-                              : 'Mic on · just talk'
+                            ? 'Mic on · just talk'
                             : 'Tap once, then just talk'
                   : recording
                   ? `${clock(rec.seconds)} · tap when you’re done`
                   : rec.state === 'working'
                     ? 'Got it…'
-                    : busy
-                      ? 'Thinking…'
-                      : speaking
-                        ? 'Tap to interrupt'
+                    : speaking
+                      ? 'Tap to interrupt'
+                      : busy
+                        ? 'Thinking…'
                         : 'Tap to talk'}
               </span>
             </div>
@@ -594,7 +621,12 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
                 )}
               </li>
             ))}
-            {busy && (
+            {busy && partial && (
+              <li className="msg msg-assistant">
+                <p className="msg-text">{partial}</p>
+              </li>
+            )}
+            {busy && !partial && (
               <li className="msg msg-assistant msg-wait" aria-label="Thinking">
                 <span />
                 <span />

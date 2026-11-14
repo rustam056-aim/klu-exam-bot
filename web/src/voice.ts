@@ -188,6 +188,38 @@ export async function speak(text: string, options: SpeakOptions = {}): Promise<b
   }
 }
 
+// Conversation, streamed: starts reading the first sentence right away, then reads the rest once
+// it's written. Resolves like speak().
+export async function speakInParts(first: string, rest: Promise<string>): Promise<boolean> {
+  stopSpeaking()
+  document.querySelectorAll('audio').forEach((a) => a.pause())
+  const mine = generation
+  setSpeaking(true)
+  playing = true
+  const firstUrl = audioUrl(first, { chat: true })
+  const restUrl = rest.then((r) => (r.trim() ? audioUrl(r.trim(), { chat: true, previous: first }) : null))
+  firstUrl.catch(() => undefined)
+  restUrl.catch(() => undefined)
+  try {
+    const url1 = await firstUrl
+    if (mine !== generation) return false
+    await playUrl(url1)
+    if (mine !== generation) return false
+    const url = await restUrl
+    if (mine !== generation) return false
+    if (url) await playUrl(url)
+    if (mine !== generation) return false
+    unlocked = true
+    return true
+  } finally {
+    if (mine === generation) {
+      playing = false
+      finishCurrent = null
+      setSpeaking(false)
+    }
+  }
+}
+
 export async function transcribe(blob: Blob): Promise<string> {
   const res = await fetch('/api/transcribe', {
     method: 'POST',
