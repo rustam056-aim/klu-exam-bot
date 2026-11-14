@@ -51,11 +51,12 @@ export const api = {
     messages: { role: 'user' | 'assistant'; content: string }[],
     wrapUp = false,
     onFirst?: (sentence: string) => void,
+    greeting?: string,
   ): Promise<ChatReply> => {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...accessHeaders() },
-      body: JSON.stringify({ messages, stream: true, ...(wrapUp ? { wrapUp: true } : {}) }),
+      body: JSON.stringify({ messages, stream: true, greeting, ...(wrapUp ? { wrapUp: true } : {}) }),
     })
     if (res.status === 401) throw new NeedsCode()
     if (!res.ok) {

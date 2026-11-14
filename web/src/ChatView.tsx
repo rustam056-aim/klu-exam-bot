@@ -29,18 +29,39 @@ import type { ChatMessage, ChatSeed } from './types'
 // The tutor answers only from the course material. Nothing is saved: the conversation lives in
 // this tab and is gone when you leave.
 
-const GREETING: ChatMessage = {
-  role: 'assistant',
-  local: true,
-  text: 'Hi! Don’t expect to be fed, be hungry. Ask me anything from the course, or say “quiz me”.',
+// He opens differently each time (a new one per conversation).
+const GREETINGS = [
+  'Hi! Don’t expect to be fed, be hungry. Ask me anything from the course, or say “quiz me”.',
+  'Hey, good to see you. Is there a topic you’re stuck on, or shall I quiz you?',
+  'Hello! Pick anything from the course, or say “quiz me” and I’ll put you on the spot.',
+  'Hi there. Be hungry today: ask me something tricky, or let me quiz you.',
+  'Welcome back! Which topic do you want to tackle, or should I throw a few questions at you?',
+  'Hey! Got a question from the slides, or do you want a quick quiz?',
+  'Good to have you here. What should we look at today? Or just say “quiz me”.',
+]
+
+function greeting(): ChatMessage {
+  return { role: 'assistant', local: true, text: GREETINGS[Math.floor(Math.random() * GREETINGS.length)] }
 }
 
+// Quick starts: the mock exam, plus three others picked at random.
 const STARTERS = [
   'Quiz me on carbon accounting',
-  'Give me a mock oral exam',
+  'Quiz me on air cargo',
+  'Quiz me on the guest lectures',
   'Why is air freight so carbon-heavy?',
   'When does an electric truck pay off?',
+  'What’s the difference between offsetting and insetting?',
+  'Explain Avoid-Shift-Improve',
+  'Quiz me on anything',
 ]
+
+function pickStarters(): string[] {
+  const pool = [...STARTERS]
+  const picked: string[] = []
+  while (picked.length < 3) picked.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0])
+  return [picked[0], 'Give me a mock oral exam', picked[1], picked[2]]
+}
 
 const seedText = (seed: ChatSeed) =>
   `I got this practice question wrong and want to talk it through.\nQuestion: ${seed.question}\nMy answer: ${seed.answer || '(I skipped it)'}`
@@ -59,7 +80,8 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
   const [handsFree, setHandsFree] = useState(() => remembered('alwaysListening', true))
   const [transcribing, setTranscribing] = useState(false)
   const [partial, setPartial] = useState<string | null>(null) // his first sentence, while the rest is written // always-on mic: turning speech into text
-  const [messages, setMessages] = useState<ChatMessage[]>(seed ? [] : [GREETING])
+  const [messages, setMessages] = useState<ChatMessage[]>(() => (seed ? [] : [greeting()]))
+  const [starterList, setStarterList] = useState(pickStarters)
   const [draft, setDraft] = useState('')
   const [busy, setBusyState] = useState(false)
   const busyRef = useRef(false)
@@ -190,6 +212,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
             return false
           })
         },
+        history.find((m) => m.local && m.role === 'assistant')?.text, // the greeting he opened with
       )
       rest.finish(res.rest ?? '')
       hisWords.current = res.reply
@@ -243,7 +266,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
         void send(seedText(seed))
       }
     } else {
-      void say(GREETING.text).then((done) => {
+      void say(messagesRef.current[0]?.text ?? '').then((done) => {
         if (done) yourTurn()
       })
     }
@@ -348,7 +371,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
 
   const starters = fresh && !busy && (
     <div className="starters">
-      {STARTERS.map((s) => (
+      {starterList.map((s) => (
         <button
           key={s}
           className="btn secondary sm"
@@ -468,7 +491,8 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
                 stopSpeaking()
                 rec.cancel()
                 live.drop()
-                setMessages([GREETING])
+                setMessages([greeting()])
+                setStarterList(pickStarters())
                 setScore({ answered: 0, right: 0 })
                 setError(null)
                 setNote(null)

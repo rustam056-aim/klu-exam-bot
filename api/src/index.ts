@@ -409,10 +409,11 @@ export default {
     // Conversation with the tutor. It only knows the course material (see chat.ts).
     if (path === '/api/chat' && req.method === 'POST') {
       if (!env.ANTHROPIC_API_KEY) return json({ error: 'chat is not set up' }, 503);
-      const body = (await req.json().catch(() => null)) as { messages?: unknown; wrapUp?: unknown; stream?: unknown } | null;
+      const body = (await req.json().catch(() => null)) as { messages?: unknown; wrapUp?: unknown; stream?: unknown; greeting?: unknown } | null;
       const turns = cleanTurns(body?.messages);
       if (!turns) return json({ error: 'need messages ending with a user message' }, 400);
       const wrapUp = body?.wrapUp === true;
+      const greeting = typeof body?.greeting === 'string' ? body.greeting.slice(0, 300) : undefined;
       // stream: one JSON line per event, so the voice can start on the first sentence:
       //   {"type":"first","text":"..."}  then  {"type":"done", reply, sources, check, rest}  (or {"type":"error","reason"})
       if (body?.stream === true) {
@@ -422,7 +423,7 @@ export default {
         const line = (obj: unknown) => writer.write(encoder.encode(JSON.stringify(obj) + '\n'));
         const work = (async () => {
           try {
-            const result = await chatWithClaude(turns, qs, env, wrapUp, (text) => void line({ type: 'first', text }));
+            const result = await chatWithClaude(turns, qs, env, wrapUp, (text) => void line({ type: 'first', text }), { greeting });
             await line({ type: 'done', ...result });
           } catch (err) {
             console.log('Chat failed:', String(err));
@@ -437,7 +438,7 @@ export default {
         });
       }
       try {
-        return json(await chatWithClaude(turns, qs, env, wrapUp));
+        return json(await chatWithClaude(turns, qs, env, wrapUp, undefined, { greeting }));
       } catch (err) {
         console.log('Chat failed:', String(err));
         // A short reason helps when someone sends a screenshot of the error.

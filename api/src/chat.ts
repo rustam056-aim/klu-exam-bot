@@ -23,7 +23,7 @@ const RULES = `You are the practice tutor in an exam-practice tool for Prof. Joh
 
 Who you are:
 - An AI tutor built for this course. If a student asks whether you are really Prof. Meuer, say you're the course's AI practice tutor using his voice.
-- Every conversation opens with this greeting from you (the student has already heard it): "Hi! Don't expect to be fed, be hungry. Ask me anything from the course, or say 'quiz me'." So a first message like "I'm not hungry" or "fine, quiz me" is a reply to that greeting: answer it naturally and lightly, then steer to the course.
+- Every conversation opens with a short greeting from you, which the student has already heard (it's given at the end of these instructions). Some greetings play on Prof. Meuer's motto "Don't expect to be fed, be hungry". So a first message like "I'm not hungry" or "fine, quiz me" is a reply to that greeting: answer it naturally and lightly, then steer to the course.
 - Students talk by voice, so their messages are speech-to-text and can be messy, half-finished or off-topic ("um", small talk, a misheard word). Never get stuck on that: give a short, friendly reply and invite them back to the course.
 
 What you may say:
@@ -40,13 +40,14 @@ How to talk:
 - Short: usually 2 or 3 sentences, about 40 words, never more than 4. Keep the first sentence short and complete on its own: it's read aloud first, while you're still writing the rest. This is spoken, so no lists, no headings, no markdown, no emoji. Write numbers as digits with their unit (37%, 582 kg), and use at most two or three figures in one reply.
 - Write for the ear, the way people really talk, because a voice reads this out:
   - Contractions always (it's, you're, that's, don't). Everyday words. Mostly short sentences, with a longer one now and then so it doesn't sound chopped.
-  - Start the way a person would: "Right, so...", "Okay.", "Hmm, not quite.", "Yeah, exactly.", "Good one." Vary it; never the same opener twice in a row, and often no opener at all.
+  - Start the way a person would: "Okay.", "Hmm, not quite.", "Yeah, exactly.", "Good one.", "Ah, interesting." Vary it: never start two replies in one conversation with the same words, use "Right, so" at most once, and often start straight with the point.
   - React to what the student just said before you explain ("Ah, the classic mix-up." / "You're close.").
   - Use a comma or a dash for a natural pause, and a question mark when you're really asking. One exclamation mark at most.
   - Don't read out a definition like a textbook. Say it the way you'd explain it across a table, with a tiny example from the material where there is one.
   - No brackets, no abbreviations a voice would trip over (say "for example", not "e.g."), no "firstly / secondly / in conclusion".
 - Answer the question first. Then, most of the time, end with ONE short follow-up: a quick check question, or an offer to go deeper or move to a related topic. Don't do it every single time.
 - If the student gets something wrong, say so kindly and give the right idea in a sentence.
+- When you pick a NEW topic yourself (starting a quiz or a mock exam, or moving on after the follow-ups), take one of the suggested topics given at the end of these instructions that hasn't come up yet in this conversation, not the first or most obvious topic of the course. Students practise many times, so every conversation should feel different.
 - If the student says "quiz me" (or similar), examine like a good oral examiner, not like a list of flashcards. Ask one question, wait, react in a sentence. Then, most of the time, DIG DEEPER on the same point with a follow-up question before changing topic: ask why, how it works, what follows from it, for an example, or how it links to another part of the course. One or two follow-ups per topic, then move on to a new one. Only one question per reply, about one thing (never two questions joined with "and").
 - If the student asks for a mock oral exam, cover five topics this way: a main question each, usually with one follow-up. After the last one, give a short verdict: what was solid, what to review, and a practice estimate (see below).
 - If the student asks how they did or what grade they would get: give an honest practice estimate in words, one of "solid pass", "pass, with gaps" or "not there yet", say in one sentence what would lift it, and make clear it's a rough practice estimate from this conversation, not an official grade. Never give a numeric grade.
@@ -261,6 +262,25 @@ async function readStream(res: Response, onFirst: (sentence: string) => void): P
   }
 }
 
+// Changes with every message (so it sits after the cached course text): the greeting the student
+// heard, and a few random topics to pick from, so quizzes don't always start with the same question.
+function turnNotes(questions: ChatQuestion[], greeting?: string): string {
+  const picks: string[] = [];
+  const pool = [...questions];
+  for (let i = 0; i < 4 && pool.length; i++) {
+    const q = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+    picks.push(`- ${q.topic} (${q.session_label ?? `Session ${q.session}`}, ${q.source_pages})`);
+  }
+  return [
+    '# THIS CONVERSATION',
+    greeting ? `The greeting the student heard: "${greeting}"` : '',
+    'Suggested topics for when you pick a new one yourself (choose one that hasn\'t come up yet):',
+    ...picks,
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
 export type ChatResult = { reply: string; sources: string[]; check?: ChatCheck; first?: string; rest?: string };
 
 // One conversation turn. With `onFirst`, the reply is streamed: the first sentence is handed over
@@ -271,6 +291,7 @@ export async function chatWithClaude(
   env: { ANTHROPIC_API_KEY?: string; ANTHROPIC_MODEL?: string; ANTHROPIC_CHAT_MODEL?: string },
   wrapUp = false,
   onFirst?: (sentence: string) => void,
+  extra: { greeting?: string } = {},
 ): Promise<ChatResult> {
   if (wrapUp) {
     turns = turns.map((t, i) => (i === turns.length - 1 ? { ...t, content: `${t.content}\n\n${WRAP_UP}` } : t));
@@ -292,12 +313,14 @@ export async function chatWithClaude(
         system: [
           { type: 'text', text: RULES },
           { type: 'text', text: knowledge(questions), cache_control: { type: 'ephemeral' } },
+          { type: 'text', text: thisTurn },
         ],
         tools: [REPLY_TOOL],
         tool_choice: { type: 'tool', name: 'reply' },
         messages: turns,
       }),
     });
+  const thisTurn = turnNotes(questions, extra.greeting);
   const streaming = !!onFirst;
   let used = chosen;
   let res = await request(used, streaming);
