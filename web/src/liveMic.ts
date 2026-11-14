@@ -87,7 +87,7 @@ export function useLiveMic(callbacks: Callbacks) {
     }
 
     const threshold = e.strict ? Math.max(0.05, e.floor * 4) : Math.max(0.02, e.floor * 2.5)
-    const needMs = e.strict ? 450 : 220
+    const needMs = e.strict ? 500 : 220
     const loud = level >= threshold
 
     if (!e.inSpeech) {
@@ -301,11 +301,13 @@ function toWav(parts: Float32Array[]): Blob {
 }
 
 // Did the mic just pick up Johannes himself (through the speakers) instead of the student?
+// Mostly his words = his voice. Short bits ("okay", "right") that he also said count as him too.
 export function soundsLikeEcho(heard: string, spoken: string): boolean {
-  const words = (t: string) => t.toLowerCase().match(/[a-z0-9']+/g) ?? []
+  const words = (t: string) => t.toLowerCase().replace(/[’']/g, "'").match(/[a-z0-9']+/g) ?? []
   const said = words(heard)
   if (said.length === 0) return true
   const his = new Set(words(spoken))
   const overlap = said.filter((w) => his.has(w)).length / said.length
-  return said.length >= 3 && overlap >= 0.7
+  if (said.length < 3) return overlap === 1
+  return overlap >= 0.6
 }

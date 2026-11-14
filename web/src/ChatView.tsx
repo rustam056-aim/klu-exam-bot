@@ -83,6 +83,8 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
   now.current = { view, handsFree, readAloud }
 
   useEffect(() => onSpeakingChange(setSpeaking), [])
+  const speakingRef = useRef(false)
+  speakingRef.current = speaking
 
   // Tap to talk, tap to send: the Type view's mic, and Talk with "Hands-free" off.
   const rec = useRecorder((said) => void send(said, true))
@@ -91,9 +93,13 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
   // Johannes speaks, he pauses; if it was really the student (not a cough, not his own echo),
   // he stops and listens, otherwise he carries on.
   const pausedForStudent = useRef(false)
+  const overHim = useRef(false) // the student started talking while he was speaking
+  const hisWords = useRef('') // what he's saying right now (to tell his echo from the student)
+  const pending = useRef<string | null>(null) // said while his reply was still being written
   const live = useLiveMic({
     onSpeechStart: () => {
       setNote(null)
+      overHim.current = speakingRef.current
       pausedForStudent.current = pauseSpeaking()
     },
     onFalseStart: () => {
@@ -107,7 +113,9 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
 
   async function heard(wav: Blob) {
     const wasPaused = pausedForStudent.current
+    const wasOverHim = overHim.current || wasPaused
     pausedForStudent.current = false
+    overHim.current = false
     liveRef.current.mute(true)
     setTranscribing(true)
     let text = ''
@@ -118,15 +126,27 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
     }
     if (!mounted.current) return
     setTranscribing(false)
-    const his = [...messagesRef.current].reverse().find((m) => m.role === 'assistant')?.text ?? ''
-    if (!text || (wasPaused && soundsLikeEcho(text, his))) {
+    const his = `${hisWords.current} ${[...messagesRef.current].reverse().find((m) => m.role === 'assistant')?.text ?? ''}`
+    if (!text || (wasOverHim && soundsLikeEcho(text, his))) {
       // Nothing real: carry on where he was.
       if (wasPaused) resumeSpeaking()
       liveRef.current.mute(false)
       return
     }
     stopSpeaking()
+    if (busyRef.current) {
+      // He's still writing his reply: answer this as soon as he's done.
+      pending.current = text
+      return
+    }
     await send(text, true)
+  }
+
+  // Something the student said while his reply was still coming in.
+  function sendPending() {
+    const text = pending.current
+    pending.current = null
+    if (text && mounted.current) void send(text, true)
   }
 
   // When he has finished talking: a soft "your turn" tone (the mic is already on).
@@ -138,6 +158,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
   // Reads a reply aloud. True when he got to the end (false: stopped, interrupted, or no sound).
   async function say(text: string): Promise<boolean> {
     setNote(null)
+    hisWords.current = text
     try {
       return await speak(text, { chat: true })
     } catch {
@@ -161,6 +182,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
         (first) => {
           if (!mounted.current) return
           setPartial(first)
+          hisWords.current = first
           if (!speakIt) return
           const remaining = new Promise<string>((resolve) => (rest.finish = resolve))
           voice.current = speakInParts(first, remaining).catch(() => {
@@ -170,6 +192,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
         },
       )
       rest.finish(res.rest ?? '')
+      hisWords.current = res.reply
       setPartial(null)
       if (!mounted.current) return
       if (res.check) {
@@ -178,8 +201,15 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
         const right = res.check.result === 'right' ? 1 : 0
         setScore((s) => ({ answered: s.answered + 1, right: s.right + right }))
       }
-      setMessages([...history, { role: 'assistant', text: res.reply, sources: res.sources, wrap: wrapUp }])
+      const withReply: ChatMessage[] = [...history, { role: 'assistant', text: res.reply, sources: res.sources, wrap: wrapUp }]
+      messagesRef.current = withReply
+      setMessages(withReply)
       setBusy(false)
+      if (pending.current) {
+        stopSpeaking()
+        sendPending()
+        return
+      }
       if (speakIt && (await (voice.current ?? say(res.reply)))) yourTurn()
     } catch (err) {
       rest.finish('')
@@ -189,6 +219,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
       const reason = err instanceof Error ? err.message.match(/\((\w+)\)/)?.[1] : undefined
       setError(`That didn’t go through${reason ? ` (code ${reason})` : ''}. Try again.`)
       setBusy(false)
+      pending.current = null
     }
   }
 
@@ -196,7 +227,8 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
     const said = text.trim()
     if (!said || busyRef.current) return
     stopSpeaking()
-    const next: ChatMessage[] = [...messages, { role: 'user', text: said }]
+    const next: ChatMessage[] = [...messagesRef.current, { role: 'user', text: said }]
+    messagesRef.current = next
     setMessages(next)
     setDraft('')
     await ask(next, now.current.view === 'call' || now.current.readAloud || byVoice, wrapUp)
@@ -237,16 +269,12 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
     if (view === 'chat') endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages, busy, error, view])
 
-  // The mic listens only while it's the student's turn: not while we wait for his reply, turn speech
-  // into text, or while he talks (through speakers the mic would hear him and cut him off; to cut in,
-  // tap the button). It opens again a moment after he stops, once his voice has faded from the room.
+  // The mic is off only while it turns speech into text, or while we wait for his reply in silence.
+  // While he talks it stays on, but only clear, sustained speech counts (strict), so the student can
+  // cut in just by talking; if what it caught was only his own voice from the speakers, he carries on.
   useEffect(() => {
-    if (busy || transcribing || speaking) {
-      live.mute(true)
-      return
-    }
-    const t = window.setTimeout(() => live.mute(false), 350)
-    return () => window.clearTimeout(t)
+    live.mute(transcribing || (busy && !speaking))
+    live.strict(speaking)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busy, transcribing, speaking])
 
@@ -266,7 +294,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
         return
       }
       if (live.on && speaking) {
-        stopSpeaking() // cut in: the mic opens a moment later
+        stopSpeaking() // cut in
         chime()
         return
       }
@@ -557,7 +585,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
                   ? transcribing
                     ? 'Got it…'
                     : speaking
-                      ? 'Tap to cut in'
+                      ? 'Just talk to cut in'
                       : busy
                       ? 'Thinking…'
                       : live.state === 'starting'
