@@ -86,8 +86,11 @@ export function useLiveMic(callbacks: Callbacks) {
       return
     }
 
-    const threshold = e.strict ? Math.max(0.05, e.floor * 4) : Math.max(0.02, e.floor * 2.5)
-    const needMs = e.strict ? 500 : 220
+    // While Johannes talks (strict), his voice can leak into the mic, so the student has to be a bit
+    // louder and longer than usual. The room level is NOT updated then (his voice would raise it
+    // until nobody could interrupt him any more).
+    const threshold = e.strict ? Math.max(0.03, e.floor * 3) : Math.max(0.02, e.floor * 2.5)
+    const needMs = e.strict ? 350 : 220
     const loud = level >= threshold
 
     if (!e.inSpeech) {
@@ -95,7 +98,7 @@ export function useLiveMic(callbacks: Callbacks) {
       let kept = e.preRoll.reduce((n, f) => n + f.length, 0)
       while (kept > (RATE * PRE_ROLL_MS) / 1000 && e.preRoll.length > 1) kept -= e.preRoll.shift()!.length
       if (!loud) {
-        e.floor = Math.min(0.05, e.floor * 0.95 + level * 0.05) // follow the room slowly
+        if (!e.strict) e.floor = Math.min(0.03, e.floor * 0.95 + level * 0.05) // follow the room slowly
         return
       }
       // Something loud: start a possible sentence, with the bit just before it.
@@ -301,13 +304,17 @@ function toWav(parts: Float32Array[]): Blob {
 }
 
 // Did the mic just pick up Johannes himself (through the speakers) instead of the student?
-// Mostly his words = his voice. Short bits ("okay", "right") that he also said count as him too.
+// An echo repeats his words in his order, so we look for runs of three words in a row that he
+// also said. A student answering uses the same course terms but not his exact sentences, so a
+// few shared words don't count. Short things like "stop", "wait", "sorry" are always the student.
 export function soundsLikeEcho(heard: string, spoken: string): boolean {
   const words = (t: string) => t.toLowerCase().replace(/[’']/g, "'").match(/[a-z0-9']+/g) ?? []
   const said = words(heard)
   if (said.length === 0) return true
-  const his = new Set(words(spoken))
-  const overlap = said.filter((w) => his.has(w)).length / said.length
-  if (said.length < 3) return overlap === 1
-  return overlap >= 0.6
+  if (said.length < 4) return false
+  const his = words(spoken)
+  const triples = new Set(his.slice(2).map((_, i) => `${his[i]} ${his[i + 1]} ${his[i + 2]}`))
+  let matched = 0
+  for (let i = 0; i + 2 < said.length; i++) if (triples.has(`${said[i]} ${said[i + 1]} ${said[i + 2]}`)) matched++
+  return matched / (said.length - 2) >= 0.5
 }

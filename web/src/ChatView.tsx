@@ -632,7 +632,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
                   ? transcribing
                     ? 'Got it…'
                     : speaking
-                      ? 'Just talk to cut in'
+                      ? 'Talk or tap to cut in'
                       : busy
                       ? 'Thinking…'
                       : live.state === 'starting'
