@@ -1807,6 +1807,17 @@ h2 {
   margin-top: 22px;
 }
 
+/* Long quick starts wrap instead of running off a phone screen. */
+.starters button {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  height: auto;
+  min-height: 40px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
 .call .chat-note {
   margin-top: 22px;
   max-width: 62ch;
@@ -2187,24 +2198,24 @@ h2 {
   aspect-ratio: 1;
   border-radius: 32px;
   overflow: hidden;
-  background: #ddd center / cover no-repeat;
+  background: var(--card, #e8efe4);
   box-shadow:
     0 0 0 1px rgb(0 0 0 / 0.06),
     0 18px 40px -18px rgb(60 30 40 / 0.45);
   transition: box-shadow 300ms ease, transform 300ms ease;
 }
 
-.avatar-video {
+.avatar-photo {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   opacity: 0;
-  transition: opacity 280ms ease;
+  transition: opacity 300ms ease;
 }
 
-.avatar-video.is-on {
+.avatar-photo.is-on {
   opacity: 1;
 }
 
@@ -2216,10 +2227,24 @@ h2 {
     0 18px 40px -18px rgb(60 30 40 / 0.45);
 }
 
+/* He's talking: a ring that gently breathes outwards. */
 .avatar-speaking .avatar-frame {
-  box-shadow:
-    0 0 0 3px var(--steel),
-    0 18px 44px -16px rgb(106 31 61 / 0.5);
+  animation: avatar-talk 1.5s ease-out infinite;
+}
+
+@keyframes avatar-talk {
+  0% {
+    box-shadow:
+      0 0 0 3px var(--steel),
+      0 0 0 3px rgb(106 31 61 / 0.35),
+      0 18px 44px -16px rgb(106 31 61 / 0.5);
+  }
+  100% {
+    box-shadow:
+      0 0 0 3px var(--steel),
+      0 0 0 16px rgb(106 31 61 / 0),
+      0 18px 44px -16px rgb(106 31 61 / 0.5);
+  }
 }
 
 /* Thinking: three dots on a small pill at the bottom of the picture. */
@@ -2277,7 +2302,8 @@ h2 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .avatar-dots span {
+  .avatar-dots span,
+  .avatar-speaking .avatar-frame {
     animation: none;
   }
 }
