@@ -10,3 +10,6 @@ web/public/alan/
 
 # Alan McKinnon transcripts for the tutor (made by scripts/build-alan-notes.mjs), never on GitHub
 api/data/private/
+
+# Video loops of Prof. Meuer (cut from materials/WIN_20261113_20_37_56_Pro.mp4): deployed from this Mac only, never on GitHub
+web/public/avatar/

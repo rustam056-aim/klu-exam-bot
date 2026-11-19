@@ -226,9 +226,10 @@ export default {
       return json({ ok: true, questions: qs.length });
     }
 
-    // GET /slides/S1-28.webp?c=CODE and /alan/01.m4a?c=CODE: slides and lecture audio behind the access code.
+    // GET /slides/S1-28.webp?c=CODE, /alan/01.m4a?c=CODE and /avatar/talking.mp4?c=CODE: slides, lecture audio
+    // and the video loops of Prof. Meuer, all behind the access code.
     // (An <img> or <audio> can't send headers, so the code comes in the URL.)
-    if (path.startsWith('/slides/') || path.startsWith('/alan/')) {
+    if (path.startsWith('/slides/') || path.startsWith('/alan/') || path.startsWith('/avatar/')) {
       const given = (url.searchParams.get('c') ?? '').trim().toLowerCase();
       if (env.ACCESS_CODE && given !== env.ACCESS_CODE.trim().toLowerCase()) {
         return new Response('access code required', { status: 401 });

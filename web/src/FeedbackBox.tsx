@@ -71,7 +71,8 @@ export function FeedbackBox({ where, compact = false }: { where: string; compact
     )
   }
 
-  const anything = rating > 0 || text.trim() !== '' || Object.keys(answers).length > 0
+  // At least one comment, so we know what to work on.
+  const anything = text.trim().length >= 3
   const mistake = answers.correct === 'mistake'
 
   return (
@@ -87,7 +88,10 @@ export function FeedbackBox({ where, compact = false }: { where: string; compact
       }}
     >
       <h2>Help us improve</h2>
-      <p className="note">Anonymous, and every question is optional. It goes straight to the people building this tool.</p>
+      <p className="note">
+        Your feedback helps us make this a better way to prepare for your exam. It’s anonymous and goes straight to the
+        people building this tool.
+      </p>
 
       <fieldset className="fb-q">
         <legend>How useful was it?</legend>
@@ -137,14 +141,16 @@ export function FeedbackBox({ where, compact = false }: { where: string; compact
 
       <label className="open fb-q">
         <span className="fb-legend">
-          {mistake ? 'What was wrong? (the question and what he said)' : 'What should be better? What’s missing?'}
+          {mistake
+            ? 'What was wrong? (the question and what he said)'
+            : 'Last thing: please leave at least one comment, so we know what to improve'}
         </span>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={3}
           maxLength={600}
-          placeholder={mistake ? 'Which question, what he said, and what the slides say' : 'Anything: confusing parts, topics you missed, ideas'}
+          placeholder={mistake ? 'Which question, what he said, and what the slides say' : 'What should be better? What’s missing? What did you like?'}
         />
       </label>
       {state === 'failed' && (
@@ -154,7 +160,7 @@ export function FeedbackBox({ where, compact = false }: { where: string; compact
       )}
       <div className="actions">
         <button className="btn primary" type="submit" disabled={state === 'sending' || !anything}>
-          {state === 'sending' ? 'Sending…' : 'Send'}
+          {state === 'sending' ? 'Sending…' : anything ? 'Send' : 'Add a comment to send'}
         </button>
         <button className="btn ghost" type="button" onClick={() => setOpen(false)}>
           Not now

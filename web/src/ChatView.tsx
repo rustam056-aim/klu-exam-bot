@@ -6,6 +6,7 @@ import { FeedbackBox } from './FeedbackBox'
 import { MicHelpBox } from './MicButton'
 import { saveTalkAnswer } from './progress'
 import { ArrowIcon, LectureClip, MicIcon, Slides, SpeakerIcon, StopIcon } from './QuestionView'
+import { Avatar } from './Avatar'
 import { Tutor } from './Tutor'
 import { clock, useRecorder } from './useRecorder'
 import { soundsLikeEcho, useLiveMic } from './liveMic'
@@ -79,6 +80,7 @@ function remembered(key: string, fallback: boolean) {
 export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatSeed }) {
   const [view, setView] = useState<'call' | 'chat'>('call')
   const [handsFree, setHandsFree] = useState(() => remembered('alwaysListening', true))
+  const [showAvatar, setShowAvatar] = useState(true) // his video; falls back to the circle if it can't load
   const [transcribing, setTranscribing] = useState(false)
   const [partial, setPartial] = useState<string | null>(null) // his first sentence, while the rest is written // always-on mic: turning speech into text
   const [messages, setMessages] = useState<ChatMessage[]>(() => (seed ? [] : [greeting()]))
@@ -371,6 +373,12 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
     return () => window.removeEventListener('keydown', onKey)
   })
 
+  const tutorLabels = {
+    idle: handsFree ? 'Tap the mic once to start' : 'Tap the mic to talk',
+    speaking: 'Johannes is talking',
+    listening: live.state === 'hearing' || recording ? 'I’m listening…' : 'Your turn, just talk',
+    thinking: 'Thinking…',
+  }
   const tutorState =
     recording || live.state === 'hearing'
       ? 'listening'
@@ -527,16 +535,11 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
 
       {view === 'call' ? (
         <div className="call">
-          <Tutor
-            big
-            state={tutorState}
-            labels={{
-              idle: handsFree ? 'Tap the mic once to start' : 'Tap the mic to talk',
-              speaking: 'Johannes is talking',
-              listening: live.state === 'hearing' || recording ? 'I’m listening…' : 'Your turn, just talk',
-              thinking: 'Thinking…',
-            }}
-          />
+          {showAvatar ? (
+            <Avatar state={tutorState} label={tutorLabels[tutorState]} onFail={() => setShowAvatar(false)} />
+          ) : (
+            <Tutor big state={tutorState} labels={tutorLabels} />
+          )}
           {busy && partial ? (
             <p className="call-line" aria-live="polite">
               {partial}
