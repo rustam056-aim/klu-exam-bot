@@ -1,9 +1,10 @@
-import { NeedsCode, accessHeaders } from './access'
+import { NeedsCode, accessHeaders, checkLimit } from './access'
 import type { AnswerResult, NextResponse, SessionInfo } from './types'
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(path, { headers: accessHeaders() })
   if (res.status === 401) throw new NeedsCode()
+  await checkLimit(res)
   if (!res.ok) throw new Error(`Request failed (${res.status})`)
   return res.json() as Promise<T>
 }
@@ -31,11 +32,12 @@ export const api = {
       body: JSON.stringify({ id, answer }),
     })
     if (res.status === 401) throw new NeedsCode()
+    await checkLimit(res)
     if (!res.ok) throw new Error(`Request failed (${res.status})`)
     return res.json() as Promise<AnswerResult>
   },
 
-  feedback: async (body: { text: string; rating?: number; where: string }) => {
+  feedback: async (body: { text: string; rating?: number; where: string; answers?: FeedbackAnswers }) => {
     const res = await fetch('/api/feedback', {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...accessHeaders() },
@@ -59,6 +61,7 @@ export const api = {
       body: JSON.stringify({ messages, stream: true, greeting, ...(wrapUp ? { wrapUp: true } : {}) }),
     })
     if (res.status === 401) throw new NeedsCode()
+    await checkLimit(res)
     if (!res.ok) {
       // The server says why ("429", "empty"…), so a screenshot of the error tells us what happened.
       const why = await res.json().then((b: { reason?: string }) => b.reason).catch(() => undefined)
@@ -93,3 +96,6 @@ export type ChatReply = {
   first?: string // already handed to onFirst
   rest?: string // what's left to read after the first sentence
 }
+
+// The quick questions in the feedback box (each optional).
+export type FeedbackAnswers = Partial<Record<'correct' | 'level' | 'voice' | 'use', string>>

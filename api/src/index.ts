@@ -5,7 +5,10 @@ import videos from '../data/questions_videos_2026.json';
 import readings from '../data/questions_readings_2026.json';
 import s3guests from '../data/questions_s3_guests_2026.json'; // Session 3, guest lectures, GSLS interview
 import videoTimes from '../data/video_times_2026.json'; // where in Alan's lecture each answer comes up (seconds)
-import { chatWithClaude, cleanTurns } from './chat'; // "Talk to Johannes" conversation
+import { chatWithClaude, cleanTurns } from './chat';
+import { allow } from './usage';
+import type { UsageEnv } from './usage';
+export { Usage } from './usage'; // "Talk to Johannes" conversation
 
 type Question = {
   id: string;
@@ -26,7 +29,7 @@ type Question = {
   session_label?: string; // e.g. "Alan McKinnon videos" (otherwise "Session N")
 };
 
-export interface Env {
+export interface Env extends UsageEnv {
   ANTHROPIC_API_KEY?: string;
   ELEVENLABS_API_KEY?: string;
   ELEVENLABS_VOICE_ID?: string; // optional: another voice, e.g. the clone of Prof. Meuer
@@ -58,7 +61,14 @@ const ALL = [
   ...(readings as { questions: Question[] }).questions,
   ...(s3guests as { questions: Question[] }).questions,
 ];
-type FeedbackItem = { at: string; rating?: number; where: string; text: string };
+type FeedbackItem = { at: string; rating?: number; where: string; text: string; answers?: Record<string, string> };
+// The quick questions in the feedback box and the answers they allow (see web/src/FeedbackBox.tsx).
+const FEEDBACK_QUESTIONS: Record<string, { label: string; values: Record<string, string> }> = {
+  correct: { label: 'Answers right?', values: { yes: 'Yes', mostly: 'Mostly', mistake: 'Spotted a mistake' } },
+  level: { label: 'Questions', values: { easy: 'Too easy', right: 'Like the exam', hard: 'Too hard' } },
+  voice: { label: 'Talking to him', values: { natural: 'Natural', ok: 'OK', awkward: 'Awkward', none: 'Didn’t try' } },
+  use: { label: 'Would use it', values: { yes: 'Yes', maybe: 'Maybe', no: 'No' } },
+};
 const timeOf = (q: Question): number | undefined => (videoTimes as Record<string, number>)[q.id];
 const speedOf = (value: string | undefined, fallback: number) => {
   const n = Number(value);
@@ -266,17 +276,32 @@ export default {
         String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
       const rated = items.filter((i) => i.rating);
       const average = rated.length ? (rated.reduce((n, i) => n + (i.rating ?? 0), 0) / rated.length).toFixed(1) : 'none yet';
+      const answerOf = (i: FeedbackItem, key: string) => FEEDBACK_QUESTIONS[key].values[i.answers?.[key] ?? ''] ?? '';
+      const keys = Object.keys(FEEDBACK_QUESTIONS);
       const rows = items
         .map(
           (i) =>
-            `<tr><td>${esc(i.at.slice(0, 16).replace('T', ' '))}</td><td>${i.rating ? esc(i.rating) + ' / 5' : ''}</td><td>${esc(i.where)}</td><td>${esc(i.text)}</td></tr>`,
+            `<tr><td>${esc(i.at.slice(0, 16).replace('T', ' '))}</td><td>${i.rating ? esc(i.rating) + ' / 5' : ''}</td><td>${esc(i.where)}</td>${keys
+              .map((k) => `<td>${esc(answerOf(i, k))}</td>`)
+              .join('')}<td>${esc(i.text)}</td></tr>`,
         )
+        .join('');
+      // How the quick questions were answered overall.
+      const summary = keys
+        .map((k) => {
+          const q = FEEDBACK_QUESTIONS[k];
+          const counts = Object.entries(q.values)
+            .map(([v, label]) => `${esc(label)}: ${items.filter((i) => i.answers?.[k] === v).length}`)
+            .join(', ');
+          return `<li><b>${esc(q.label)}</b>: ${counts}</li>`;
+        })
         .join('');
       return new Response(
         `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Practice bot feedback</title>
-<style>body{font:16px/1.5 system-ui,sans-serif;margin:24px;color:#232323}table{border-collapse:collapse;width:100%}td,th{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid #ddd}td:nth-child(-n+3){white-space:nowrap;color:#555}</style>
+<style>body{font:16px/1.5 system-ui,sans-serif;margin:24px;color:#232323}table{border-collapse:collapse;width:100%}td,th{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid #ddd}td:nth-child(-n+7){white-space:nowrap;color:#555}</style>
 <h1>Practice bot feedback</h1><p>${items.length} entries, average rating: ${average}. Times are UTC. Newest first.</p>
-<table><tr><th>When</th><th>Rating</th><th>Where</th><th>What they wrote</th></tr>${rows}</table>`,
+<ul>${summary}</ul>
+<table><tr><th>When</th><th>Rating</th><th>Where</th>${keys.map((k) => `<th>${esc(FEEDBACK_QUESTIONS[k].label)}</th>`).join('')}<th>What they wrote</th></tr>${rows}</table>`,
         { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } },
       );
     }
@@ -330,6 +355,7 @@ export default {
     if (path === '/api/hint' && req.method === 'GET') {
       const q = qs.find((x) => x.id === url.searchParams.get('id'));
       if (!q) return json({ error: 'unknown question' }, 404);
+      if (!(await allow(env, req, 'practice'))) return json({ error: 'daily limit', reason: 'limit', kind: 'practice' }, 429);
       const level = url.searchParams.get('level') === '2' ? 2 : 1;
       return json({ id: q.id, level, hint: level === 2 ? q.hint2 : q.hint1 });
     }
@@ -339,6 +365,7 @@ export default {
       const body = (await req.json().catch(() => null)) as { id?: string; answer?: string } | null;
       const q = qs.find((x) => x.id === body?.id);
       if (!q || typeof body?.answer !== 'string') return json({ error: 'need id and answer' }, 400);
+      if (!(await allow(env, req, 'practice'))) return json({ error: 'daily limit', reason: 'limit', kind: 'practice' }, 429);
 
       if (q.type === 'MC') {
         // Multiple choice is checked by code. No AI involved.
@@ -386,15 +413,22 @@ export default {
     // POST /api/feedback  { "text": "...", "rating"?: 1-5, "where"?: "talk" } -> { ok: true }
     // No names, no IP address: just what they wrote, the stars, and which part of the tool they were in.
     if (path === '/api/feedback' && req.method === 'POST') {
-      const body = (await req.json().catch(() => null)) as { text?: unknown; rating?: unknown; where?: unknown } | null;
+      const body = (await req.json().catch(() => null)) as { text?: unknown; rating?: unknown; where?: unknown; answers?: unknown } | null;
       const rating = Number(body?.rating);
+      const answers: Record<string, string> = {};
+      const given = body?.answers && typeof body.answers === 'object' ? (body.answers as Record<string, unknown>) : {};
+      for (const [key, q] of Object.entries(FEEDBACK_QUESTIONS)) {
+        const v = given[key];
+        if (typeof v === 'string' && v in q.values) answers[key] = v;
+      }
       const item: FeedbackItem = {
         at: new Date().toISOString(),
         rating: Number.isInteger(rating) && rating >= 1 && rating <= 5 ? rating : undefined,
         where: typeof body?.where === 'string' ? body.where.slice(0, 30) : '',
         text: typeof body?.text === 'string' ? body.text.trim().slice(0, 600) : '',
+        answers: Object.keys(answers).length ? answers : undefined,
       };
-      if (!item.text && !item.rating) return json({ error: 'need a rating or some text' }, 400);
+      if (!item.text && !item.rating && !item.answers) return json({ error: 'need a rating, an answer or some text' }, 400);
       // KV keeps at most 1024 bytes next to a key; trim long non-English text to fit.
       while (new TextEncoder().encode(JSON.stringify(item)).length > 1000) item.text = item.text.slice(0, -20);
       console.log('Feedback:', JSON.stringify(item));
@@ -414,6 +448,7 @@ export default {
       if (!turns) return json({ error: 'need messages ending with a user message' }, 400);
       const wrapUp = body?.wrapUp === true;
       const greeting = typeof body?.greeting === 'string' ? body.greeting.slice(0, 300) : undefined;
+      if (!(await allow(env, req, 'chat'))) return json({ error: 'daily limit', reason: 'limit', kind: 'chat' }, 429);
       // stream: one JSON line per event, so the voice can start on the first sentence:
       //   {"type":"first","text":"..."}  then  {"type":"done", reply, sources, check, rest}  (or {"type":"error","reason"})
       if (body?.stream === true) {
@@ -455,6 +490,7 @@ export default {
       const audio = await req.arrayBuffer();
       if (audio.byteLength === 0) return json({ error: 'empty recording' }, 400);
       if (audio.byteLength > 6_000_000) return json({ error: 'recording too long' }, 413);
+      if (!(await allow(env, req, 'listen'))) return json({ error: 'daily limit', reason: 'limit', kind: 'listen' }, 429);
       const ext = type.includes('wav') ? 'wav' : type.includes('mp4') ? 'mp4' : type.includes('ogg') ? 'ogg' : 'webm';
       const form = new FormData();
       form.append('file', new Blob([audio], { type }), `answer.${ext}`);
@@ -486,6 +522,7 @@ export default {
       } | null;
       const text = sayable(speakable(body?.text?.trim() ?? ''));
       if (!text) return json({ error: 'need text' }, 400);
+      if (!(await allow(env, req, 'voice', text.length))) return json({ error: 'daily limit', reason: 'limit', kind: 'voice' }, 429);
       const around = (t: unknown) => (typeof t === 'string' && t.trim() ? sayable(t.trim().slice(-300)) : undefined);
       const voice = env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
       const standard = env.ELEVENLABS_MODEL || 'eleven_multilingual_v2';

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { api } from './api'
+import { DailyLimit } from './access'
 import { difficultyLabel, formatSource, lectureAudio, opening, slideImages, verdictLabel } from './format'
 import { MicHelpBox } from './MicButton'
 import { spokenChoice } from './spokenChoice'
@@ -117,8 +118,8 @@ export function QuestionView({ question, number, total, readAloud, voice, onDone
     setError(null)
     try {
       setResult(await api.answer(question.id, a))
-    } catch {
-      setError('Your answer could not be checked. Try again.')
+    } catch (err) {
+      setError(err instanceof DailyLimit ? err.message : 'Your answer could not be checked. Try again.')
     } finally {
       setBusy(false)
     }
@@ -130,8 +131,8 @@ export function QuestionView({ question, number, total, readAloud, voice, onDone
       const h = await api.hint(question.id, (hints.length + 1) as 1 | 2)
       setHints([...hints, h.hint])
       if (voice) say(h.hint)
-    } catch {
-      setError('The hint could not be loaded. Try again.')
+    } catch (err) {
+      setError(err instanceof DailyLimit ? err.message : 'The hint could not be loaded. Try again.')
     }
   }
 

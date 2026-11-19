@@ -14,9 +14,11 @@ const VIDEO_TITLES: Record<string, string> = {
   '47': "Truck energy efficiency and fuel economy standards",
   '51': "Eco-driver training",
   '53': "Traffic congestion and fuel efficiency",
+  '58': "Types of low-carbon energy for logistics",
   '63': "Low-carbon electricity in freight transport",
   '64': "The electrification route",
   '65': "Hydrogen as an energy carrier",
+  '66': "Electrifying roads for long-haul trucks",
   '67': "Combined effect of all carbon-saving measures",
 }
 

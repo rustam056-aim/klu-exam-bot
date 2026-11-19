@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { DailyLimit } from './access'
 import { api } from './api'
 import { formatSource, slideImages } from './format'
 import { FeedbackBox } from './FeedbackBox'
@@ -143,7 +144,12 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
     let text = ''
     try {
       text = (await transcribe(wav)).trim()
-    } catch {
+    } catch (err) {
+      if (err instanceof DailyLimit) {
+        voiceFailed(err)
+        setTranscribing(false)
+        return
+      }
       if (mounted.current) setNote('That didn’t come through. Say it again?')
     }
     if (!mounted.current) return
@@ -183,10 +189,22 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
     hisWords.current = text
     try {
       return await speak(text, { chat: true })
-    } catch {
-      if (mounted.current) setNote('The sound didn’t start. Tap “Listen” to hear it.')
+    } catch (err) {
+      voiceFailed(err)
       return false
     }
+  }
+
+  // His voice didn't play. Out of today's voice time: carry on by typing.
+  function voiceFailed(err: unknown) {
+    if (!mounted.current) return
+    if (err instanceof DailyLimit) {
+      setNote(err.message)
+      liveRef.current.stop()
+      setView('chat')
+      return
+    }
+    setNote('The sound didn’t start. Tap “Listen” to hear it.')
   }
 
   async function ask(history: ChatMessage[], speakIt: boolean, wrapUp = false) {
@@ -207,8 +225,8 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
           hisWords.current = first
           if (!speakIt) return
           const remaining = new Promise<string>((resolve) => (rest.finish = resolve))
-          voice.current = speakInParts(first, remaining).catch(() => {
-            if (mounted.current) setNote('The sound didn’t start. Tap “Listen” to hear it.')
+          voice.current = speakInParts(first, remaining).catch((err) => {
+            voiceFailed(err)
             return false
           })
         },
@@ -240,7 +258,9 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
       setPartial(null)
       if (!mounted.current) return
       const reason = err instanceof Error ? err.message.match(/\((\w+)\)/)?.[1] : undefined
-      setError(`That didn’t go through${reason ? ` (code ${reason})` : ''}. Try again.`)
+      setError(
+        err instanceof DailyLimit ? err.message : `That didn’t go through${reason ? ` (code ${reason})` : ''}. Try again.`,
+      )
       setBusy(false)
       pending.current = null
     }
@@ -365,7 +385,7 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
   const fresh = userTurns === 0
   const last = messages[messages.length - 1]
   const lastTutor = [...messages].reverse().find((m) => m.role === 'assistant')
-  const waitingForRetry = !!error && last?.role === 'user'
+  const waitingForRetry = !!error && last?.role === 'user' && !error?.startsWith('You’ve')
   const canWrapUp = userTurns >= 2 && !busy && !recording && last?.role === 'assistant' && !last.wrap
   const slideSource = lastTutor?.sources?.find((s) => slideImages(s).length > 0)
 

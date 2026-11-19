@@ -19,6 +19,23 @@
 			"/alan/*"
 		]
 	},
+	// Daily limits per student (api/src/usage.ts): one small counter object per day.
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "USAGE",
+				"class_name": "Usage"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"Usage"
+			]
+		}
+	],
 	"kv_namespaces": [
 		{
 			"binding": "FEEDBACK",

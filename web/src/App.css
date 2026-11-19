@@ -2122,3 +2122,52 @@ h2 {
   border: 2px solid rgb(106 31 61 / 0.35);
   animation: ring 2.4s ease-out infinite;
 }
+
+/* Feedback questions: a label and a row of tap-to-choose answers. */
+.fb-q {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  margin: 4px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.fb-q legend,
+.fb-legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font-weight: 650;
+  font-size: 0.9375rem;
+  color: var(--ink);
+}
+
+.fb-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fb-choice {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.fb-choice:hover {
+  border-color: var(--steel);
+}
+
+.fb-choice[aria-checked='true'] {
+  background: var(--steel);
+  border-color: var(--steel);
+  color: var(--on-steel);
+}

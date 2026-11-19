@@ -1,4 +1,4 @@
-import { accessHeaders } from './access'
+import { accessHeaders, checkLimit } from './access'
 
 // Voice helpers. All calls go through our backend; the ElevenLabs key never reaches the browser.
 
@@ -129,6 +129,7 @@ function audioUrl(text: string, extra: { chat?: boolean; previous?: string; next
       headers: { 'content-type': 'application/json', ...accessHeaders() },
       body: JSON.stringify({ text, ...extra }),
     }).then(async (res) => {
+      await checkLimit(res)
       if (!res.ok) throw new Error(`speak failed (${res.status})`)
       return URL.createObjectURL(await res.blob())
     })
@@ -226,6 +227,7 @@ export async function transcribe(blob: Blob): Promise<string> {
     headers: { 'content-type': blob.type || 'audio/webm', ...accessHeaders() },
     body: blob,
   })
+  await checkLimit(res)
   if (!res.ok) throw new Error(`transcribe failed (${res.status})`)
   const data = (await res.json()) as { text?: string }
   return data.text ?? ''
