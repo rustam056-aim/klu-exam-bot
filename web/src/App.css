@@ -2839,3 +2839,175 @@ h2 {
     align-items: flex-start;
   }
 }
+
+/* ---------- Home: module tiles and Quick 5 in the "Practise by module" card ---------- */
+.mode-practice {
+  cursor: default;
+}
+
+.mode-practice:hover {
+  transform: none;
+}
+
+.map-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 6px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+/* A chip fills up from the left as you get questions right (green), tried ones in amber. */
+.map-chip {
+  --right: 0%;
+  --tried: 0%;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background:
+    linear-gradient(var(--good), var(--good)) left bottom / var(--right) 4px no-repeat,
+    linear-gradient(rgb(154 106 18 / 0.5), rgb(154 106 18 / 0.5)) left bottom / var(--tried) 4px no-repeat,
+    var(--surface);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 650;
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.map-chip:not(:disabled):hover {
+  transform: translateY(-2px);
+  border-color: var(--signal);
+  box-shadow: 0 10px 20px -12px rgb(209 75 47 / 0.6);
+}
+
+.map-chip:focus-visible {
+  outline: 3px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.map-chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.map-count {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.map-chip.is-done {
+  border-color: rgb(44 122 79 / 0.5);
+  background: rgb(44 122 79 / 0.1);
+}
+
+.map-chip.is-done .map-count {
+  color: var(--good);
+}
+
+.map-chip.is-loading {
+  cursor: default;
+  background: linear-gradient(90deg, var(--surface) 0%, var(--surface-2) 50%, var(--surface) 100%);
+  background-size: 200% 100%;
+  animation: map-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes map-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-chip.is-loading {
+    animation: none;
+  }
+}
+
+/* Both home cards: the text keeps its size; any spare room goes above the line at the bottom. */
+.mode-talk .mode-text,
+.mode-practice .mode-text {
+  flex: 0 0 auto;
+}
+
+.mode-talk .mode-stat,
+.mode-practice .mode-stat {
+  margin-top: auto;
+}
+
+/* Quick 5: the orange twin of the "Oral exam" button. */
+.quick-go {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  width: 100%;
+  padding: 13px 16px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--signal);
+  color: var(--on-signal);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.quick-go:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -14px rgb(209 75 47 / 0.8);
+}
+
+.quick-go:focus-visible {
+  outline: 3px solid var(--steel);
+  outline-offset: 2px;
+}
+
+.quick-go:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.quick-go-name {
+  font-weight: 700;
+  font-size: 1.0625rem;
+}
+
+.quick-go-text {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.mode-more {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 650;
+  color: var(--steel);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: rgb(106 31 61 / 0.3);
+  text-underline-offset: 4px;
+}
+
+.mode-more:not(:disabled):hover {
+  text-decoration-color: currentColor;
+}
+
+.mode-more:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+

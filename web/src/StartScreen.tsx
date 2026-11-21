@@ -176,6 +176,15 @@ export function StartScreen({
   const talked = talkStats(talk)
   const missed = missedIds(progress)
 
+  const ALL = 999 // "All" stays "All" for whichever module you start
+  const availableIn = (s: SessionInfo) =>
+    settings.difficulty === 'mixed' ? s.count : (s.byDifficulty?.[settings.difficulty] ?? s.count)
+  const startModule = (session: string, available: number) => {
+    if (available > 0) {
+      onStart({ ...settings, session, length: Math.min(settings.length, available), lengthPref: settings.length, quick: false })
+    }
+  }
+
   if (screen === 'home') {
     return (
       <section className="start">
@@ -226,7 +235,7 @@ export function StartScreen({
             </span>
           </div>
 
-          <button className="card mode" type="button" disabled={!sessions} onClick={() => onScreen('practice')}>
+          <div className="card mode mode-practice">
             <span className="card-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
                 <path d="M9 6h11M9 12h11M9 18h11" />
@@ -237,8 +246,53 @@ export function StartScreen({
             </span>
             <span className="mode-title">Practise by module</span>
             <span className="mode-text">
-              Exam-style questions, session by session, with feedback, the slide it comes from, and your progress.
+              Exam-style questions, with feedback and the source slide. Pick a module:
             </span>
+            <div className="map-chips">
+              {sessions
+                ? all.map((m) => {
+                    const st = sessionStats(progress, m.session)
+                    const available = availableIn(m)
+                    const done = st.right >= m.count && m.count > 0
+                    const label = m.label ?? `Session ${m.session}`
+                    return (
+                      <button
+                        key={m.session}
+                        type="button"
+                        className={`map-chip${done ? ' is-done' : ''}`}
+                        disabled={available === 0}
+                        title={label}
+                        aria-label={`${label}: ${st.tried ? `${st.right} of ${m.count} right` : `${m.count} questions`}`}
+                        onClick={() => startModule(String(m.session), available)}
+                        style={{
+                          ['--right' as string]: `${m.count ? (100 * st.right) / m.count : 0}%`,
+                          ['--tried' as string]: `${m.count ? (100 * st.tried) / m.count : 0}%`,
+                        }}
+                      >
+                        {shortName(m)}
+                        {(done || st.tried > 0) && (
+                          <span className="map-count" aria-hidden="true">
+                            {done ? '✓' : `${st.right}/${m.count}`}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })
+                : [86, 86, 86, 56, 68, 74, 126, 128, 88, 112].map((w, i) => (
+                    <span key={i} className="map-chip is-loading" style={{ width: w }} />
+                  ))}
+            </div>
+            <button
+              className="quick-go"
+              type="button"
+              disabled={!sessions}
+              onClick={() =>
+                onStart({ ...settings, session: 'all', difficulty: 'mixed', length: 5, lengthPref: settings.length, quick: true })
+              }
+            >
+              <span className="quick-go-name">Quick 5</span>
+              <span className="quick-go-text">5 questions from everything · 3 min</span>
+            </button>
             <span className="mode-stat">
               {tried > 0
                 ? `So far: ${tried} of ${totalQuestions} questions tried, ${right} right`
@@ -246,8 +300,10 @@ export function StartScreen({
                   ? `${totalQuestions} questions in ${all.length} modules`
                   : 'Loading…'}
             </span>
-            <span className="btn primary mode-go">Choose a module</span>
-          </button>
+            <button className="mode-more" type="button" disabled={!sessions} onClick={() => onScreen('practice')}>
+              All modules and options <span aria-hidden="true">→</span>
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -266,16 +322,8 @@ export function StartScreen({
   }
 
   // ---------- Practise by module ----------
-  const ALL = 999 // "All" stays "All" for whichever module you start
-  const availableIn = (s: SessionInfo) =>
-    settings.difficulty === 'mixed' ? s.count : (s.byDifficulty?.[settings.difficulty] ?? s.count)
   const lengthLabel = settings.length >= ALL ? 'all questions' : `${settings.length} questions`
   const difficultyLabel = settings.difficulty === 'mixed' ? 'mixed difficulty' : settings.difficulty
-  const startModule = (session: string, available: number) => {
-    if (available > 0) {
-      onStart({ ...settings, session, length: Math.min(settings.length, available), lengthPref: settings.length, quick: false })
-    }
-  }
   const everything = all.reduce((n, s) => n + availableIn(s), 0)
 
   return (
@@ -434,6 +482,16 @@ export function StartScreen({
       <p className="fineprint">Questions come only from the course material. This is practice, not the real exam.</p>
     </section>
   )
+}
+
+// A short name for the module chips on the home screen ("MAN", "Elkington"); the full name is the tooltip.
+function shortName(s: SessionInfo) {
+  const label = s.label ?? `Session ${s.session}`
+  return label
+    .replace(/^Guest lecture:\s*/, '')
+    .replace(/^Alan McKinnon videos$/, 'McKinnon videos')
+    .replace(/^Reading:\s*/, '')
+    .replace(/\s*\([^)]*\)\s*$/, '')
 }
 
 // Green = right, amber = tried but not right yet.
