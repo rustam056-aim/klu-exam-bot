@@ -68,14 +68,14 @@ const ALL = [
   ...(s3guests as { questions: Question[] }).questions,
 ];
 // A practice oral exam a student sent in (no name).
-type ExamStored = {
+// A full practice oral exam, kept for Prof. Meuer's class overview: no name and nothing the student
+// said, only the practice grade and how each question went (module, topic, result, thinking time).
+type ExamStats = {
   at: string;
   lengthSec: number;
   grade?: number;
-  verdict?: string;
   leftWindow: number;
-  flagged: number;
-  turns: { question: string; answer: string; result?: string; comment?: string; thinkMs: number | null; flagged: boolean }[];
+  answers: { result: string; module: string; topic: string; thinkMs: number | null }[];
 };
 type ExamMeta = {
   at: string;
@@ -84,10 +84,15 @@ type ExamMeta = {
   right: number;
   partly: number;
   wrong: number;
+  beyond: number;
   avgThinkSec?: number;
   leftWindow: number;
-  flagged: number;
+  // per module: [right, partly, wrong, beyond]; and the topics that went wrong
+  mods: Record<string, number[]>;
+  miss: string[];
 };
+// One answer a student asked Prof. Meuer to check, with their reason.
+type ExamFlag = { at: string; question: string; answer: string; result?: string; comment?: string; note: string; grade?: number };
 
 type FeedbackItem = { at: string; rating?: number; where: string; text: string; answers?: Record<string, string> };
 // The quick questions in the feedback box and the answers they allow (see web/src/FeedbackBox.tsx).
@@ -114,7 +119,11 @@ const sayable = (text: string) =>
     .replace(/(\d)\s?k€/g, '$1 thousand euros')
     .replace(/€\/t\b/g, 'euros per tonne')
     .replace(/≈/g, 'about ')
-    .replace(/≤/g, 'up to ');
+    .replace(/≤/g, 'up to ')
+    // His name the German way: "Meuer" sounds like "MOY-a", "Johannes" like "yo-HAN-nes".
+    .replace(/\bProf\.\s/g, 'Professor ')
+    .replace(/\bMeuer\b/g, 'Moya')
+    .replace(/\bJohannes\b/g, 'Yohannes');
 // Never stop the voice in the middle of a sentence: cut long text at the last sentence end.
 const speakable = (text: string, max = 900) => {
   if (text.length <= max) return text;
@@ -288,64 +297,91 @@ export default {
       return new Response(body.slice(from, to + 1), { status: 206, headers });
     }
 
-    // GET /api/exams?admin=CODE  the practice oral exams students sent in (anonymous), for Prof. Meuer:
-    // grades, timings, flagged answers; /api/exams?admin=CODE&id=KEY shows one exam in full.
+    // GET /api/exams?admin=CODE  for Prof. Meuer only: the class overview of full practice oral exams
+    // (anonymous: grades, where students struggle) and the answers students asked him to check.
     if (path === '/api/exams') {
       if (!env.ADMIN_CODE || url.searchParams.get('admin') !== env.ADMIN_CODE) return json({ error: 'not found' }, 404);
       if (!env.FEEDBACK) return new Response('Storage is not set up yet (see CLAUDE.md).', { status: 503 });
       const esc = (t: unknown) =>
         String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-      const page = (title: string, body: string) =>
-        new Response(
-          `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title>
-<style>body{font:16px/1.5 system-ui,sans-serif;margin:24px;color:#232323;max-width:1100px}table{border-collapse:collapse;width:100%}td,th{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid #ddd}.flag{background:#fff3cd}.q{font-weight:600}.muted{color:#666}</style>${body}`,
-          { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } },
-        );
-      const admin = encodeURIComponent(url.searchParams.get('admin') ?? '');
-      const id = url.searchParams.get('id');
-      if (id) {
-        const raw = id.startsWith('exam:') ? await env.FEEDBACK.get(id) : null;
-        if (!raw) return page('Not found', '<p>Not found.</p>');
-        const e = JSON.parse(raw) as ExamStored;
-        const rows = e.turns
-          .map(
-            (t, i) =>
-              `<tr class="${t.flagged ? 'flag' : ''}"><td>${i + 1}</td><td><div class="q">${esc(t.question)}</div><div>${esc(t.answer)}</div>${
-                t.comment ? `<div class="muted">${esc(t.result ?? '')}: ${esc(t.comment)}</div>` : ''
-              }</td><td>${t.thinkMs != null ? Math.round(t.thinkMs / 1000) + ' s' : ''}</td><td>${t.flagged ? 'flagged' : ''}</td></tr>`,
-          )
-          .join('');
-        return page(
-          'Oral exam',
-          `<p><a href="?admin=${admin}">All exams</a></p><h1>Practice oral exam, ${esc(e.at.slice(0, 16).replace('T', ' '))} UTC</h1>
-<p>Practice grade: <b>${esc(e.grade ?? 'n/a')}</b> · Length ${esc(Math.round(e.lengthSec / 60))} min · Left the window ${esc(e.leftWindow)}× · ${esc(e.flagged)} flagged</p>
-<p>${esc(e.verdict ?? '')}</p>
-<table><tr><th>#</th><th>Question and answer</th><th>Time before answering</th><th></th></tr>${rows}</table>`,
-        );
-      }
-      const items: { name: string; meta: ExamMeta }[] = [];
-      let cursor: string | undefined;
-      do {
-        const listed = await env.FEEDBACK.list({ prefix: 'exam:', limit: 1000, cursor });
-        for (const k of listed.keys) if (k.metadata) items.push({ name: k.name, meta: k.metadata as ExamMeta });
-        cursor = listed.list_complete ? undefined : listed.cursor;
-      } while (cursor);
-      items.reverse();
-      const graded = items.filter((i) => typeof i.meta.grade === 'number');
-      const avg = graded.length ? (graded.reduce((n, i) => n + (i.meta.grade ?? 0), 0) / graded.length).toFixed(1) : 'n/a';
-      const dist = [1, 2, 3, 4, 5]
-        .map((g) => `${g}.x: ${graded.filter((i) => Math.floor(i.meta.grade ?? 0) === g).length}`)
-        .join(' · ');
-      const rows = items
+      const listAll = async (prefix: string) => {
+        const keys: { name: string; metadata?: unknown }[] = [];
+        let cursor: string | undefined;
+        do {
+          const listed = await env.FEEDBACK!.list({ prefix, limit: 1000, cursor });
+          keys.push(...listed.keys);
+          cursor = listed.list_complete ? undefined : listed.cursor;
+        } while (cursor);
+        return keys.reverse(); // newest first
+      };
+      const exams = (await listAll('exam:')).map((k) => k.metadata as ExamMeta).filter((m) => m && m.mods);
+      const flagKeys = (await listAll('flag:')).slice(0, 40);
+      const flags = (await Promise.all(flagKeys.map((k) => env.FEEDBACK!.get(k.name)))).flatMap((raw) => {
+        try {
+          return raw ? [JSON.parse(raw) as ExamFlag] : [];
+        } catch {
+          return [];
+        }
+      });
+      const when = (at: string) => esc(at.slice(0, 16).replace('T', ' '));
+      const pct = (n: number, of: number) => (of ? `${Math.round((100 * n) / of)}%` : '');
+
+      const graded = exams.filter((e) => typeof e.grade === 'number');
+      const avg = graded.length ? (graded.reduce((n, e) => n + (e.grade ?? 0), 0) / graded.length).toFixed(1) : 'n/a';
+      const dist = [1, 2, 3, 4, 5].map((g) => `${g}.x: ${graded.filter((e) => Math.floor(e.grade ?? 0) === g).length}`).join(' · ');
+
+      const byModule: Record<string, number[]> = {};
+      for (const e of exams)
+        for (const [m, v] of Object.entries(e.mods)) {
+          const t = (byModule[m] ??= [0, 0, 0, 0]);
+          v.forEach((n, i) => (t[i] += n || 0));
+        }
+      const moduleRows = Object.entries(byModule)
+        .map(([m, [r, p, w, b]]) => ({ m, r, p, w, b, n: r + p + w }))
+        .sort((x, y) => x.r / (x.n || 1) - y.r / (y.n || 1))
         .map(
-          (i) =>
-            `<tr><td><a href="?admin=${admin}&id=${encodeURIComponent(i.name)}">${esc(i.meta.at.slice(0, 16).replace('T', ' '))}</a></td><td>${esc(i.meta.grade ?? '')}</td><td>${esc(Math.round(i.meta.lengthSec / 60))} min</td><td>${esc(i.meta.right)} · ${esc(i.meta.partly)} · ${esc(i.meta.wrong)}</td><td>${i.meta.avgThinkSec != null ? esc(i.meta.avgThinkSec) + ' s' : ''}</td><td>${esc(i.meta.leftWindow)}</td><td>${i.meta.flagged ? '<b>' + esc(i.meta.flagged) + '</b>' : '0'}</td></tr>`,
+          (x) =>
+            `<tr><td>${esc(x.m)}</td><td>${x.r + x.p + x.w + x.b}</td><td><b>${pct(x.r, x.n)}</b></td><td>${pct(x.p, x.n)}</td><td>${pct(x.w, x.n)}</td><td>${x.b || ''}</td></tr>`,
         )
         .join('');
-      return page(
-        'Practice oral exams',
-        `<h1>Practice oral exams</h1><p>${items.length} exams sent in (anonymous). Average practice grade: <b>${avg}</b> (${dist}). Times are UTC, newest first. Only for you: students never see how they compare.</p>
-<table><tr><th>When</th><th>Grade</th><th>Length</th><th>Right · partly · wrong</th><th>Avg. time before answering</th><th>Left window</th><th>Flagged</th></tr>${rows}</table>`,
+      const missCount: Record<string, number> = {};
+      for (const e of exams) for (const t of e.miss ?? []) missCount[t.toLowerCase()] = (missCount[t.toLowerCase()] ?? 0) + 1;
+      const misses = Object.entries(missCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 12)
+        .map(([t, n]) => `<li>${esc(t)}${n > 1 ? ` <span class="muted">(${n} exams)</span>` : ''}</li>`)
+        .join('');
+      const flagRows = flags
+        .map(
+          (f) =>
+            `<div class="flag"><div class="muted">${when(f.at)} UTC${f.grade ? ` · practice grade ${esc(f.grade)}` : ''}</div><p class="q">${esc(f.question)}</p><p>Student: ${esc(f.answer)}</p>${
+              f.result ? `<p class="muted">AI judged it: ${esc(f.result)}${f.comment ? `. ${esc(f.comment)}` : ''}</p>` : ''
+            }<p><b>Why they flagged it:</b> ${esc(f.note)}</p></div>`,
+        )
+        .join('');
+      const examRows = exams
+        .slice(0, 200)
+        .map(
+          (e) =>
+            `<tr><td>${when(e.at)}</td><td>${esc(e.grade ?? '')}</td><td>${Math.round(e.lengthSec / 60)} min</td><td>${e.right} · ${e.partly} · ${e.wrong}${e.beyond ? ` · ${e.beyond} beyond` : ''}</td><td>${e.avgThinkSec != null ? e.avgThinkSec + ' s' : ''}</td><td>${e.leftWindow}</td></tr>`,
+        )
+        .join('');
+      return new Response(
+        `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Practice oral exams</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;margin:24px;color:#232323;max-width:1100px}table{border-collapse:collapse;width:100%;margin-bottom:24px}td,th{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid #ddd}.flag{background:#fff8e1;border:1px solid #f0d78c;border-radius:10px;padding:4px 16px;margin:12px 0}.flag p{margin:8px 0}.q{font-weight:600}.muted{color:#666}h2{margin-top:36px}</style>
+<h1>Practice oral exams</h1>
+<p class="muted">Only for you. Students never see how they compare. Anonymous: no names and nothing students said, except in answers they chose to flag. Only full exams count (at least half the time and 4 answers). Times are UTC.</p>
+<h2>Answers students asked you to check (${flags.length}${flagKeys.length === 40 ? ', newest 40' : ''})</h2>
+${flagRows || '<p class="muted">None yet.</p>'}
+<h2>Class overview</h2>
+<p>${exams.length} full exams. Average practice grade: <b>${avg}</b> (${dist}).</p>
+<h3>By module, weakest first</h3>
+<table><tr><th>Module</th><th>Answers</th><th>Right</th><th>Partly</th><th>Wrong</th><th>Beyond the lectures</th></tr>${moduleRows || '<tr><td colspan="6" class="muted">No exams yet.</td></tr>'}</table>
+<h3>Topics that went wrong most often</h3>
+${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
+<h3>Every exam, newest first</h3>
+<table><tr><th>When</th><th>Grade</th><th>Length</th><th>Right · partly · wrong</th><th>Avg. time before answering</th><th>Left window</th></tr>${examRows || '<tr><td colspan="6" class="muted">No exams yet.</td></tr>'}</table>`,
+        { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } },
       );
     }
 
@@ -689,48 +725,89 @@ export default {
       }
     }
 
-    // POST /api/exam/submit  the student sends their practice exam to Prof. Meuer (no name), with the
-    // answers they want him to double-check. Stored in KV under "exam:".
+    // POST /api/exam/submit  after a FULL practice exam (at least half the planned time, 4+ answers):
+    // its stats go into Prof. Meuer's class overview. No name, nothing the student said.
     if (path === '/api/exam/submit' && req.method === 'POST') {
-      const body = (await req.json().catch(() => null)) as Partial<ExamStored> | null;
-      if (!body || !Array.isArray(body.turns) || body.turns.length === 0) return json({ error: 'nothing to send' }, 400);
+      const body = (await req.json().catch(() => null)) as
+        | { lengthSec?: unknown; plannedSec?: unknown; grade?: unknown; leftWindow?: unknown; answers?: unknown }
+        | null;
       const str = (v: unknown, n: number) => (typeof v === 'string' ? v.slice(0, n) : '');
-      const num = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : null);
-      const turns = body.turns.slice(0, 60).map((t) => ({
-        question: str(t?.question, 1500),
-        answer: str(t?.answer, 3000),
-        result: str(t?.result, 10) || undefined,
-        comment: str(t?.comment, 400) || undefined,
+      const num = (v: unknown) => (v !== null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null);
+      const answers = (Array.isArray(body?.answers) ? (body!.answers as Record<string, unknown>[]) : []).slice(0, 60).map((t) => ({
+        result: ['right', 'partly', 'wrong', 'beyond'].includes(String(t?.result)) ? String(t.result) : 'partly',
+        module: str(t?.module, 60) || 'Other',
+        topic: str(t?.topic, 40),
         thinkMs: num(t?.thinkMs),
-        flagged: t?.flagged === true,
       }));
-      const stored: ExamStored = {
+      const lengthSec = Math.max(0, Math.min(7200, num(body?.lengthSec) ?? 0));
+      const plannedSec = Math.max(60, Math.min(7200, num(body?.plannedSec) ?? 900));
+      // Short, unfinished or joke exams stay out of the overview.
+      if (answers.length < 4 || lengthSec < plannedSec / 2) return json({ ok: true, counted: false });
+      if (!(await allow(env, req, 'exam'))) return json({ ok: true, counted: false, reason: 'limit' });
+      const grade = num(body?.grade);
+      const stats: ExamStats = {
         at: new Date().toISOString(),
-        lengthSec: Math.max(0, Math.min(7200, num(body.lengthSec) ?? 0)),
-        grade: num(body.grade) ?? undefined,
-        verdict: str(body.verdict, 800) || undefined,
-        leftWindow: Math.max(0, num(body.leftWindow) ?? 0),
-        flagged: turns.filter((t) => t.flagged).length,
-        turns,
+        lengthSec,
+        grade: grade != null && grade >= 1 && grade <= 5 ? grade : undefined,
+        leftWindow: Math.max(0, Math.min(999, num(body?.leftWindow) ?? 0)),
+        answers,
       };
-      const thinks = turns.map((t) => t.thinkMs).filter((v): v is number => v != null);
+      const count = (r: string) => answers.filter((t) => t.result === r).length;
+      const mods: Record<string, number[]> = {};
+      for (const t of answers) {
+        const m = (mods[t.module] ??= [0, 0, 0, 0]);
+        m[['right', 'partly', 'wrong', 'beyond'].indexOf(t.result)]++;
+      }
+      const thinks = answers.map((t) => t.thinkMs).filter((v): v is number => v != null);
       const meta: ExamMeta = {
-        at: stored.at,
-        lengthSec: stored.lengthSec,
-        grade: stored.grade,
-        right: turns.filter((t) => t.result === 'right').length,
-        partly: turns.filter((t) => t.result === 'partly').length,
-        wrong: turns.filter((t) => t.result === 'wrong').length,
+        at: stats.at,
+        lengthSec,
+        grade: stats.grade,
+        right: count('right'),
+        partly: count('partly'),
+        wrong: count('wrong'),
+        beyond: count('beyond'),
         avgThinkSec: thinks.length ? Math.round(thinks.reduce((a, b) => a + b, 0) / thinks.length / 1000) : undefined,
-        leftWindow: stored.leftWindow,
-        flagged: stored.flagged,
+        leftWindow: stats.leftWindow,
+        mods,
+        miss: [...new Set(answers.filter((t) => t.result === 'wrong' && t.topic).map((t) => t.topic))].slice(0, 6),
       };
+      // KV metadata holds at most 1024 bytes: drop topics, then shorten module names if needed.
+      while (JSON.stringify(meta).length > 1000 && meta.miss.length) meta.miss.pop();
+      if (JSON.stringify(meta).length > 1000) {
+        meta.mods = Object.fromEntries(Object.entries(meta.mods).map(([k, v]) => [k.replace(/\s*\(.*\)$/, '').slice(0, 24), v]));
+      }
       if (!env.FEEDBACK) {
         console.log('Exam (no storage):', JSON.stringify(meta));
+        return json({ ok: true, counted: false });
+      }
+      await env.FEEDBACK.put(`exam:${stats.at}:${crypto.randomUUID().slice(0, 8)}`, JSON.stringify(stats), { metadata: meta });
+      return json({ ok: true, counted: true });
+    }
+
+    // POST /api/exam/flag  one answer the student wants Prof. Meuer to check, with a reason.
+    // Only after a full exam (the page checks), at most a few a day per student.
+    if (path === '/api/exam/flag' && req.method === 'POST') {
+      const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+      const str = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
+      const flag: ExamFlag = {
+        at: new Date().toISOString(),
+        question: str(body?.question, 1500),
+        answer: str(body?.answer, 3000),
+        result: str(body?.result, 10) || undefined,
+        comment: str(body?.comment, 400) || undefined,
+        note: str(body?.note, 600),
+        grade: Number.isFinite(Number(body?.grade)) ? Number(body?.grade) : undefined,
+      };
+      if (!flag.question || !flag.answer || flag.note.length < 5) return json({ error: 'say what he should check' }, 400);
+      if (!(await allow(env, req, 'flag'))) return json({ error: 'daily limit', reason: 'limit', kind: 'flag' }, 429);
+      if (!env.FEEDBACK) {
+        console.log('Exam flag (no storage):', JSON.stringify(flag));
         return json({ ok: true, stored: false });
       }
-      const key = `exam:${stored.at}:${crypto.randomUUID().slice(0, 8)}`;
-      await env.FEEDBACK.put(key, JSON.stringify(stored), { metadata: meta });
+      await env.FEEDBACK.put(`flag:${flag.at}:${crypto.randomUUID().slice(0, 8)}`, JSON.stringify(flag), {
+        metadata: { at: flag.at },
+      });
       return json({ ok: true, stored: true });
     }
 

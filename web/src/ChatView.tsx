@@ -107,7 +107,7 @@ export function ChatView({
   // The exam: running -> closing (time is up, he says goodbye) -> done (the summary).
   const [examPhase, setExamPhase] = useState<'running' | 'closing' | 'done' | 'off'>(exam ? 'running' : 'off')
   const examOn = examPhase === 'running' || examPhase === 'closing'
-  const examRecord = useRef<ExamRecord>({ startedAt: 0, endedAt: 0, turns: [], leftWindow: [] })
+  const examRecord = useRef<ExamRecord>({ startedAt: 0, endedAt: 0, plannedMs: EXAM_MINUTES * 60000, turns: [], leftWindow: [] })
   const examEndsAt = useRef(0)
   const timeUp = useRef(false)
   const [tick, setTick] = useState(0) // re-renders the exam clock every second

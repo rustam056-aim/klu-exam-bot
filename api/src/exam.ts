@@ -9,12 +9,18 @@ export type ExamTurnIn = { question: string; answer: string };
 export type ExamGrade = {
   grade: number;
   verdict: string;
-  answers: { result: 'right' | 'partly' | 'wrong' | 'beyond'; comment: string }[];
+  answers: { result: 'right' | 'partly' | 'wrong' | 'beyond'; comment: string; module: string; topic: string }[];
 };
 
 const GRADES = [1.0, 1.3, 1.7, 2.0, 2.3, 2.7, 3.0, 3.3, 3.7, 4.0, 5.0];
 
-const GRADE_TOOL = {
+// The course modules ("Session 2", "Guest lecture: MAN (eTrucks)", ...), so the class overview can
+// show where students struggle.
+export function modulesOf(questions: ChatQuestion[]): string[] {
+  return [...new Set(questions.map((q) => q.session_label ?? `Session ${q.session}`))];
+}
+
+const gradeTool = (modules: string[]) => ({
   name: 'record_exam_grade',
   description: 'Record the practice grade for this oral exam and a short assessment of each answer.',
   input_schema: {
@@ -32,8 +38,10 @@ const GRADE_TOOL = {
               description: "Against the course material. 'beyond' = mostly content that isn't in the material (to be checked by the professor).",
             },
             comment: { type: 'string', description: 'One short sentence: what was good or what was missing, from the material.' },
+            module: { type: 'string', enum: [...modules, 'Other'], description: 'The course module the question is about.' },
+            topic: { type: 'string', description: 'The topic of the question in 2 to 4 words, e.g. "Scope 3 emissions".' },
           },
-          required: ['result', 'comment'],
+          required: ['result', 'comment', 'module', 'topic'],
         },
       },
       grade: {
@@ -48,7 +56,7 @@ const GRADE_TOOL = {
     },
     required: ['answers', 'grade', 'verdict'],
   },
-};
+});
 
 const RUBRIC = `You grade a PRACTICE oral exam in the KLU course "Sustainable Logistics" (Prof. Johannes Meuer).
 Judge every answer only against the course material below. Be fair but realistic: students tend to think they know more than they do.
@@ -62,6 +70,7 @@ export async function gradeExam(
   questions: ChatQuestion[],
   env: { ANTHROPIC_API_KEY?: string; ANTHROPIC_MODEL?: string; ANTHROPIC_CHAT_MODEL?: string },
 ): Promise<ExamGrade> {
+  const modules = modulesOf(questions);
   const transcript = turns
     .map((t, i) => `Q${i + 1}: ${t.question.slice(0, 1200)}\nA${i + 1}: ${t.answer.slice(0, 2000)}`)
     .join('\n\n');
@@ -79,7 +88,7 @@ export async function gradeExam(
         { type: 'text', text: RUBRIC },
         { type: 'text', text: knowledge(questions), cache_control: { type: 'ephemeral' } },
       ],
-      tools: [GRADE_TOOL],
+      tools: [gradeTool(modules)],
       tool_choice: { type: 'tool', name: 'record_exam_grade' },
       messages: [{ role: 'user', content: `The exam (${turns.length} answers):\n\n${transcript}\n\nGrade it.` }],
     }),
@@ -91,9 +100,11 @@ export async function gradeExam(
   const nearest = (g: number) => GRADES.reduce((a, b) => (Math.abs(b - g) < Math.abs(a - g) ? b : a));
   const answers = (Array.isArray(input.answers) ? input.answers : [])
     .slice(0, turns.length)
-    .map((a: { result?: unknown; comment?: unknown }) => ({
+    .map((a: { result?: unknown; comment?: unknown; module?: unknown; topic?: unknown }) => ({
       result: (['right', 'partly', 'wrong', 'beyond'].includes(String(a?.result)) ? a.result : 'partly') as ExamGrade['answers'][number]['result'],
       comment: typeof a?.comment === 'string' ? a.comment.slice(0, 400) : '',
+      module: modules.includes(String(a?.module)) ? String(a.module) : 'Other',
+      topic: typeof a?.topic === 'string' ? a.topic.slice(0, 40) : '',
     }));
   return {
     grade: nearest(Number(input.grade) || 5),

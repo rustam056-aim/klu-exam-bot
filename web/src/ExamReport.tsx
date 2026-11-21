@@ -16,11 +16,19 @@ export type ExamTurn = {
 export type ExamRecord = {
   startedAt: number
   endedAt: number
+  plannedMs: number // how long the exam was meant to take
   turns: ExamTurn[]
   leftWindow: number[] // times the student left the tab or window
 }
 
 const LONG_PAUSE_MS = 10000 // a "long pause" before answering
+const MAX_FLAGS = 3 // answers per exam a student can send to Prof. Meuer
+
+// A full exam: at least half the planned time and 4 answers. Only these count for the class
+// overview and allow flagging, so quick tries and joke runs don't reach Prof. Meuer.
+export function isFullExam(record: ExamRecord) {
+  return record.turns.filter((t) => t.answer).length >= 4 && record.endedAt - record.startedAt >= record.plannedMs / 2
+}
 
 function seconds(ms: number) {
   return `${Math.round(ms / 1000)} s`
@@ -85,8 +93,12 @@ export function ExamReport({
   const long = think.filter((t) => t.ms >= LONG_PAUSE_MS)
   const [grade, setGrade] = useState<ExamGradeReply | null>(null)
   const [grading, setGrading] = useState<'working' | 'done' | 'failed'>(answered.length ? 'working' : 'done')
-  const [flags, setFlags] = useState<boolean[]>(() => answered.map(() => false))
-  const [sent, setSent] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle')
+  const full = isFullExam(record)
+  // Per answer: closed, writing the reason, sending, sent, or failed.
+  const [flags, setFlags] = useState<{ state: 'off' | 'open' | 'sending' | 'sent' | 'failed' | 'limit'; note: string }[]>(() =>
+    answered.map(() => ({ state: 'off', note: '' })),
+  )
+  const [counted, setCounted] = useState<boolean | null>(null)
 
   // The practice grade: the AI compares every answer with the course material.
   useEffect(() => {
@@ -109,6 +121,29 @@ export function ExamReport({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // A full exam goes into Prof. Meuer's class overview by itself: practice grade, and per question
+  // the module, topic, result and thinking time. No name, nothing the student said.
+  useEffect(() => {
+    if (!full || grading !== 'done' || counted !== null) return
+    setCounted(false)
+    api
+      .examSubmit({
+        lengthSec: Math.round((record.endedAt - record.startedAt) / 1000),
+        plannedSec: Math.round(record.plannedMs / 1000),
+        grade: grade?.grade,
+        leftWindow: record.leftWindow.length,
+        answers: answered.map((t, i) => ({
+          result: grade?.answers[i]?.result ?? t.result ?? 'partly',
+          module: grade?.answers[i]?.module,
+          topic: grade?.answers[i]?.topic,
+          thinkMs: t.firstSpeechAt ? t.firstSpeechAt - t.askedAt : null,
+        })),
+      })
+      .then((r) => setCounted(r.counted))
+      .catch(() => setCounted(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [full, grading])
+
   const resultOf = (i: number) => grade?.answers[i]?.result ?? answered[i].result
   const count = (r: string) => answered.filter((_, i) => resultOf(i) === r).length
 
@@ -121,28 +156,26 @@ export function ExamReport({
     window.setTimeout(() => URL.revokeObjectURL(a.href), 2000)
   }
 
-  function send() {
-    setSent('sending')
+  const setFlag = (i: number, f: Partial<(typeof flags)[number]>) =>
+    setFlags((all) => all.map((x, j) => (j === i ? { ...x, ...f } : x)))
+
+  function sendFlag(i: number) {
+    const t = answered[i]
+    setFlag(i, { state: 'sending' })
     api
-      .examSubmit({
-        lengthSec: Math.round((record.endedAt - record.startedAt) / 1000),
+      .examFlag({
+        question: t.question,
+        answer: t.answer ?? '',
+        result: resultOf(i),
+        comment: grade?.answers[i]?.comment,
+        note: flags[i].note,
         grade: grade?.grade,
-        verdict: grade?.verdict,
-        leftWindow: record.leftWindow.length,
-        turns: answered.map((t, i) => ({
-          question: t.question,
-          answer: t.answer,
-          result: resultOf(i),
-          comment: grade?.answers[i]?.comment,
-          thinkMs: t.firstSpeechAt ? t.firstSpeechAt - t.askedAt : null,
-          flagged: flags[i],
-        })),
       })
-      .then(() => setSent('sent'))
-      .catch(() => setSent('failed'))
+      .then(() => setFlag(i, { state: 'sent' }))
+      .catch((e) => setFlag(i, { state: e instanceof Error && e.message === 'limit' ? 'limit' : 'failed' }))
   }
 
-  const flaggedCount = flags.filter(Boolean).length
+  const flagsSent = flags.filter((f) => f.state === 'sent').length
 
   return (
     <section className="exam-report card" aria-labelledby="exam-report-title">
@@ -199,8 +232,9 @@ export function ExamReport({
       {answered.length > 0 && (
         <>
           <p className="note">
-            Think an answer was judged unfairly, or you said something beyond the lectures? Flag it, and Prof. Meuer
-            will double-check it.
+            {full
+              ? `Think an answer was judged unfairly, or you said something beyond the lectures? Send it to Prof. Meuer with a line on why (up to ${MAX_FLAGS}).`
+              : 'Sending answers to Prof. Meuer opens after a full exam: at least half the time and 4 answers.'}
           </p>
           <ol className="exam-turns">
             {answered.map((t, i) => {
@@ -218,15 +252,16 @@ export function ExamReport({
                       {grade?.answers[i]?.comment}
                     </p>
                   )}
-                  <button
-                    type="button"
-                    className={`exam-flag ${flags[i] ? 'is-on' : ''}`}
-                    aria-pressed={flags[i]}
-                    disabled={sent === 'sent'}
-                    onClick={() => setFlags((f) => f.map((v, j) => (j === i ? !v : v)))}
-                  >
-                    {flags[i] ? '⚑ Flagged for Prof. Meuer' : '⚐ Ask Prof. Meuer to double-check'}
-                  </button>
+                  {full && (
+                    <FlagBox
+                      flag={flags[i]}
+                      full={flagsSent >= MAX_FLAGS}
+                      onOpen={() => setFlag(i, { state: 'open' })}
+                      onCancel={() => setFlag(i, { state: 'off' })}
+                      onNote={(note) => setFlag(i, { note })}
+                      onSend={() => sendFlag(i)}
+                    />
+                  )}
                 </li>
               )
             })}
@@ -234,30 +269,12 @@ export function ExamReport({
         </>
       )}
 
-      {answered.length > 0 && (
-        <div className="exam-send">
-          {sent === 'sent' ? (
-            <p className="feedback-thanks" role="status">
-              Sent to Prof. Meuer. Thank you!
-            </p>
-          ) : (
-            <>
-              <button className="btn primary" type="button" onClick={send} disabled={sent === 'sending' || grading === 'working'}>
-                {sent === 'sending'
-                  ? 'Sending…'
-                  : flaggedCount
-                    ? `Send my exam to Prof. Meuer (${flaggedCount} flagged)`
-                    : 'Send my exam to Prof. Meuer'}
-              </button>
-              <p className="note">Without your name. He sees your answers, the timings and what you flagged.</p>
-              {sent === 'failed' && (
-                <p className="error" role="alert">
-                  That didn’t go through. Try again.
-                </p>
-              )}
-            </>
-          )}
-        </div>
+      {full && (
+        <p className="note exam-overview-note">
+          {counted
+            ? 'This full exam goes into Prof. Meuer’s anonymous class overview: only the practice grade and which topics went well. Never your name, never what you said. Nobody sees how you compare.'
+            : 'Full exams go into Prof. Meuer’s anonymous class overview: only the practice grade and which topics went well. Never your name, never what you said.'}
+        </p>
       )}
 
       <div className="actions">
@@ -269,5 +286,68 @@ export function ExamReport({
         </button>
       </div>
     </section>
+  )
+}
+
+// "Ask Prof. Meuer to check this one": opens a line for the reason, then sends just this answer.
+function FlagBox({
+  flag,
+  full,
+  onOpen,
+  onCancel,
+  onNote,
+  onSend,
+}: {
+  flag: { state: 'off' | 'open' | 'sending' | 'sent' | 'failed' | 'limit'; note: string }
+  full: boolean // the student already sent the most allowed
+  onOpen: () => void
+  onCancel: () => void
+  onNote: (note: string) => void
+  onSend: () => void
+}) {
+  if (flag.state === 'sent') return <p className="exam-flag is-on">⚑ Sent to Prof. Meuer</p>
+  if (flag.state === 'off')
+    return (
+      <button type="button" className="exam-flag" disabled={full} onClick={onOpen}>
+        ⚐ Ask Prof. Meuer to check this one
+      </button>
+    )
+  return (
+    <form
+      className="exam-flag-box"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (flag.note.trim().length >= 5) onSend()
+      }}
+    >
+      <label>
+        <span>What should he check?</span>
+        <input
+          value={flag.note}
+          onChange={(e) => onNote(e.target.value)}
+          placeholder="E.g. I think this is right, or this is from my own reading"
+          maxLength={600}
+          autoFocus
+        />
+      </label>
+      <div className="exam-flag-actions">
+        <button className="btn primary sm" type="submit" disabled={flag.state === 'sending' || flag.note.trim().length < 5}>
+          {flag.state === 'sending' ? 'Sending…' : 'Send to Prof. Meuer'}
+        </button>
+        <button className="btn ghost sm" type="button" onClick={onCancel} disabled={flag.state === 'sending'}>
+          Cancel
+        </button>
+      </div>
+      {flag.state === 'failed' && (
+        <p className="error" role="alert">
+          That didn’t go through. Try again.
+        </p>
+      )}
+      {flag.state === 'limit' && (
+        <p className="error" role="alert">
+          That’s the most you can send today.
+        </p>
+      )}
+    </form>
   )
 }

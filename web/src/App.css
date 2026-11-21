@@ -2826,11 +2826,52 @@ h2 {
   font-weight: 650;
 }
 
-.exam-send {
+p.exam-flag {
+  display: inline-block;
+  cursor: default;
+}
+
+.exam-flag:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.exam-flag-box {
   display: grid;
-  gap: 6px;
-  justify-items: start;
-  padding-top: 4px;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 12px 14px;
+  border: 1px solid #e0b84d;
+  border-radius: 14px;
+  background: #fffaf0;
+}
+
+.exam-flag-box label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.exam-flag-box input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  font: inherit;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.exam-flag-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exam-overview-note {
+  margin-top: 4px;
 }
 
 @media (max-width: 560px) {

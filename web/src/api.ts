@@ -50,14 +50,27 @@ export const api = {
     return res.json() as Promise<ExamGradeReply>
   },
 
-  // The student sends their exam to Prof. Meuer (no name), with the answers to double-check.
-  examSubmit: async (exam: unknown) => {
+  // After a full practice exam: anonymous stats for Prof. Meuer's class overview (no name, nothing said).
+  examSubmit: async (stats: unknown): Promise<{ counted: boolean }> => {
     const res = await fetch('/api/exam/submit', {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...accessHeaders() },
-      body: JSON.stringify(exam),
+      body: JSON.stringify(stats),
     })
     if (res.status === 401) throw new NeedsCode()
+    if (!res.ok) throw new Error(`Request failed (${res.status})`)
+    return res.json() as Promise<{ counted: boolean }>
+  },
+
+  // One answer the student wants Prof. Meuer to check, with their reason.
+  examFlag: async (flag: { question: string; answer: string; result?: string; comment?: string; note: string; grade?: number }) => {
+    const res = await fetch('/api/exam/flag', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...accessHeaders() },
+      body: JSON.stringify(flag),
+    })
+    if (res.status === 401) throw new NeedsCode()
+    if (res.status === 429) throw new Error('limit')
     if (!res.ok) throw new Error(`Request failed (${res.status})`)
   },
 
@@ -128,5 +141,5 @@ export type FeedbackAnswers = Partial<Record<'correct' | 'level' | 'voice' | 'us
 export type ExamGradeReply = {
   grade: number // KLU scale: 1.0 best, 4.0 pass, 5.0 fail (a practice estimate)
   verdict: string
-  answers: { result: 'right' | 'partly' | 'wrong' | 'beyond'; comment: string }[]
+  answers: { result: 'right' | 'partly' | 'wrong' | 'beyond'; comment: string; module?: string; topic?: string }[]
 }

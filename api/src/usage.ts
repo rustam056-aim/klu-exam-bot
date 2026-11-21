@@ -34,7 +34,7 @@ export class Usage {
   }
 }
 
-export type UsageKind = 'voice' | 'chat' | 'practice' | 'listen' | 'avatar';
+export type UsageKind = 'voice' | 'chat' | 'practice' | 'listen' | 'avatar' | 'exam' | 'flag';
 
 export type UsageEnv = {
   USAGE?: {
@@ -46,10 +46,11 @@ export type UsageEnv = {
   DAILY_PRACTICE?: string; // graded answers and hints per student per day (default 400)
 };
 
-const DEFAULTS: Record<UsageKind, number> = { voice: 25000, chat: 150, practice: 400, listen: 300, avatar: 20 };
+// exam = full practice exams that go into Prof. Meuer's class overview; flag = answers sent to him to check.
+const DEFAULTS: Record<UsageKind, number> = { voice: 25000, chat: 150, practice: 400, listen: 300, avatar: 20, exam: 3, flag: 6 };
 
 function limitOf(env: UsageEnv, kind: UsageKind): number {
-  const set = { voice: env.DAILY_VOICE_CHARS, chat: env.DAILY_CHAT, practice: env.DAILY_PRACTICE, listen: undefined, avatar: undefined }[kind];
+  const set = { voice: env.DAILY_VOICE_CHARS, chat: env.DAILY_CHAT, practice: env.DAILY_PRACTICE, listen: undefined, avatar: undefined, exam: undefined, flag: undefined }[kind];
   const n = Number(set);
   return Number.isFinite(n) && n > 0 ? n : DEFAULTS[kind];
 }
