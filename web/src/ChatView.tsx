@@ -78,13 +78,17 @@ function remembered(key: string, fallback: boolean) {
   }
 }
 
-export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatSeed }) {
-  const [view, setView] = useState<'call' | 'chat'>('call')
+// The three ways to talk to him, as chosen on the home screen (and as tabs here).
+export type TalkMode = 'type' | 'talk' | 'video'
+
+export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?: ChatSeed; mode?: TalkMode }) {
+  const [view, setView] = useState<'call' | 'chat'>(mode === 'type' ? 'chat' : 'call')
   const [handsFree, setHandsFree] = useState(() => remembered('alwaysListening', true))
   const [showAvatar, setShowAvatar] = useState(true) // his picture; falls back to the circle if it can't load
   // Three ways to practise, as tabs: Type, Talk (voice, his photo) and Video (the talking avatar).
   // Video only shows up when the avatar is set up on the server.
   const [withVideo, setWithVideo] = useState(() => {
+    if (mode) return mode === 'video'
     if (typeof location !== 'undefined' && /[?&]mode=video\b/.test(location.search)) return true
     return remembered('talkVideo', false)
   })
@@ -116,8 +120,9 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
   const mounted = useRef(true)
   const seeded = useRef(false)
   // The latest values, for code that continues after a long wait (a reply, the end of a sentence).
-  const now = useRef({ view, handsFree, readAloud, withVideo: videoOn })
-  now.current = { view, handsFree, readAloud, withVideo: videoOn }
+  // wantsVideo: the Video tab is chosen (even before we know the avatar is set up).
+  const now = useRef({ view, handsFree, readAloud, withVideo: videoOn, wantsVideo: withVideo })
+  now.current = { view, handsFree, readAloud, withVideo: videoOn, wantsVideo: withVideo }
 
   useEffect(() => onSpeakingChange(setSpeaking), [])
   const speakingRef = useRef(false)
@@ -299,16 +304,16 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
         seeded.current = true
         void send(seedText(seed))
       }
-    } else {
+    } else if (now.current.view === 'call' || now.current.readAloud) {
       // With the talking avatar, give it a moment to connect so he greets with moving lips.
-      void (now.current.withVideo ? readyToGreet() : Promise.resolve())
+      void (now.current.wantsVideo ? readyToGreet() : Promise.resolve())
         .then(() => (mounted.current ? say(messagesRef.current[0]?.text ?? '') : false))
         .then((done) => {
           if (done) yourTurn()
         })
     }
     // Hands-free: the mic goes on right away, so the student can even cut into the greeting.
-    if (now.current.handsFree) live.start()
+    if (now.current.handsFree && now.current.view === 'call') live.start()
     return () => {
       mounted.current = false
       stopSpeaking()
@@ -573,9 +578,9 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
       </div>
 
       {view === 'call' ? (
-        <div className="call">
+        <div className={`call ${videoOn ? 'call-video' : ''}`}>
           {showAvatar ? (
-            <Avatar state={tutorState} label={tutorLabels[tutorState]} live={videoOn} onFail={() => setShowAvatar(false)} />
+            <Avatar state={tutorState} label={tutorLabels[tutorState]} live={videoOn} big={videoOn} onFail={() => setShowAvatar(false)} />
           ) : (
             <Tutor big state={tutorState} labels={tutorLabels} />
           )}

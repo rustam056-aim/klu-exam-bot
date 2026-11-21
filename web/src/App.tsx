@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import { api } from './api'
 import { ChatView } from './ChatView'
+import type { TalkMode } from './ChatView'
 import { saveAttempt } from './progress'
 import { stopSpeaking, unlockAudio } from './voice'
 import { QuestionView } from './QuestionView'
@@ -23,6 +24,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   // The conversation: an optional question to talk through, and where "back" leads afterwards.
   const [chatSeed, setChatSeed] = useState<ChatSeed | undefined>()
+  const [chatMode, setChatMode] = useState<TalkMode | undefined>() // Type, Talk or Video, picked on the home screen
   const [chatKey, setChatKey] = useState(0)
   const [backTo, setBackTo] = useState<Phase>('start')
   const [readAloud, setReadAloud] = useState<boolean>(() => {
@@ -83,7 +85,8 @@ export default function App() {
     else void loadNext(done, settings, only)
   }
 
-  function openChat(seed?: ChatSeed) {
+  function openChat(seed?: ChatSeed, mode?: TalkMode) {
+    setChatMode(mode)
     setChatSeed(seed)
     setChatKey((k) => k + 1)
     setPhase('chat')
@@ -176,15 +179,15 @@ export default function App() {
             }}
             initial={settings}
             onStart={(s, ids) => start(s, ids)}
-            onChat={() => {
+            onChat={(mode) => {
               unlockAudio() // this click lets his greeting start by itself, also on iPhones
               setBackTo('start')
-              openChat()
+              openChat(undefined, mode)
             }}
           />
         )}
 
-        {phase === 'chat' && <ChatView key={chatKey} readAloud={readAloud} seed={chatSeed} />}
+        {phase === 'chat' && <ChatView key={chatKey} readAloud={readAloud} seed={chatSeed} mode={chatMode} />}
 
         {phase === 'quiz' && (
           <>

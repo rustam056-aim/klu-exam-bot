@@ -1,9 +1,50 @@
 import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { NeedsCode, setAccessCode } from './access'
 import { api } from './api'
 import { FeedbackBox } from './FeedbackBox'
 import { loadProgress, loadTalk, missedIds, resetProgress, sessionStats, talkStats } from './progress'
 import type { SessionInfo, Settings } from './types'
+import type { TalkMode } from './ChatView'
+import { avatarEnabled } from './talkingAvatar'
+
+// The three ways to talk to Johannes, shown as buttons on the home screen.
+const stroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const
+const TALK_WAYS: { mode: TalkMode; name: string; text: string; icon: ReactNode }[] = [
+  {
+    mode: 'type',
+    name: 'Type',
+    text: 'Chat in writing',
+    icon: (
+      <svg viewBox="0 0 24 24" width="22" height="22" {...stroke}>
+        <rect x="2.5" y="6" width="19" height="12" rx="2.5" />
+        <path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9" />
+      </svg>
+    ),
+  },
+  {
+    mode: 'talk',
+    name: 'Talk',
+    text: 'Out loud, in his voice',
+    icon: (
+      <svg viewBox="0 0 24 24" width="22" height="22" {...stroke}>
+        <rect x="9" y="3" width="6" height="11" rx="3" />
+        <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" />
+      </svg>
+    ),
+  },
+  {
+    mode: 'video',
+    name: 'Video',
+    text: 'Face to face with him',
+    icon: (
+      <svg viewBox="0 0 24 24" width="22" height="22" {...stroke}>
+        <rect x="2.5" y="6" width="13" height="12" rx="2.5" />
+        <path d="m15.5 10.5 6-3.5v10l-6-3.5" />
+      </svg>
+    ),
+  },
+]
 
 type Option<T extends string> = { value: T; label: string }
 
@@ -48,7 +89,7 @@ export function StartScreen({
   screen: 'home' | 'practice'
   initial: Settings
   onStart: (s: Settings, onlyIds?: string[]) => void
-  onChat: () => void
+  onChat: (mode: TalkMode) => void
   onScreen: (screen: 'home' | 'practice') => void
 }) {
   const [settings, setSettings] = useState({ ...initial, length: initial.lengthPref ?? initial.length, quick: false })
@@ -59,6 +100,11 @@ export function StartScreen({
   const [needCode, setNeedCode] = useState(false)
   const [codeInput, setCodeInput] = useState('')
   const [codeError, setCodeError] = useState<string | null>(null)
+  // The Video way only shows up when the talking avatar is set up (asked once the code is in).
+  const [videoAvailable, setVideoAvailable] = useState(false)
+  useEffect(() => {
+    if (sessions) void avatarEnabled().then(setVideoAvailable)
+  }, [sessions])
 
   function load(afterCodeEntry = false) {
     api
@@ -128,10 +174,10 @@ export function StartScreen({
     return (
       <section className="start">
         <h1>Practise for the Sustainable Logistics exam</h1>
-        <p className="lede">Two ways to get ready. Pick one, switch whenever you like.</p>
+        <p className="lede">Two ways to get ready: talk it through with Johannes, or practise exam questions by module.</p>
 
         <div className="modes">
-          <button className="card mode" type="button" disabled={!sessions} onClick={onChat}>
+          <div className="card mode mode-talk">
             <span className="card-icon card-icon-talk" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="26" height="26">
                 <path
@@ -144,16 +190,31 @@ export function StartScreen({
               Talk to Johannes <span className="tag">AI tutor</span>
             </span>
             <span className="mode-text">
-              A conversation about the course: type, talk out loud, or talk to him on video. Ask anything, let him
-              quiz you, or do a mock oral exam.
+              A conversation about the course. Ask anything, let him quiz you, or do a mock oral exam. Pick how:
             </span>
+            <div className="talk-ways">
+              {TALK_WAYS.filter((w) => w.mode !== 'video' || videoAvailable).map((w) => (
+                <button
+                  key={w.mode}
+                  className="talk-way"
+                  type="button"
+                  disabled={!sessions}
+                  onClick={() => onChat(w.mode)}
+                >
+                  <span className="talk-way-icon" aria-hidden="true">
+                    {w.icon}
+                  </span>
+                  <span className="talk-way-name">{w.name}</span>
+                  <span className="talk-way-text">{w.text}</span>
+                </button>
+              ))}
+            </div>
             <span className="mode-stat">
               {talked.answered > 0
                 ? `So far: ${talked.right} of ${talked.answered} of his questions right`
                 : 'He answers in Prof. Meuer’s voice'}
             </span>
-            <span className="btn primary mode-go">Start talking</span>
-          </button>
+          </div>
 
           <button className="card mode" type="button" disabled={!sessions} onClick={() => onScreen('practice')}>
             <span className="card-icon" aria-hidden="true">

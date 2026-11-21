@@ -51,11 +51,19 @@ export function avatarLive(): boolean {
 // Is the avatar set up on the server (key and face id)? Asked once per visit.
 let enabled: Promise<boolean> | null = null
 export function avatarEnabled(): Promise<boolean> {
-  enabled ??= fetch('/api/avatar', { headers: accessHeaders() })
-    .then((r) => (r.ok ? r.json() : { enabled: false }))
+  if (enabled) return enabled
+  const asking = fetch('/api/avatar', { headers: accessHeaders() })
+    .then((r) => {
+      if (r.status === 401) enabled = null // no access code yet: ask again later
+      return r.ok ? r.json() : { enabled: false }
+    })
     .then((d: { enabled?: boolean }) => d.enabled === true)
-    .catch(() => false)
-  return enabled
+    .catch(() => {
+      enabled = null
+      return false
+    })
+  enabled = asking
+  return asking
 }
 
 // Before his first words: wait (at most a few seconds) for the avatar to connect, if it's set up.
@@ -84,7 +92,15 @@ export async function startAvatar(video: HTMLVideoElement, audio: HTMLAudioEleme
     const { token } = (await res.json()) as { token: string }
     const mod = (await import('simli-client')) as unknown as SimliModule
     if (mine !== attempt) return false
+    // We play his voice ourselves (see voice.ts), so Simli's own sound stays off: that way the voice
+    // always works, even where the browser would block Simli's audio.
+    audio.muted = true
     const client = new mod.SimliClient(token, video, audio, null, mod.LogLevel?.ERROR)
+    client.on('speaking', () => {
+      const waiting = speakingWaiters
+      speakingWaiters = []
+      waiting.forEach((w) => w())
+    })
     client.on('stop', () => {
       if (session === client) {
         session = null
@@ -114,6 +130,21 @@ export function stopAvatar() {
   endsAt = 0
   if (s) void s.stop().catch(() => undefined)
   setState('off')
+}
+
+// Resolves when Simli starts moving his lips to what we just sent (or after `maxMs`, whatever comes
+// first), so his voice can start at exactly that moment.
+let speakingWaiters: (() => void)[] = []
+export function nextAvatarSpeaking(maxMs = 1500): Promise<void> {
+  return new Promise((resolve) => {
+    const done = () => {
+      window.clearTimeout(timer)
+      speakingWaiters = speakingWaiters.filter((w) => w !== done)
+      resolve()
+    }
+    const timer = window.setTimeout(done, maxMs)
+    speakingWaiters.push(done)
+  })
 }
 
 // ---- Speaking through the avatar ----

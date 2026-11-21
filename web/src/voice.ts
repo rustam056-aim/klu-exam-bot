@@ -1,5 +1,5 @@
 import { accessHeaders, checkLimit } from './access'
-import { avatarEndsAt, avatarLive, clearAvatar, sendToAvatar } from './talkingAvatar'
+import { avatarLive, clearAvatar, nextAvatarSpeaking, sendToAvatar } from './talkingAvatar'
 
 // Voice helpers. All calls go through our backend; the ElevenLabs key never reaches the browser.
 
@@ -112,6 +112,7 @@ export function stopSpeaking() {
   pausedAt = null
   generation++
   if (avatarLive() && playing) clearAvatar()
+  stopVoiceSources()
   if (player && playing) player.pause()
   playing = false
   finishCurrent?.()
@@ -171,28 +172,65 @@ function pcmFor(text: string, extra: { chat?: boolean; previous?: string; next?:
   return pcm
 }
 
-// Waits until the avatar has said everything sent so far (or he's stopped).
-function untilAvatarDone(): Promise<void> {
-  return new Promise((resolve) => {
-    finishCurrent = resolve
-    const tick = () => {
-      if (finishCurrent !== resolve) return
-      const left = avatarEndsAt() - performance.now()
-      if (left <= 0) resolve()
-      else window.setTimeout(tick, Math.min(left, 250))
+// His voice with the avatar: the same raw audio goes to Simli (for the lips) and to our own speakers
+// (Web Audio). Each piece starts playing the moment Simli starts moving his lips to it, and the next
+// pieces follow without a gap, so voice and lips stay together.
+let voiceSources: AudioBufferSourceNode[] = []
+
+function stopVoiceSources() {
+  for (const src of voiceSources) {
+    try {
+      src.onended = null
+      src.stop()
+    } catch {
+      /* already stopped */
     }
-    tick()
-  })
+  }
+  voiceSources = []
 }
 
-// Sends each part to the avatar as soon as it's ready (Simli queues them), then waits until he's done.
+function pcmToBuffer(ctx: AudioContext, pcm: Uint8Array): AudioBuffer {
+  const samples = pcm.length >> 1
+  const buffer = ctx.createBuffer(1, Math.max(1, samples), 16000)
+  const out = buffer.getChannelData(0)
+  const view = new DataView(pcm.buffer, pcm.byteOffset, samples * 2)
+  for (let i = 0; i < samples; i++) out[i] = view.getInt16(i * 2, true) / 32768
+  return buffer
+}
+
 async function speakViaAvatar(parts: Promise<Uint8Array>[], mine: number): Promise<boolean> {
+  const ctx = audioContext()
+  if (!ctx) throw new Error('no audio')
+  if (ctx.state === 'suspended') await ctx.resume().catch(() => undefined)
+  let next = 0 // audio-clock time where the next piece starts
+  let last: Promise<void> = Promise.resolve()
   for (const part of parts) {
     const pcm = await part
     if (mine !== generation) return false
+    if (pcm.length < 2) continue
+    const afterGap = next <= ctx.currentTime // nothing is playing: wait for the lips to start
+    const lipsStart = afterGap ? nextAvatarSpeaking(1500) : null
     sendToAvatar(pcm)
+    if (lipsStart) {
+      await lipsStart
+      if (mine !== generation) return false
+    }
+    const src = ctx.createBufferSource()
+    src.buffer = pcmToBuffer(ctx, pcm)
+    src.connect(ctx.destination)
+    const at = Math.max(next, ctx.currentTime)
+    src.start(at)
+    next = at + src.buffer.duration
+    voiceSources.push(src)
+    last = new Promise((resolve) => {
+      src.onended = () => resolve()
+    })
   }
-  await untilAvatarDone()
+  await new Promise<void>((resolve) => {
+    finishCurrent = resolve
+    void last.then(resolve)
+  })
+  if (mine === generation) voiceSources = []
   return mine === generation
 }
 

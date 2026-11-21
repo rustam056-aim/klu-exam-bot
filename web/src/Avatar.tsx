@@ -14,11 +14,13 @@ export function Avatar({
   state,
   label,
   live: wantVideo,
+  big = false,
   onFail,
 }: {
   state: TutorState
   label: string
   live: boolean // the Video tab: connect the talking avatar; otherwise just the photo
+  big?: boolean // Video: he fills the screen, like a video call
   onFail: () => void
 }) {
   const [loaded, setLoaded] = useState(false)
@@ -43,7 +45,7 @@ export function Avatar({
 
   const showVideo = wantVideo && live === 'live'
   return (
-    <div className={`avatar avatar-${state}`}>
+    <div className={`avatar avatar-${state} ${big ? 'avatar-big' : ''}`}>
       <div className="avatar-frame">
         <img
           className={`avatar-photo ${loaded && !showVideo ? 'is-on' : ''}`}
