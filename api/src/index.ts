@@ -447,11 +447,17 @@ export default {
     // Conversation with the tutor. It only knows the course material (see chat.ts).
     if (path === '/api/chat' && req.method === 'POST') {
       if (!env.ANTHROPIC_API_KEY) return json({ error: 'chat is not set up' }, 503);
-      const body = (await req.json().catch(() => null)) as { messages?: unknown; wrapUp?: unknown; stream?: unknown; greeting?: unknown } | null;
+      const body = (await req.json().catch(() => null)) as { messages?: unknown; wrapUp?: unknown; stream?: unknown; greeting?: unknown; exam?: unknown } | null;
       const turns = cleanTurns(body?.messages);
       if (!turns) return json({ error: 'need messages ending with a user message' }, 400);
       const wrapUp = body?.wrapUp === true;
       const greeting = typeof body?.greeting === 'string' ? body.greeting.slice(0, 300) : undefined;
+      // The timed oral exam: minutes left, and whether time is up.
+      const examIn = body?.exam as { minutesLeft?: unknown; ending?: unknown } | undefined;
+      const exam =
+        examIn && typeof examIn === 'object' && Number.isFinite(Number(examIn.minutesLeft))
+          ? { minutesLeft: Math.min(60, Math.max(0, Number(examIn.minutesLeft))), ending: examIn.ending === true }
+          : undefined;
       if (!(await allow(env, req, 'chat'))) return json({ error: 'daily limit', reason: 'limit', kind: 'chat' }, 429);
       // stream: one JSON line per event, so the voice can start on the first sentence:
       //   {"type":"first","text":"..."}  then  {"type":"done", reply, sources, check, rest}  (or {"type":"error","reason"})
@@ -462,7 +468,7 @@ export default {
         const line = (obj: unknown) => writer.write(encoder.encode(JSON.stringify(obj) + '\n'));
         const work = (async () => {
           try {
-            const result = await chatWithClaude(turns, qs, env, wrapUp, (text) => void line({ type: 'first', text }), { greeting });
+            const result = await chatWithClaude(turns, qs, env, wrapUp, (text) => void line({ type: 'first', text }), { greeting, exam });
             await line({ type: 'done', ...result });
           } catch (err) {
             console.log('Chat failed:', String(err));
@@ -477,7 +483,7 @@ export default {
         });
       }
       try {
-        return json(await chatWithClaude(turns, qs, env, wrapUp, undefined, { greeting }));
+        return json(await chatWithClaude(turns, qs, env, wrapUp, undefined, { greeting, exam }));
       } catch (err) {
         console.log('Chat failed:', String(err));
         // A short reason helps when someone sends a screenshot of the error.
@@ -601,7 +607,7 @@ export default {
         body: JSON.stringify({
           faceId: env.SIMLI_FACE_ID,
           handleSilence: true,
-          maxSessionLength: 1200, // 20 minutes per talk
+          maxSessionLength: 2400, // 40 minutes: enough for the 30-minute oral exam
           maxIdleTime: 120, // closes after 2 quiet minutes, so a forgotten tab doesn't cost money
           ...size,
         }),

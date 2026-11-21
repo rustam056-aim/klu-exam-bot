@@ -25,6 +25,7 @@ export default function App() {
   // The conversation: an optional question to talk through, and where "back" leads afterwards.
   const [chatSeed, setChatSeed] = useState<ChatSeed | undefined>()
   const [chatMode, setChatMode] = useState<TalkMode | undefined>() // Type, Talk or Video, picked on the home screen
+  const [chatExam, setChatExam] = useState(false) // the 30-minute oral exam
   const [chatKey, setChatKey] = useState(0)
   const [backTo, setBackTo] = useState<Phase>('start')
   const [readAloud, setReadAloud] = useState<boolean>(() => {
@@ -85,8 +86,9 @@ export default function App() {
     else void loadNext(done, settings, only)
   }
 
-  function openChat(seed?: ChatSeed, mode?: TalkMode) {
+  function openChat(seed?: ChatSeed, mode?: TalkMode, exam = false) {
     setChatMode(mode)
+    setChatExam(exam)
     setChatSeed(seed)
     setChatKey((k) => k + 1)
     setPhase('chat')
@@ -184,10 +186,15 @@ export default function App() {
               setBackTo('start')
               openChat(undefined, mode)
             }}
+            onExam={() => {
+              unlockAudio()
+              setBackTo('start')
+              openChat(undefined, undefined, true)
+            }}
           />
         )}
 
-        {phase === 'chat' && <ChatView key={chatKey} readAloud={readAloud} seed={chatSeed} mode={chatMode} />}
+        {phase === 'chat' && <ChatView key={chatKey} readAloud={readAloud} seed={chatSeed} mode={chatMode} exam={chatExam} />}
 
         {phase === 'quiz' && (
           <>

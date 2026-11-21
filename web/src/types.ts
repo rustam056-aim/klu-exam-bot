@@ -73,6 +73,7 @@ export type ChatMessage = {
   sources?: string[] // e.g. ["S2 p14", "Video 65"]
   local?: boolean // shown on screen only (the greeting), never sent to the server
   wrap?: boolean // the wrap-up at the end: its sources are "look at these again"
+  meta?: boolean // sent to the server but not shown (e.g. "I'm ready" when the exam starts)
 }
 
 // A practice question the student wants to talk through with the tutor.

@@ -41,12 +41,12 @@ export type UsageEnv = {
     idFromName(name: string): unknown;
     get(id: unknown): { fetch(url: string, init: RequestInit): Promise<Response> };
   };
-  DAILY_VOICE_CHARS?: string; // characters of voice per student per day (default 15000, about 2 to 3 talks)
+  DAILY_VOICE_CHARS?: string; // characters of voice per student per day (default 25000: a 30-minute oral exam plus some practice)
   DAILY_CHAT?: string; // conversation messages per student per day (default 150)
   DAILY_PRACTICE?: string; // graded answers and hints per student per day (default 400)
 };
 
-const DEFAULTS: Record<UsageKind, number> = { voice: 15000, chat: 150, practice: 400, listen: 300, avatar: 20 };
+const DEFAULTS: Record<UsageKind, number> = { voice: 25000, chat: 150, practice: 400, listen: 300, avatar: 20 };
 
 function limitOf(env: UsageEnv, kind: UsageKind): number {
   const set = { voice: env.DAILY_VOICE_CHARS, chat: env.DAILY_CHAT, practice: env.DAILY_PRACTICE, listen: undefined, avatar: undefined }[kind];

@@ -54,11 +54,12 @@ export const api = {
     wrapUp = false,
     onFirst?: (sentence: string) => void,
     greeting?: string,
+    exam?: { minutesLeft: number; ending?: boolean }, // the timed oral exam
   ): Promise<ChatReply> => {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...accessHeaders() },
-      body: JSON.stringify({ messages, stream: true, greeting, ...(wrapUp ? { wrapUp: true } : {}) }),
+      body: JSON.stringify({ messages, stream: true, greeting, exam, ...(wrapUp ? { wrapUp: true } : {}) }),
     })
     if (res.status === 401) throw new NeedsCode()
     await checkLimit(res)

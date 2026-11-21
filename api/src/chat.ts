@@ -280,7 +280,9 @@ async function readStream(res: Response, onFirst: (sentence: string) => void): P
 
 // Changes with every message (so it sits after the cached course text): the greeting the student
 // heard, and a few random topics to pick from, so quizzes don't always start with the same question.
-function turnNotes(questions: ChatQuestion[], greeting?: string): string {
+export type ExamInfo = { minutesLeft: number; ending?: boolean };
+
+function turnNotes(questions: ChatQuestion[], greeting?: string, exam?: ExamInfo): string {
   // A random module first, then a random question in it, so small modules come up as often as
   // big ones and the order is different every time.
   const byModule = new Map<number, ChatQuestion[]>();
@@ -298,9 +300,28 @@ function turnNotes(questions: ChatQuestion[], greeting?: string): string {
     `NEXT NEW TOPIC (use this when you pick a new topic yourself): ${picks[0]}`,
     "If that one has already come up in this conversation, take the first of these that hasn't (for a mock exam, go through them in this order):",
     ...picks.slice(1).map((p, n) => `${n + 1}. ${p}`),
+    exam ? examNotes(exam) : '',
   ]
     .filter(Boolean)
     .join('\n');
+}
+
+// The timed oral exam (about 30 minutes): he behaves like the examiner in the real oral exam.
+function examNotes(exam: ExamInfo): string {
+  if (exam.ending) {
+    return `
+# ORAL EXAM: TIME IS UP
+Close the exam now in two short sentences: thank the student, say the exam is over and that their summary is on the screen. No more questions, no verdict, no right answers. Still fill "check" if their last message answered your question.`;
+  }
+  return `
+# ORAL EXAM MODE (this overrides the quiz rules above)
+This is a timed oral exam of about 30 minutes, as in the real exam. Minutes left: ${Math.max(0, Math.round(exam.minutesLeft))}.
+- You are the examiner. One question at a time. Cover as many different topics as the time allows, about 3 minutes per topic: a main question, then one or two follow-ups that dig deeper (why, how, an example, a link to another part of the course). Take the topics from NEXT NEW TOPIC and its list, never your own favourites.
+- Don't correct the student, don't tell them the right answer and don't say whether they were right. React neutrally and briefly ("Okay.", "Thank you.", "Mhm."), then ask the next question. If they struggle, give a small hint inside a follow-up question, or say that's fine and move on.
+- If they bring in something that isn't in the course material, say briefly that it goes beyond the lectures and that you'll check it afterwards.
+- If they ask you to repeat or rephrase, do it.
+- EVERY reply ends with a question. With 2 minutes or less left, finish the current topic but don't start a new one.
+- Fill "check" for every answer to your questions: it's recorded for the summary, the student doesn't see it during the exam.`;
 }
 
 export type ChatResult = { reply: string; sources: string[]; check?: ChatCheck; first?: string; rest?: string };
@@ -313,7 +334,7 @@ export async function chatWithClaude(
   env: { ANTHROPIC_API_KEY?: string; ANTHROPIC_MODEL?: string; ANTHROPIC_CHAT_MODEL?: string },
   wrapUp = false,
   onFirst?: (sentence: string) => void,
-  extra: { greeting?: string } = {},
+  extra: { greeting?: string; exam?: ExamInfo } = {},
 ): Promise<ChatResult> {
   if (wrapUp) {
     turns = turns.map((t, i) => (i === turns.length - 1 ? { ...t, content: `${t.content}\n\n${WRAP_UP}` } : t));
@@ -342,7 +363,7 @@ export async function chatWithClaude(
         messages: turns,
       }),
     });
-  const thisTurn = turnNotes(questions, extra.greeting);
+  const thisTurn = turnNotes(questions, extra.greeting, extra.exam);
   const streaming = !!onFirst;
   let used = chosen;
   let res = await request(used, streaming);

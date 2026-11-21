@@ -84,12 +84,14 @@ export function StartScreen({
   initial,
   onStart,
   onChat,
+  onExam,
   onScreen,
 }: {
   screen: 'home' | 'practice'
   initial: Settings
   onStart: (s: Settings, onlyIds?: string[]) => void
   onChat: (mode: TalkMode) => void
+  onExam: () => void
   onScreen: (screen: 'home' | 'practice') => void
 }) {
   const [settings, setSettings] = useState({ ...initial, length: initial.lengthPref ?? initial.length, quick: false })
@@ -213,6 +215,10 @@ export function StartScreen({
                 </button>
               ))}
             </div>
+            <button className="talk-exam" type="button" disabled={!sessions} onClick={onExam}>
+              <span className="talk-exam-name">Oral exam</span>
+              <span className="talk-exam-text">30 minutes with him, like the real thing. Summary at the end.</span>
+            </button>
             <span className="mode-stat">
               {talked.answered > 0
                 ? `So far: ${talked.right} of ${talked.answered} of his questions right`

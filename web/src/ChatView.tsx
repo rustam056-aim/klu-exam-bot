@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { DailyLimit } from './access'
+import { ExamReport } from './ExamReport'
+import type { ExamRecord } from './ExamReport'
 import { api } from './api'
 import { formatSource, lectureAudio, slideImages } from './format'
 import { FeedbackBox } from './FeedbackBox'
@@ -81,13 +83,38 @@ function remembered(key: string, fallback: boolean) {
 // The three ways to talk to him, as chosen on the home screen (and as tabs here).
 export type TalkMode = 'type' | 'talk' | 'video'
 
-export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?: ChatSeed; mode?: TalkMode }) {
-  const [view, setView] = useState<'call' | 'chat'>(mode === 'type' ? 'chat' : 'call')
-  const [handsFree, setHandsFree] = useState(() => remembered('alwaysListening', true))
+// The timed oral exam, as in the real thing.
+// 30 minutes; a link with ?examMinutes=5 makes a shorter one (for trying it out).
+const EXAM_MINUTES =
+  (typeof location !== 'undefined' && Number(new URLSearchParams(location.search).get('examMinutes'))) || 30
+const EXAM_GREETING =
+  'Welcome to your oral exam in Sustainable Logistics. It takes about 30 minutes. I’ll ask you questions, and you just answer out loud, the way you would in the real exam. Let’s begin.'
+
+export function ChatView({
+  readAloud,
+  seed,
+  mode,
+  exam = false,
+}: {
+  readAloud: boolean
+  seed?: ChatSeed
+  mode?: TalkMode
+  exam?: boolean // the 30-minute oral exam
+}) {
+  const [view, setView] = useState<'call' | 'chat'>(mode === 'type' && !exam ? 'chat' : 'call')
+  const [handsFree, setHandsFree] = useState(() => exam || remembered('alwaysListening', true))
+  // The exam: running -> closing (time is up, he says goodbye) -> done (the summary).
+  const [examPhase, setExamPhase] = useState<'running' | 'closing' | 'done' | 'off'>(exam ? 'running' : 'off')
+  const examOn = examPhase === 'running' || examPhase === 'closing'
+  const examRecord = useRef<ExamRecord>({ startedAt: 0, endedAt: 0, turns: [], leftWindow: [] })
+  const examEndsAt = useRef(0)
+  const timeUp = useRef(false)
+  const [tick, setTick] = useState(0) // re-renders the exam clock every second
   const [showAvatar, setShowAvatar] = useState(true) // his picture; falls back to the circle if it can't load
   // Three ways to practise, as tabs: Type, Talk (voice, his photo) and Video (the talking avatar).
   // Video only shows up when the avatar is set up on the server.
   const [withVideo, setWithVideo] = useState(() => {
+    if (exam) return true // the exam is a video call when the avatar is set up, otherwise voice
     if (mode) return mode === 'video'
     if (typeof location !== 'undefined' && /[?&]mode=video\b/.test(location.search)) return true
     return remembered('talkVideo', false)
@@ -97,7 +124,7 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
     void avatarEnabled().then(setVideoAvailable)
   }, [])
   const videoOn = withVideo && videoAvailable
-  const inVideo = view === 'call' && videoOn
+  const inVideo = view === 'call' && videoOn && examPhase !== 'done'
   // Once the video call has been opened it stays mounted (hidden) for the rest of the conversation.
   const [videoUsed, setVideoUsed] = useState(false)
   useEffect(() => {
@@ -105,7 +132,9 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
   }, [inVideo])
   const [transcribing, setTranscribing] = useState(false)
   const [partial, setPartial] = useState<string | null>(null) // his first sentence, while the rest is written // always-on mic: turning speech into text
-  const [messages, setMessages] = useState<ChatMessage[]>(() => (seed ? [] : [greeting()]))
+  const [messages, setMessages] = useState<ChatMessage[]>(() =>
+    seed ? [] : exam ? [{ role: 'assistant', local: true, text: EXAM_GREETING }] : [greeting()],
+  )
   const [starterList, setStarterList] = useState(pickStarters)
   const [draft, setDraft] = useState('')
   const [busy, setBusyState] = useState(false)
@@ -127,8 +156,8 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
   const seeded = useRef(false)
   // The latest values, for code that continues after a long wait (a reply, the end of a sentence).
   // wantsVideo: the Video tab is chosen (even before we know the avatar is set up).
-  const now = useRef({ view, handsFree, readAloud, withVideo: videoOn, wantsVideo: withVideo })
-  now.current = { view, handsFree, readAloud, withVideo: videoOn, wantsVideo: withVideo }
+  const now = useRef({ view, handsFree, readAloud, withVideo: videoOn, wantsVideo: withVideo, examPhase })
+  now.current = { view, handsFree, readAloud, withVideo: videoOn, wantsVideo: withVideo, examPhase }
 
   useEffect(() => onSpeakingChange(setSpeaking), [])
   const speakingRef = useRef(false)
@@ -147,6 +176,11 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
   const live = useLiveMic({
     onSpeechStart: () => {
       setNote(null)
+      // Exam: how long the student took before starting to answer.
+      const last = examRecord.current.turns[examRecord.current.turns.length - 1]
+      if (now.current.examPhase === 'running' && last && !last.firstSpeechAt && !speakingRef.current) {
+        last.firstSpeechAt = Date.now()
+      }
       overHim.current = speakingRef.current
       pausedForStudent.current = pauseSpeaking()
     },
@@ -205,6 +239,11 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
   // When he has finished talking: a soft "your turn" tone (the mic is already on).
   function yourTurn() {
     if (!mounted.current || now.current.view !== 'call') return
+    if (now.current.examPhase === 'running') {
+      // Exam: he has just finished asking; the clock for "time before answering" starts now.
+      const question = [...messagesRef.current].reverse().find((m) => m.role === 'assistant' && !m.local)?.text
+      if (question) examRecord.current.turns.push({ question, askedAt: Date.now() })
+    }
     if (liveRef.current.on) chime()
   }
 
@@ -233,6 +272,10 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
   }
 
   async function ask(history: ChatMessage[], speakIt: boolean, wrapUp = false) {
+    const examNow = now.current.examPhase === 'running' && !wrapUp
+    const ending = examNow && timeUp.current
+    if (ending) setExamPhase('closing')
+    const examInfo = examNow ? { minutesLeft: Math.max(0, (examEndsAt.current - Date.now()) / 60000), ending } : undefined
     setBusy(true)
     setError(null)
     setNote(null)
@@ -256,11 +299,17 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
           })
         },
         history.find((m) => m.local && m.role === 'assistant')?.text, // the greeting he opened with
+        examInfo,
       )
       rest.finish(res.rest ?? '')
       hisWords.current = res.reply
       setPartial(null)
       if (!mounted.current) return
+      if (res.check && examNow) {
+        // Exam: the result belongs to the question just answered (shown only in the summary).
+        const answered = [...examRecord.current.turns].reverse().find((t) => t.answer && !t.result)
+        if (answered) answered.result = res.check.result
+      }
       if (res.check) {
         // He had asked a question and the student answered: keep the score.
         saveTalkAnswer(res.check)
@@ -274,6 +323,12 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
       if (pending.current) {
         stopSpeaking()
         sendPending()
+        return
+      }
+      if (ending) {
+        // Time is up: he says goodbye, then the summary.
+        if (speakIt) await (voice.current ?? say(res.reply))
+        finishExam()
         return
       }
       if (speakIt && (await (voice.current ?? say(res.reply)))) yourTurn()
@@ -291,11 +346,15 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
     }
   }
 
-  async function send(text: string, byVoice = false, wrapUp = false) {
+  async function send(text: string, byVoice = false, wrapUp = false, meta = false) {
     const said = text.trim()
     if (!said || busyRef.current) return
     stopSpeaking()
-    const next: ChatMessage[] = [...messagesRef.current, { role: 'user', text: said }]
+    if (now.current.examPhase === 'running' && !meta) {
+      const last = examRecord.current.turns[examRecord.current.turns.length - 1]
+      if (last && !last.answer) last.answer = said
+    }
+    const next: ChatMessage[] = [...messagesRef.current, { role: 'user', text: said, meta }]
     messagesRef.current = next
     setMessages(next)
     setDraft('')
@@ -310,6 +369,16 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
         seeded.current = true
         void send(seedText(seed))
       }
+    } else if (exam) {
+      // The oral exam: he welcomes the student, then asks the first question straight away.
+      void (now.current.wantsVideo ? readyToGreet(9000) : Promise.resolve())
+        .then(() => (mounted.current ? say(EXAM_GREETING) : false))
+        .then(() => {
+          if (!mounted.current) return
+          examRecord.current.startedAt = Date.now()
+          examEndsAt.current = Date.now() + EXAM_MINUTES * 60000
+          void send('I’m ready, please start the exam.', true, false, true)
+        })
     } else if (now.current.view === 'call' || now.current.readAloud) {
       // With the talking avatar, give it a moment to connect so he greets with moving lips.
       void (now.current.wantsVideo ? readyToGreet(9000) : Promise.resolve())
@@ -329,6 +398,7 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
 
   useEffect(() => {
     try {
+      if (exam) return // the exam doesn't change the student's usual settings
       localStorage.setItem('alwaysListening', handsFree ? 'on' : 'off')
       localStorage.setItem('talkVideo', withVideo ? 'on' : 'off')
     } catch {
@@ -400,6 +470,66 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
     return () => window.removeEventListener('keydown', onKey)
   })
 
+  // ---- The oral exam ----
+  const examLeft = examEndsAt.current ? examEndsAt.current - Date.now() : null
+  void tick
+
+  function finishExam() {
+    examRecord.current.endedAt = Date.now()
+    live.stop()
+    setExamPhase('done')
+  }
+
+  // "End exam": he closes the exam right away (or after the reply he's writing).
+  function endExamNow() {
+    timeUp.current = true
+    stopSpeaking()
+    if (!busyRef.current) void send('I’d like to end the exam here.', true, false, true)
+  }
+
+  // After the summary: normal talk with him, starting with his feedback on the exam.
+  function examFeedback() {
+    setExamPhase('off')
+    setView('chat')
+    void send('The exam is over. How did I do? Give me feedback on my answers.', false, true)
+  }
+
+  // The exam clock: when time is up, his next reply closes the exam. If the student doesn't
+  // say anything for a while after that, he closes it anyway.
+  useEffect(() => {
+    if (!examOn) return
+    const timer = window.setInterval(() => {
+      setTick((n) => n + 1)
+      if (!examEndsAt.current || Date.now() < examEndsAt.current) return
+      timeUp.current = true
+      if (now.current.examPhase === 'running' && !busyRef.current && !speakingRef.current && Date.now() > examEndsAt.current + 60000) {
+        void send('(Time is up.)', true, false, true)
+      }
+    }, 1000)
+    return () => window.clearInterval(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [examOn])
+
+  // The exam: note every time the student leaves the tab or the window.
+  useEffect(() => {
+    if (examPhase !== 'running') return
+    let lastAt = 0
+    const left = () => {
+      if (!examRecord.current.startedAt || Date.now() - lastAt < 1500) return
+      lastAt = Date.now()
+      examRecord.current.leftWindow.push(lastAt)
+    }
+    const onVisibility = () => {
+      if (document.hidden) left()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('blur', left)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('blur', left)
+    }
+  }, [examPhase])
+
   const tutorLabels = {
     idle: handsFree ? 'Tap the mic once to start' : 'Tap the mic to talk',
     speaking: 'Johannes is talking',
@@ -426,7 +556,7 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
   // For a source from Alan's videos there's no slide, but there's the lecture clip.
   const clipSource = slideSource ? undefined : lastTutor?.sources?.find((s) => lectureAudio(s) !== null)
 
-  const starters = fresh && !busy && (
+  const starters = fresh && !busy && !exam && (
     <div className="starters">
       {starterList.map((s) => (
         <button
@@ -495,6 +625,21 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
 
   return (
     <section className={`chat chat-${view}`}>
+      {examPhase !== 'off' ? (
+        <div className="chat-head exam-head">
+          <span className="exam-title">Oral exam</span>
+          {examOn && (
+            <span className={`tag exam-clock ${examLeft !== null && examLeft < 120000 ? 'is-late' : ''}`} aria-live="off">
+              {examLeft === null ? '30:00' : examLeft > 0 ? `${clock(Math.ceil(examLeft / 1000))} left` : 'Time is up'}
+            </span>
+          )}
+          {examPhase === 'running' && (
+            <button className="btn secondary sm" type="button" onClick={endExamNow} disabled={!examRecord.current.startedAt}>
+              End exam
+            </button>
+          )}
+        </div>
+      ) : (
       <div className="chat-head">
         <div className="seg" role="tablist" aria-label="How you talk to the tutor">
           <button
@@ -584,6 +729,11 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
           )}
         </div>
       </div>
+      )}
+
+      {examPhase === 'done' && (
+        <ExamReport record={examRecord.current} messages={messages} onFeedback={examFeedback} />
+      )}
 
       {/* Video: like a video call. He fills the screen, the mic is always on, and the only button
           is Stop (to cut him off). No subtitles: you hear him and see him. Once opened, the call
@@ -611,7 +761,7 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
           {inVideo && problems}
         </div>
       )}
-      {inVideo ? null : view === 'call' ? (
+      {inVideo || examPhase === 'done' ? null : view === 'call' ? (
         <div className="call">
           {showAvatar ? (
             <Avatar state={tutorState} label={tutorLabels[tutorState]} live={false} onFail={() => setShowAvatar(false)} />
@@ -638,7 +788,7 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
           {!busy && lastTutor?.sources && lastTutor.sources.length > 0 && (
             <div className="call-source">
               {/* The slide (or the lecture clip) is a hint you ask for, not something that pops up by itself. */}
-              {(slideSource || clipSource) && !slideOpen && (
+              {(slideSource || clipSource) && !slideOpen && !examOn && (
                 <button className="btn secondary sm hint-btn" type="button" onClick={() => setSlideOpen(true)}>
                   {slideSource ? 'Need a hint? Show the slide' : 'Need a hint? Hear it from Alan'}
                 </button>
@@ -658,6 +808,7 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
           {/* Bottom bar: one big button, like a call. */}
           <div className="dock" role="toolbar" aria-label="Voice controls">
             <div className="dock-side">
+              {!exam && (
               <button
                 className={`switch ${handsFree ? 'is-on' : ''}`}
                 type="button"
@@ -672,6 +823,7 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
                 <span className="switch-track" aria-hidden="true" />
                 Hands-free
               </button>
+              )}
             </div>
             <div className="dock-main">
               <button
