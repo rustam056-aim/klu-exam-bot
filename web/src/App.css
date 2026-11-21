@@ -2219,6 +2219,26 @@ h2 {
   opacity: 1;
 }
 
+/* The talking avatar (live video), on top of the photo once it's connected. */
+.avatar-live {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+
+.avatar-live.is-on {
+  opacity: 1;
+}
+
+/* With the moving face, the pulsing ring isn't needed while he talks. */
+.avatar:has(.avatar-live.is-on).avatar-speaking .avatar-frame {
+  animation: none;
+}
+
 /* Your turn: a soft ring in the accent colour. */
 .avatar-listening .avatar-frame {
   box-shadow:

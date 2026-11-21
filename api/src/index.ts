@@ -35,7 +35,9 @@ export interface Env extends UsageEnv {
   ELEVENLABS_VOICE_ID?: string; // optional: another voice, e.g. the clone of Prof. Meuer
   ELEVENLABS_SPEED?: string; // optional: reading speed, 0.7 (slow) to 1.2 (fast); default 0.82
   ELEVENLABS_MODEL?: string; // optional: voice model; default eleven_multilingual_v2 (livelier), or eleven_flash_v2_5 (cheaper)
-  ELEVENLABS_CHAT_MODEL?: string; // optional: another voice model just for the conversation (falls back to the standard one if it fails)
+  ELEVENLABS_CHAT_MODEL?: string;
+  SIMLI_API_KEY?: string; // talking avatar (simli.com); with SIMLI_FACE_ID set, the Talk view shows it
+  SIMLI_FACE_ID?: string; // optional: another voice model just for the conversation (falls back to the standard one if it fails)
   ELEVENLABS_CHAT_SPEED?: string; // optional: talking speed in the conversation, 0.7 to 1.2; default 0.95
   ANTHROPIC_MODEL?: string; // optional: override the grading model
   ANTHROPIC_CHAT_MODEL?: string; // optional: a different model for the conversation mode
@@ -520,6 +522,7 @@ export default {
         chat?: boolean; // conversation mode: may use the faster voice model
         previous?: string; // the sentence before / after, so a reply split in two still sounds like one
         next?: string;
+        pcm?: boolean; // for the talking avatar: raw 16 kHz 16-bit mono audio instead of mp3
       } | null;
       const text = sayable(speakable(body?.text?.trim() ?? ''));
       if (!text) return json({ error: 'need text' }, 400);
@@ -529,12 +532,12 @@ export default {
       const standard = env.ELEVENLABS_MODEL || 'eleven_multilingual_v2';
       const model = (body?.chat && env.ELEVENLABS_CHAT_MODEL) || standard;
       const tts = (payload: Record<string, unknown>) =>
-        fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_128`, {
+        fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=${body?.pcm ? 'pcm_16000' : 'mp3_44100_128'}`, {
           method: 'POST',
           headers: {
             'xi-api-key': env.ELEVENLABS_API_KEY!,
             'content-type': 'application/json',
-            accept: 'audio/mpeg',
+            accept: body?.pcm ? 'audio/pcm' : 'audio/mpeg',
           },
           body: JSON.stringify(payload),
         });
@@ -567,7 +570,35 @@ export default {
         console.log('ElevenLabs text-to-speech failed', res.status, (await res.text()).slice(0, 300));
         return json({ error: 'speech failed' }, 502);
       }
-      return new Response(res.body, { headers: { 'content-type': 'audio/mpeg', 'cache-control': 'no-store' } });
+      return new Response(res.body, {
+        headers: { 'content-type': body?.pcm ? 'audio/L16;rate=16000' : 'audio/mpeg', 'cache-control': 'no-store' },
+      });
+    }
+
+    // GET /api/avatar: is the talking avatar (Simli) set up? POST /api/avatar: a session token for it.
+    // The Simli key stays here; the browser only gets a short-lived token for one session.
+    if (path === '/api/avatar' && req.method === 'GET') {
+      return json({ enabled: !!(env.SIMLI_API_KEY && env.SIMLI_FACE_ID) });
+    }
+    if (path === '/api/avatar' && req.method === 'POST') {
+      if (!env.SIMLI_API_KEY || !env.SIMLI_FACE_ID) return json({ error: 'avatar is not set up' }, 503);
+      if (!(await allow(env, req, 'avatar'))) return json({ error: 'daily limit', reason: 'limit', kind: 'avatar' }, 429);
+      const res = await fetch('https://api.simli.ai/compose/token', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-simli-api-key': env.SIMLI_API_KEY },
+        body: JSON.stringify({
+          faceId: env.SIMLI_FACE_ID,
+          handleSilence: true,
+          maxSessionLength: 1200, // 20 minutes per talk
+          maxIdleTime: 120, // closes after 2 quiet minutes, so a forgotten tab doesn't cost money
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { session_token?: string; detail?: unknown };
+      if (!res.ok || !data.session_token) {
+        console.log('Simli token failed', res.status, JSON.stringify(data).slice(0, 300));
+        return json({ error: 'avatar failed' }, 502);
+      }
+      return json({ token: data.session_token });
     }
 
     return json({ error: 'not found' }, 404);

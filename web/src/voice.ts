@@ -1,4 +1,5 @@
 import { accessHeaders, checkLimit } from './access'
+import { avatarEndsAt, avatarLive, clearAvatar, sendToAvatar } from './talkingAvatar'
 
 // Voice helpers. All calls go through our backend; the ElevenLabs key never reaches the browser.
 
@@ -86,6 +87,7 @@ export function unlockAudio() {
 let pausedAt: number | null = null
 
 export function pauseSpeaking(): boolean {
+  if (avatarLive()) return false // the avatar can't pause; a real interruption stops him instead
   if (!player || !playing || player.paused) return false
   pausedAt = generation
   player.pause()
@@ -109,6 +111,7 @@ export function audioContext(): AudioContext | null {
 export function stopSpeaking() {
   pausedAt = null
   generation++
+  if (avatarLive() && playing) clearAvatar()
   if (player && playing) player.pause()
   playing = false
   finishCurrent?.()
@@ -146,6 +149,53 @@ export function splitForSpeech(text: string): string[] {
   return m ? [m[1], m[2]] : [t]
 }
 
+// ---- Through the talking avatar: raw audio goes to Simli, which plays it with moving lips ----
+const pcmCache = new Map<string, Promise<Uint8Array>>()
+
+function pcmFor(text: string, extra: { chat?: boolean; previous?: string; next?: string }): Promise<Uint8Array> {
+  const key = JSON.stringify([text, extra.chat ?? false, extra.previous ?? '', extra.next ?? ''])
+  let pcm = pcmCache.get(key)
+  if (!pcm) {
+    pcm = fetch('/api/speak', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...accessHeaders() },
+      body: JSON.stringify({ text, ...extra, pcm: true }),
+    }).then(async (res) => {
+      await checkLimit(res)
+      if (!res.ok) throw new Error(`speak failed (${res.status})`)
+      return new Uint8Array(await res.arrayBuffer())
+    })
+    pcm.catch(() => pcmCache.delete(key))
+    pcmCache.set(key, pcm)
+  }
+  return pcm
+}
+
+// Waits until the avatar has said everything sent so far (or he's stopped).
+function untilAvatarDone(): Promise<void> {
+  return new Promise((resolve) => {
+    finishCurrent = resolve
+    const tick = () => {
+      if (finishCurrent !== resolve) return
+      const left = avatarEndsAt() - performance.now()
+      if (left <= 0) resolve()
+      else window.setTimeout(tick, Math.min(left, 250))
+    }
+    tick()
+  })
+}
+
+// Sends each part to the avatar as soon as it's ready (Simli queues them), then waits until he's done.
+async function speakViaAvatar(parts: Promise<Uint8Array>[], mine: number): Promise<boolean> {
+  for (const part of parts) {
+    const pcm = await part
+    if (mine !== generation) return false
+    sendToAvatar(pcm)
+  }
+  await untilAvatarDone()
+  return mine === generation
+}
+
 function playUrl(url: string): Promise<void> {
   return new Promise((resolve, reject) => {
     if (!player) return reject(new Error('no audio'))
@@ -166,6 +216,20 @@ export async function speak(text: string, options: SpeakOptions = {}): Promise<b
   setSpeaking(true)
   playing = true
   const parts = options.chat ? splitForSpeech(text) : [text]
+  if (options.chat && avatarLive()) {
+    try {
+      return await speakViaAvatar(
+        parts.map((part, i) => pcmFor(part, { chat: true, previous: parts[i - 1], next: parts[i + 1] })),
+        mine,
+      )
+    } finally {
+      if (mine === generation) {
+        playing = false
+        finishCurrent = null
+        setSpeaking(false)
+      }
+    }
+  }
   // Ask for all parts right away; play them in order as they arrive.
   const urls = parts.map((part, i) =>
     audioUrl(part, options.chat ? { chat: true, previous: parts[i - 1], next: parts[i + 1] } : {}),
@@ -197,6 +261,19 @@ export async function speakInParts(first: string, rest: Promise<string>): Promis
   const mine = generation
   setSpeaking(true)
   playing = true
+  if (avatarLive()) {
+    try {
+      const firstPcm = pcmFor(first, { chat: true })
+      const restPcm = rest.then((r) => (r.trim() ? pcmFor(r.trim(), { chat: true, previous: first }) : new Uint8Array()))
+      return await speakViaAvatar([firstPcm, restPcm], mine)
+    } finally {
+      if (mine === generation) {
+        playing = false
+        finishCurrent = null
+        setSpeaking(false)
+      }
+    }
+  }
   const firstUrl = audioUrl(first, { chat: true })
   const restUrl = rest.then((r) => (r.trim() ? audioUrl(r.trim(), { chat: true, previous: first }) : null))
   firstUrl.catch(() => undefined)

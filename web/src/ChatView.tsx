@@ -7,6 +7,7 @@ import { MicHelpBox } from './MicButton'
 import { saveTalkAnswer } from './progress'
 import { ArrowIcon, LectureClip, MicIcon, Slides, SpeakerIcon, StopIcon } from './QuestionView'
 import { Avatar } from './Avatar'
+import { readyToGreet } from './talkingAvatar'
 import { Tutor } from './Tutor'
 import { clock, useRecorder } from './useRecorder'
 import { soundsLikeEcho, useLiveMic } from './liveMic'
@@ -288,9 +289,12 @@ export function ChatView({ readAloud, seed }: { readAloud: boolean; seed?: ChatS
         void send(seedText(seed))
       }
     } else {
-      void say(messagesRef.current[0]?.text ?? '').then((done) => {
-        if (done) yourTurn()
-      })
+      // With the talking avatar, give it a moment to connect so he greets with moving lips.
+      void readyToGreet()
+        .then(() => (mounted.current ? say(messagesRef.current[0]?.text ?? '') : false))
+        .then((done) => {
+          if (done) yourTurn()
+        })
     }
     // Hands-free: the mic goes on right away, so the student can even cut into the greeting.
     if (now.current.handsFree) live.start()
