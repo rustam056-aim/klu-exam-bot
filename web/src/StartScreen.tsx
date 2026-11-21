@@ -6,7 +6,7 @@ import { FeedbackBox } from './FeedbackBox'
 import { loadProgress, loadTalk, missedIds, resetProgress, sessionStats, talkStats } from './progress'
 import type { SessionInfo, Settings } from './types'
 import type { TalkMode } from './ChatView'
-import { avatarEnabled } from './talkingAvatar'
+import { avatarEnabled, prefetchAvatar } from './talkingAvatar'
 
 // The three ways to talk to Johannes, shown as buttons on the home screen.
 const stroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const
@@ -103,7 +103,11 @@ export function StartScreen({
   // The Video way only shows up when the talking avatar is set up (asked once the code is in).
   const [videoAvailable, setVideoAvailable] = useState(false)
   useEffect(() => {
-    if (sessions) void avatarEnabled().then(setVideoAvailable)
+    if (sessions)
+      void avatarEnabled().then((on) => {
+        setVideoAvailable(on)
+        if (on) prefetchAvatar()
+      })
   }, [sessions])
 
   function load(afterCodeEntry = false) {

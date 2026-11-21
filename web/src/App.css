@@ -2411,36 +2411,181 @@ h2 {
   line-height: 1.3;
 }
 
-/* ---------- Video: he fills the screen, like a video call ---------- */
-.call-video {
-  padding-top: 12px;
+/* ---------- Video: a video call with Johannes ---------- */
+.vcall {
+  padding: 12px 0 8px;
 }
 
-.avatar-big {
-  width: 100%;
-  margin-bottom: 12px;
+/* The call uses the whole width of the window, not just the text column. */
+.vcall-stage {
+  width: min(calc(100vw - 32px), 1200px);
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
-.avatar-big .avatar-frame {
-  width: min(100%, 680px, calc(100dvh - 330px));
-  min-width: min(100%, 300px);
+.vcall-stage {
+  height: calc(100dvh - 210px);
+  min-height: 360px;
   border-radius: 28px;
+  overflow: hidden;
+  background: #1d1418;
+  box-shadow: 0 24px 60px -30px rgb(40 10 25 / 0.6);
 }
 
-/* Under the big video, his words read like subtitles. */
-.call-video .call-line {
-  max-width: 44ch;
+/* Behind everything: his photo, soft and blurred, so the frame is never empty. */
+.vcall-backdrop {
+  position: absolute;
+  inset: -40px;
+  background: center / cover no-repeat;
+  filter: blur(28px) saturate(0.9) brightness(0.75);
+  transform: scale(1.1);
+}
+
+/* The video (square) sits in the middle at full height; the blurred photo fills the sides. */
+.vcall-video,
+.vcall-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.vcall-video {
+  opacity: 0;
+  transition: opacity 500ms ease;
+}
+
+.vcall-video.is-on {
+  opacity: 1;
+}
+
+/* While connecting: the photo is dimmed, so it doesn't look like the video itself. */
+.vcall-photo.is-waiting {
+  filter: grayscale(0.35) brightness(0.55);
+}
+
+.vcall-connecting {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: #fff;
+  font-weight: 650;
   font-size: 1.125rem;
-  font-weight: 560;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.5);
 }
 
-@media (max-width: 560px) {
-  .avatar-big .avatar-frame {
-    width: 100%;
-    border-radius: 22px;
+.vcall-spinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid rgb(255 255 255 / 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: vcall-spin 0.9s linear infinite;
+}
+
+@keyframes vcall-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
-.call-video .call-line:not(.call-wait) {
-  font-size: 1.125rem;
+/* Who's talking, top left on the video, like in a call app. */
+.vcall-status {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgb(20 10 15 / 0.55);
+  color: #fff;
+  font-weight: 650;
+  font-size: 0.9375rem;
+  backdrop-filter: blur(6px);
+}
+
+.avatar-listening.vcall-stage .vcall-status {
+  background: var(--signal);
+}
+
+.vcall-stage .avatar-dots {
+  bottom: auto;
+  top: 18px;
+  left: auto;
+  right: 16px;
+  transform: none;
+}
+
+.vcall-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 22px;
+  display: flex;
+  justify-content: center;
+}
+
+/* The one button: stop him. */
+.vcall-stop {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 0 26px;
+  border: 0;
+  border-radius: 999px;
+  background: #d93a2b;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1.0625rem;
+  cursor: pointer;
+  box-shadow: 0 10px 26px -8px rgb(160 30 20 / 0.7);
+  transition: transform 140ms ease, background-color 140ms ease;
+}
+
+.vcall-stop:hover {
+  background: #c22f21;
+  transform: translateY(-1px);
+}
+
+.vcall-stop:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+/* Not his turn: a quiet mic badge that lights up while you speak. */
+.vcall-mic {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgb(20 10 15 / 0.5);
+  color: #fff;
+  backdrop-filter: blur(6px);
+  transition: background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.vcall-mic.is-hearing {
+  background: var(--signal);
+  box-shadow: 0 0 0 8px rgb(209 75 47 / 0.25);
+}
+
+@media (max-width: 560px) {
+  .vcall-stage {
+    height: calc(100dvh - 190px);
+    border-radius: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vcall-spinner {
+    animation-duration: 2.5s;
+  }
 }

@@ -37,7 +37,8 @@ export interface Env extends UsageEnv {
   ELEVENLABS_MODEL?: string; // optional: voice model; default eleven_multilingual_v2 (livelier), or eleven_flash_v2_5 (cheaper)
   ELEVENLABS_CHAT_MODEL?: string;
   SIMLI_API_KEY?: string; // talking avatar (simli.com); with SIMLI_FACE_ID set, the Talk view shows it
-  SIMLI_FACE_ID?: string; // optional: another voice model just for the conversation (falls back to the standard one if it fails)
+  SIMLI_FACE_ID?: string;
+  SIMLI_SHAPE?: string; // 'square' = always Simli's default square video // optional: another voice model just for the conversation (falls back to the standard one if it fails)
   ELEVENLABS_CHAT_SPEED?: string; // optional: talking speed in the conversation, 0.7 to 1.2; default 0.95
   ANTHROPIC_MODEL?: string; // optional: override the grading model
   ANTHROPIC_CHAT_MODEL?: string; // optional: a different model for the conversation mode
@@ -583,6 +584,17 @@ export default {
     if (path === '/api/avatar' && req.method === 'POST') {
       if (!env.SIMLI_API_KEY || !env.SIMLI_FACE_ID) return json({ error: 'avatar is not set up' }, 503);
       if (!(await allow(env, req, 'avatar'))) return json({ error: 'daily limit', reason: 'limit', kind: 'avatar' }, 429);
+      // The video's shape follows the screen: wide on a laptop, tall on a phone, so he fills the
+      // call window. SIMLI_SHAPE=square turns this off (Simli's default 768 x 768).
+      const asked = (await req.json().catch(() => ({}))) as { shape?: string };
+      const size =
+        env.SIMLI_SHAPE === 'square'
+          ? {}
+          : asked.shape === 'tall'
+            ? { streaming_width: 720, streaming_height: 1280 }
+            : asked.shape === 'wide'
+              ? { streaming_width: 1280, streaming_height: 720 }
+              : {};
       const res = await fetch('https://api.simli.ai/compose/token', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-simli-api-key': env.SIMLI_API_KEY },
@@ -591,6 +603,7 @@ export default {
           handleSilence: true,
           maxSessionLength: 1200, // 20 minutes per talk
           maxIdleTime: 120, // closes after 2 quiet minutes, so a forgotten tab doesn't cost money
+          ...size,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { session_token?: string; detail?: unknown };

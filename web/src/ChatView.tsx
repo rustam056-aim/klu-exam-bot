@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { DailyLimit } from './access'
 import { api } from './api'
-import { formatSource, slideImages } from './format'
+import { formatSource, lectureAudio, slideImages } from './format'
 import { FeedbackBox } from './FeedbackBox'
 import { MicHelpBox } from './MicButton'
 import { saveTalkAnswer } from './progress'
@@ -306,14 +306,14 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
       }
     } else if (now.current.view === 'call' || now.current.readAloud) {
       // With the talking avatar, give it a moment to connect so he greets with moving lips.
-      void (now.current.wantsVideo ? readyToGreet() : Promise.resolve())
+      void (now.current.wantsVideo ? readyToGreet(9000) : Promise.resolve())
         .then(() => (mounted.current ? say(messagesRef.current[0]?.text ?? '') : false))
         .then((done) => {
           if (done) yourTurn()
         })
     }
     // Hands-free: the mic goes on right away, so the student can even cut into the greeting.
-    if (now.current.handsFree && now.current.view === 'call') live.start()
+    if ((now.current.handsFree || now.current.wantsVideo) && now.current.view === 'call') live.start()
     return () => {
       mounted.current = false
       stopSpeaking()
@@ -345,7 +345,7 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
   }, [busy, transcribing, speaking])
 
   const recording = rec.state === 'recording'
-  const liveOn = view === 'call' && handsFree && live.on
+  const liveOn = view === 'call' && (handsFree || videoOn) && live.on
 
   // The big button.
   //   Hands-free, mic on:  while he talks = interrupt him; otherwise = pause the mic.
@@ -417,6 +417,8 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
   const waitingForRetry = !!error && last?.role === 'user' && !error?.startsWith('You’ve')
   const canWrapUp = userTurns >= 2 && !busy && !recording && last?.role === 'assistant' && !last.wrap
   const slideSource = lastTutor?.sources?.find((s) => slideImages(s).length > 0)
+  // For a source from Alan's videos there's no slide, but there's the lecture clip.
+  const clipSource = slideSource ? undefined : lastTutor?.sources?.find((s) => lectureAudio(s) !== null)
 
   const starters = fresh && !busy && (
     <div className="starters">
@@ -525,7 +527,7 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
                 if (!withVideo) stopSpeaking()
                 setWithVideo(true)
                 setView('call')
-                if (handsFree) live.start()
+                live.start() // a video call: the mic is simply on
               }}
             >
               Video
@@ -577,10 +579,35 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
         </div>
       </div>
 
-      {view === 'call' ? (
-        <div className={`call ${videoOn ? 'call-video' : ''}`}>
+      {view === 'call' && videoOn ? (
+        // Video: like a video call. He fills the screen, the mic is always on, and the only button
+        // is Stop (to cut him off). No subtitles: you hear him and see him.
+        <div className="vcall">
+          <Avatar
+            state={tutorState}
+            label={tutorLabels[tutorState]}
+            live
+            call
+            onFail={() => setWithVideo(false)}
+          >
+            {speaking ? (
+              <button className="vcall-stop" type="button" onClick={stopSpeaking} aria-label="Stop him">
+                <StopIcon />
+                <span>Stop</span>
+              </button>
+            ) : (
+              <span className={`vcall-mic ${live.state === 'hearing' ? 'is-hearing' : ''}`} aria-hidden="true">
+                <MicIcon recording={false} />
+              </span>
+            )}
+          </Avatar>
+          {problems}
+          {smallPrint}
+        </div>
+      ) : view === 'call' ? (
+        <div className="call">
           {showAvatar ? (
-            <Avatar state={tutorState} label={tutorLabels[tutorState]} live={videoOn} big={videoOn} onFail={() => setShowAvatar(false)} />
+            <Avatar state={tutorState} label={tutorLabels[tutorState]} live={false} onFail={() => setShowAvatar(false)} />
           ) : (
             <Tutor big state={tutorState} labels={tutorLabels} />
           )}
@@ -603,16 +630,17 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
           )}
           {!busy && lastTutor?.sources && lastTutor.sources.length > 0 && (
             <div className="call-source">
-              {/* The slide is a hint you ask for, not something that pops up by itself. */}
-              {slideSource && !slideOpen && (
-                <button className="btn ghost sm" type="button" onClick={() => setSlideOpen(true)}>
-                  Show the slide
+              {/* The slide (or the lecture clip) is a hint you ask for, not something that pops up by itself. */}
+              {(slideSource || clipSource) && !slideOpen && (
+                <button className="btn secondary sm hint-btn" type="button" onClick={() => setSlideOpen(true)}>
+                  {slideSource ? 'Need a hint? Show the slide' : 'Need a hint? Hear it from Alan'}
                 </button>
               )}
-              {(slideOpen || !slideSource) && (
+              {(slideOpen || (!slideSource && !clipSource)) && (
                 <p className="source">From the course: {lastTutor.sources.map(formatSource).join(' · ')}</p>
               )}
               {slideSource && slideOpen && <Slides source={slideSource} />}
+              {clipSource && slideOpen && <LectureClip source={clipSource} />}
             </div>
           )}
           {starters}

@@ -1,27 +1,33 @@
 import { useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { accessQuery } from './access'
 import { avatarEnabled, onAvatarChange, startAvatar, stopAvatar } from './talkingAvatar'
 import type { AvatarState } from './talkingAvatar'
 import type { TutorState } from './Tutor'
 
 // Johannes on screen in "Talk to Johannes".
-// With the talking avatar set up (Simli, see talkingAvatar.ts) it's a live video of him whose lips
-// move with his voice. Until it's connected, or if it can't be, it's his photo
-// (web/public/avatar/photo.jpg, never on GitHub, behind the access code like the slides).
-// The ring shows what's happening: a gentle pulse while he talks, the accent colour when it's
-// your turn, dots while he thinks. If even the photo can't load, `onFail` brings back the circle.
+// Talk: his photo (web/public/avatar/photo.jpg, never on GitHub, behind the access code) with a ring
+// that shows what's happening: a gentle pulse while he talks, the accent colour when it's your
+// turn, dots while he thinks.
+// Video (`call`): like a video call. The talking avatar (Simli, see talkingAvatar.ts) fills the
+// screen; while it connects you see a soft, blurred version of his photo and "Connecting…", so
+// it never looks like a still picture pretending to be the video. The status sits on the video,
+// and `children` (the Stop button) at the bottom of it.
+// If even the photo can't load, `onFail` lets the page fall back.
 export function Avatar({
   state,
   label,
   live: wantVideo,
-  big = false,
+  call = false,
   onFail,
+  children,
 }: {
   state: TutorState
   label: string
-  live: boolean // the Video tab: connect the talking avatar; otherwise just the photo
-  big?: boolean // Video: he fills the screen, like a video call
+  live: boolean // connect the talking avatar; otherwise just the photo
+  call?: boolean // Video: full-screen video call layout
   onFail: () => void
+  children?: ReactNode
 }) {
   const [loaded, setLoaded] = useState(false)
   const [live, setLive] = useState<AvatarState>('off')
@@ -44,12 +50,53 @@ export function Avatar({
   }, [wantVideo])
 
   const showVideo = wantVideo && live === 'live'
+  const photo = `/avatar/photo.jpg${accessQuery()}`
+
+  if (call) {
+    const connecting = !showVideo && live !== 'failed'
+    return (
+      <div className={`vcall-stage avatar-${state} ${showVideo ? 'is-live' : ''}`}>
+        <div className="vcall-backdrop" style={{ backgroundImage: `url(${photo})` }} aria-hidden="true" />
+        <video ref={video} className={`vcall-video ${showVideo ? 'is-on' : ''}`} autoPlay playsInline aria-hidden="true" />
+        <audio ref={audio} autoPlay />
+        {!showVideo && (
+          <img
+            className={`vcall-photo ${connecting ? 'is-waiting' : ''}`}
+            src={photo}
+            alt="Prof. Johannes Meuer"
+            onLoad={() => setLoaded(true)}
+            onError={onFail}
+          />
+        )}
+        {connecting && loaded && (
+          <div className="vcall-connecting" role="status">
+            <span className="vcall-spinner" aria-hidden="true" />
+            Connecting to Johannes…
+          </div>
+        )}
+        {showVideo && (
+          <span className="vcall-status" aria-live="polite">
+            {state === 'thinking' ? 'Thinking…' : label}
+          </span>
+        )}
+        {state === 'thinking' && showVideo && (
+          <span className="avatar-dots" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </span>
+        )}
+        <div className="vcall-controls">{children}</div>
+      </div>
+    )
+  }
+
   return (
-    <div className={`avatar avatar-${state} ${big ? 'avatar-big' : ''}`}>
+    <div className={`avatar avatar-${state}`}>
       <div className="avatar-frame">
         <img
           className={`avatar-photo ${loaded && !showVideo ? 'is-on' : ''}`}
-          src={`/avatar/photo.jpg${accessQuery()}`}
+          src={photo}
           alt="Prof. Johannes Meuer"
           onLoad={() => setLoaded(true)}
           onError={onFail}

@@ -82,12 +82,22 @@ export async function readyToGreet(maxMs = 4000): Promise<void> {
   })
 }
 
+// Load the Simli code ahead of time (on the home screen), so the video connects faster.
+export function prefetchAvatar() {
+  void import('simli-client').catch(() => undefined)
+}
+
 export async function startAvatar(video: HTMLVideoElement, audio: HTMLAudioElement): Promise<boolean> {
   if (session) return true
   const mine = ++attempt
   setState('starting')
   try {
-    const res = await fetch('/api/avatar', { method: 'POST', headers: accessHeaders() })
+    const shape = window.innerWidth >= window.innerHeight ? 'wide' : 'tall' // fill the call window
+    const res = await fetch('/api/avatar', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...accessHeaders() },
+      body: JSON.stringify({ shape }),
+    })
     if (!res.ok) throw new Error(`avatar token ${res.status}`)
     const { token } = (await res.json()) as { token: string }
     const mod = (await import('simli-client')) as unknown as SimliModule
