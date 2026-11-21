@@ -44,8 +44,15 @@ export function onAvatarChange(listener: (s: AvatarState) => void): () => void {
   }
 }
 
+// Is the call on screen? While it's hidden (Talk or Type tab), the connection stays but his voice
+// plays through the normal speakers.
+let active = false
+export function setAvatarActive(on: boolean) {
+  active = on
+}
+
 export function avatarLive(): boolean {
-  return state === 'live' && session !== null
+  return active && state === 'live' && session !== null
 }
 
 // Is the avatar set up on the server (key and face id)? Asked once per visit.

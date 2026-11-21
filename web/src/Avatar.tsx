@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { accessQuery } from './access'
-import { avatarEnabled, onAvatarChange, startAvatar, stopAvatar } from './talkingAvatar'
+import { avatarEnabled, onAvatarChange, setAvatarActive, startAvatar, stopAvatar } from './talkingAvatar'
 import type { AvatarState } from './talkingAvatar'
 import type { TutorState } from './Tutor'
 
@@ -31,23 +31,34 @@ export function Avatar({
 }) {
   const [loaded, setLoaded] = useState(false)
   const [live, setLive] = useState<AvatarState>('off')
+  const [retry, setRetry] = useState(0)
   const video = useRef<HTMLVideoElement>(null)
   const audio = useRef<HTMLAudioElement>(null)
 
-  // Connect the talking avatar while this screen is open; hang up when leaving it.
+  useEffect(() => onAvatarChange(setLive), [])
+
+  // The call (Video): connect when it's shown, and reconnect if the connection was closed meanwhile
+  // (Simli hangs up after 2 quiet minutes). Hidden = his voice goes back to the normal speakers,
+  // but the connection stays, so coming back is instant. Leaving the conversation hangs up.
   useEffect(() => {
-    const off = onAvatarChange(setLive)
-    if (!wantVideo) return off
+    if (!call) return
+    setAvatarActive(wantVideo)
+    if (!wantVideo) return
     let cancelled = false
     void avatarEnabled().then((on) => {
       if (on && !cancelled && video.current && audio.current) void startAvatar(video.current, audio.current)
     })
     return () => {
       cancelled = true
-      off()
+    }
+  }, [wantVideo, call, retry])
+  useEffect(() => {
+    if (!call) return
+    return () => {
+      setAvatarActive(false)
       stopAvatar()
     }
-  }, [wantVideo])
+  }, [call])
 
   const showVideo = wantVideo && live === 'live'
   const photo = `/avatar/photo.jpg${accessQuery()}`
@@ -61,17 +72,25 @@ export function Avatar({
         <audio ref={audio} autoPlay />
         {!showVideo && (
           <img
-            className={`vcall-photo ${connecting ? 'is-waiting' : ''}`}
+            className="vcall-photo is-waiting"
             src={photo}
             alt="Prof. Johannes Meuer"
             onLoad={() => setLoaded(true)}
             onError={onFail}
           />
         )}
-        {connecting && loaded && (
+        {connecting && (
           <div className="vcall-connecting" role="status">
             <span className="vcall-spinner" aria-hidden="true" />
             Connecting to Johannes…
+          </div>
+        )}
+        {live === 'failed' && (
+          <div className="vcall-connecting" role="alert">
+            The video couldn’t start, so it’s voice only for now.
+            <button className="btn secondary sm" type="button" onClick={() => setRetry((n) => n + 1)}>
+              Try the video again
+            </button>
           </div>
         )}
         {showVideo && (
@@ -87,6 +106,7 @@ export function Avatar({
           </span>
         )}
         <div className="vcall-controls">{children}</div>
+        <span className="vcall-note">AI tutor with Prof. Meuer’s face and voice · can make mistakes</span>
       </div>
     )
   }

@@ -2413,19 +2413,24 @@ h2 {
 
 /* ---------- Video: a video call with Johannes ---------- */
 .vcall {
-  padding: 12px 0 8px;
+  padding: 10px 0 0;
+}
+
+/* In the call, nothing but him: no room kept for the bottom bar, so the page doesn't scroll. */
+.app:has(.vcall:not([hidden])) {
+  padding-bottom: 0;
 }
 
 /* The call uses the whole width of the window, not just the text column. */
 .vcall-stage {
-  width: min(calc(100vw - 32px), 1200px);
+  width: calc(100vw - 32px);
   position: relative;
   left: 50%;
   transform: translateX(-50%);
 }
 
 .vcall-stage {
-  height: calc(100dvh - 210px);
+  height: calc(100dvh - 178px);
   min-height: 360px;
   border-radius: 28px;
   overflow: hidden;
@@ -2449,7 +2454,8 @@ h2 {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover; /* he fills the whole window; his face stays in view */
+  object-position: 50% 30%;
 }
 
 .vcall-video {
@@ -2587,5 +2593,24 @@ h2 {
 @media (prefers-reduced-motion: reduce) {
   .vcall-spinner {
     animation-duration: 2.5s;
+  }
+}
+
+.vcall-note {
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  max-width: 40%;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  text-align: right;
+  color: rgb(255 255 255 / 0.8);
+  text-shadow: 0 1px 6px rgb(0 0 0 / 0.6);
+  pointer-events: none;
+}
+
+@media (max-width: 560px) {
+  .vcall-note {
+    display: none;
   }
 }

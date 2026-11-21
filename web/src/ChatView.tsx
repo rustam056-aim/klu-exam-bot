@@ -97,6 +97,12 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
     void avatarEnabled().then(setVideoAvailable)
   }, [])
   const videoOn = withVideo && videoAvailable
+  const inVideo = view === 'call' && videoOn
+  // Once the video call has been opened it stays mounted (hidden) for the rest of the conversation.
+  const [videoUsed, setVideoUsed] = useState(false)
+  useEffect(() => {
+    if (inVideo) setVideoUsed(true)
+  }, [inVideo])
   const [transcribing, setTranscribing] = useState(false)
   const [partial, setPartial] = useState<string | null>(null) // his first sentence, while the rest is written // always-on mic: turning speech into text
   const [messages, setMessages] = useState<ChatMessage[]>(() => (seed ? [] : [greeting()]))
@@ -579,14 +585,15 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
         </div>
       </div>
 
-      {view === 'call' && videoOn ? (
-        // Video: like a video call. He fills the screen, the mic is always on, and the only button
-        // is Stop (to cut him off). No subtitles: you hear him and see him.
-        <div className="vcall">
+      {/* Video: like a video call. He fills the screen, the mic is always on, and the only button
+          is Stop (to cut him off). No subtitles: you hear him and see him. Once opened, the call
+          stays connected in the background while you switch tabs, so coming back is instant. */}
+      {videoUsed && (
+        <div className="vcall" hidden={!inVideo}>
           <Avatar
             state={tutorState}
             label={tutorLabels[tutorState]}
-            live
+            live={inVideo}
             call
             onFail={() => setWithVideo(false)}
           >
@@ -601,10 +608,10 @@ export function ChatView({ readAloud, seed, mode }: { readAloud: boolean; seed?:
               </span>
             )}
           </Avatar>
-          {problems}
-          {smallPrint}
+          {inVideo && problems}
         </div>
-      ) : view === 'call' ? (
+      )}
+      {inVideo ? null : view === 'call' ? (
         <div className="call">
           {showAvatar ? (
             <Avatar state={tutorState} label={tutorLabels[tutorState]} live={false} onFail={() => setShowAvatar(false)} />

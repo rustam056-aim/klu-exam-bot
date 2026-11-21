@@ -46,7 +46,7 @@ export type UsageEnv = {
   DAILY_PRACTICE?: string; // graded answers and hints per student per day (default 400)
 };
 
-const DEFAULTS: Record<UsageKind, number> = { voice: 15000, chat: 150, practice: 400, listen: 300, avatar: 6 };
+const DEFAULTS: Record<UsageKind, number> = { voice: 15000, chat: 150, practice: 400, listen: 300, avatar: 20 };
 
 function limitOf(env: UsageEnv, kind: UsageKind): number {
   const set = { voice: env.DAILY_VOICE_CHARS, chat: env.DAILY_CHAT, practice: env.DAILY_PRACTICE, listen: undefined, avatar: undefined }[kind];
