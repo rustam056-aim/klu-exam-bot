@@ -2423,14 +2423,14 @@ h2 {
 
 /* The call uses the whole width of the window, not just the text column. */
 .vcall-stage {
-  width: calc(100vw - 32px);
+  width: min(calc(100vw - 32px), 1100px);
   position: relative;
   left: 50%;
   transform: translateX(-50%);
 }
 
 .vcall-stage {
-  height: calc(100dvh - 178px);
+  height: min(calc(100dvh - 190px), 760px);
   min-height: 360px;
   border-radius: 28px;
   overflow: hidden;
@@ -2454,8 +2454,7 @@ h2 {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* he fills the whole window; his face stays in view */
-  object-position: 50% 30%;
+  object-fit: contain; /* all of him in view; the blurred photo fills the sides */
 }
 
 .vcall-video {

@@ -47,7 +47,7 @@ How to talk:
   - No brackets, no abbreviations a voice would trip over (say "for example", not "e.g."), no "firstly / secondly / in conclusion".
 - Answer the question first. Then, most of the time, end with ONE short follow-up: a quick check question, or an offer to go deeper or move to a related topic. Don't do it every single time.
 - If the student gets something wrong, say so kindly and give the right idea in a sentence.
-- When you pick a NEW topic yourself (starting a quiz or a mock exam, or moving on after the follow-ups), take one of the suggested topics given at the end of these instructions that hasn't come up yet in this conversation, not the first or most obvious topic of the course. Students practise many times, so every conversation should feel different.
+- When you pick a NEW topic yourself (starting a quiz or a mock exam, or moving on after the follow-ups), ALWAYS use the NEXT NEW TOPIC given at the end of these instructions (or the next one in its list if it already came up). Never choose a topic on your own, not even a favourite or obvious one like the GSLS survey or carbon accounting, unless it's the one given. The topics are drawn at random for every message, so students who practise many times get different questions in a different order each time. When the student names a topic themselves, follow the student instead.
 - If the student says "quiz me" (or similar), examine like a good oral examiner, not like a list of flashcards. Ask one question, wait, react in a sentence. Then, most of the time, DIG DEEPER on the same point with a follow-up question before changing topic: ask why, how it works, what follows from it, for an example, or how it links to another part of the course. One or two follow-ups per topic, then move on to a new one. Only one question per reply, about one thing (never two questions joined with "and").
 - If the student asks for a mock oral exam, cover five topics this way: a main question each, usually with one follow-up. After the last one, give a short verdict: what was solid, what to review, and a practice estimate (see below).
 - If the student asks how they did or what grade they would get: give an honest practice estimate in words, one of "solid pass", "pass, with gaps" or "not there yet", say in one sentence what would lift it, and make clear it's a rough practice estimate from this conversation, not an official grade. Never give a numeric grade.
@@ -265,17 +265,23 @@ async function readStream(res: Response, onFirst: (sentence: string) => void): P
 // Changes with every message (so it sits after the cached course text): the greeting the student
 // heard, and a few random topics to pick from, so quizzes don't always start with the same question.
 function turnNotes(questions: ChatQuestion[], greeting?: string): string {
+  // A random module first, then a random question in it, so small modules come up as often as
+  // big ones and the order is different every time.
+  const byModule = new Map<number, ChatQuestion[]>();
+  for (const q of questions) byModule.set(q.session, [...(byModule.get(q.session) ?? []), q]);
+  const modules = [...byModule.values()];
   const picks: string[] = [];
-  const pool = [...questions];
-  for (let i = 0; i < 4 && pool.length; i++) {
-    const q = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
-    picks.push(`- ${q.topic} (${q.session_label ?? `Session ${q.session}`}, ${q.source_pages})`);
+  for (let i = 0; i < 6 && modules.length; i++) {
+    const m = modules.splice(Math.floor(Math.random() * modules.length), 1)[0];
+    const q = m[Math.floor(Math.random() * m.length)];
+    picks.push(`${q.topic} (${q.session_label ?? `Session ${q.session}`}, ${q.source_pages})`);
   }
   return [
     '# THIS CONVERSATION',
     greeting ? `The greeting the student heard: "${greeting}"` : '',
-    'Suggested topics for when you pick a new one yourself (choose one that hasn\'t come up yet):',
-    ...picks,
+    `NEXT NEW TOPIC (use this when you pick a new topic yourself): ${picks[0]}`,
+    "If that one has already come up in this conversation, take the first of these that hasn't (for a mock exam, go through them in this order):",
+    ...picks.slice(1).map((p, n) => `${n + 1}. ${p}`),
   ]
     .filter(Boolean)
     .join('\n');
