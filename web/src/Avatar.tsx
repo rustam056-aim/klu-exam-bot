@@ -10,7 +10,17 @@ import type { TutorState } from './Tutor'
 // (web/public/avatar/photo.jpg, never on GitHub, behind the access code like the slides).
 // The ring shows what's happening: a gentle pulse while he talks, the accent colour when it's
 // your turn, dots while he thinks. If even the photo can't load, `onFail` brings back the circle.
-export function Avatar({ state, label, onFail }: { state: TutorState; label: string; onFail: () => void }) {
+export function Avatar({
+  state,
+  label,
+  live: wantVideo,
+  onFail,
+}: {
+  state: TutorState
+  label: string
+  live: boolean // the Video tab: connect the talking avatar; otherwise just the photo
+  onFail: () => void
+}) {
   const [loaded, setLoaded] = useState(false)
   const [live, setLive] = useState<AvatarState>('off')
   const video = useRef<HTMLVideoElement>(null)
@@ -19,6 +29,7 @@ export function Avatar({ state, label, onFail }: { state: TutorState; label: str
   // Connect the talking avatar while this screen is open; hang up when leaving it.
   useEffect(() => {
     const off = onAvatarChange(setLive)
+    if (!wantVideo) return off
     let cancelled = false
     void avatarEnabled().then((on) => {
       if (on && !cancelled && video.current && audio.current) void startAvatar(video.current, audio.current)
@@ -28,9 +39,9 @@ export function Avatar({ state, label, onFail }: { state: TutorState; label: str
       off()
       stopAvatar()
     }
-  }, [])
+  }, [wantVideo])
 
-  const showVideo = live === 'live'
+  const showVideo = wantVideo && live === 'live'
   return (
     <div className={`avatar avatar-${state}`}>
       <div className="avatar-frame">
@@ -52,7 +63,7 @@ export function Avatar({ state, label, onFail }: { state: TutorState; label: str
         )}
       </div>
       <span className="tutor-label avatar-label" aria-live="polite">
-        {label}
+        {wantVideo && live === 'starting' ? 'Connecting the video…' : label}
       </span>
     </div>
   )
