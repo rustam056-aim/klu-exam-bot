@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { api } from './api'
 import type { FeedbackAnswers } from './api'
 
-// "Help us improve": a few quick taps and a few words, sent to Rustam and Prof. Meuer.
+// "Help improve this tool": a few quick taps and a few words, sent to Rustam and Prof. Meuer.
 // No name, no login; it only says which part of the tool the student was in.
 // The questions are the ones that help most to improve the tutor: are the answers right, are the
 // questions at exam level, does the voice work, would they really use it.
@@ -66,7 +66,7 @@ export function FeedbackBox({ where, compact = false }: { where: string; compact
   if (!open) {
     return (
       <button className={`btn ${compact ? 'ghost sm' : 'secondary'} feedback-open`} type="button" onClick={() => setOpen(true)}>
-        Help us improve (1 min)
+        Help improve this tool (1 min)
       </button>
     )
   }
@@ -87,10 +87,10 @@ export function FeedbackBox({ where, compact = false }: { where: string; compact
           .catch(() => setState('failed'))
       }}
     >
-      <h2>Help us improve</h2>
+      <h2>Help improve this tool</h2>
       <p className="note">
-        Your feedback helps us make this a better way to prepare for your exam. It’s anonymous and goes straight to the
-        people building this tool.
+        Your feedback helps you and your classmates prepare better for the exam. It goes straight to the person
+        building this tool, and it’s anonymous: nobody can tell who wrote it.
       </p>
 
       <fieldset className="fb-q">

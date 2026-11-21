@@ -578,9 +578,9 @@ export function ChatView({
   )
   const smallPrint = fresh && (
     <p className="note chat-note">
-      This is an AI tutor. It answers only from this year&rsquo;s course material and can still get things wrong, so
-      the slides have the last word. Please don&rsquo;t share personal details: what you say or type is sent to
-      Anthropic and ElevenLabs{videoOn && view === 'call' ? ', and to Simli, which animates his face,' : ''} to create the reply, and isn&rsquo;t saved by this site.
+      This is an AI tutor. It&rsquo;s built on this year&rsquo;s course material (slides, lectures, videos and readings)
+      and sometimes adds related background. It can still get things wrong, so the slides have the last word. Keep
+      personal details out of it; this site doesn&rsquo;t keep your conversation.
     </p>
   )
   const problems = (
