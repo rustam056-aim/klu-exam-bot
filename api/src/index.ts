@@ -7,6 +7,8 @@ import s3guests from '../data/questions_s3_guests_2026.json'; // Session 3, gues
 import videoTimes from '../data/video_times_2026.json'; // where in Alan's lecture each answer comes up (seconds)
 import { chatWithClaude, cleanTurns } from './chat';
 import { allow } from './usage';
+import { gradeExam } from './exam';
+import type { ExamTurnIn } from './exam';
 import type { UsageEnv } from './usage';
 export { Usage } from './usage'; // "Talk to Johannes" conversation
 
@@ -49,6 +51,7 @@ export interface Env extends UsageEnv {
   // Without it, feedback only shows up in the Worker logs.
   FEEDBACK?: {
     put: (key: string, value: string, options?: { metadata?: unknown }) => Promise<void>;
+    get: (key: string) => Promise<string | null>;
     list: (options?: { prefix?: string; limit?: number; cursor?: string }) => Promise<{
       keys: { name: string; metadata?: unknown }[];
       list_complete: boolean;
@@ -64,6 +67,28 @@ const ALL = [
   ...(readings as { questions: Question[] }).questions,
   ...(s3guests as { questions: Question[] }).questions,
 ];
+// A practice oral exam a student sent in (no name).
+type ExamStored = {
+  at: string;
+  lengthSec: number;
+  grade?: number;
+  verdict?: string;
+  leftWindow: number;
+  flagged: number;
+  turns: { question: string; answer: string; result?: string; comment?: string; thinkMs: number | null; flagged: boolean }[];
+};
+type ExamMeta = {
+  at: string;
+  lengthSec: number;
+  grade?: number;
+  right: number;
+  partly: number;
+  wrong: number;
+  avgThinkSec?: number;
+  leftWindow: number;
+  flagged: number;
+};
+
 type FeedbackItem = { at: string; rating?: number; where: string; text: string; answers?: Record<string, string> };
 // The quick questions in the feedback box and the answers they allow (see web/src/FeedbackBox.tsx).
 const FEEDBACK_QUESTIONS: Record<string, { label: string; values: Record<string, string> }> = {
@@ -263,6 +288,67 @@ export default {
       return new Response(body.slice(from, to + 1), { status: 206, headers });
     }
 
+    // GET /api/exams?admin=CODE  the practice oral exams students sent in (anonymous), for Prof. Meuer:
+    // grades, timings, flagged answers; /api/exams?admin=CODE&id=KEY shows one exam in full.
+    if (path === '/api/exams') {
+      if (!env.ADMIN_CODE || url.searchParams.get('admin') !== env.ADMIN_CODE) return json({ error: 'not found' }, 404);
+      if (!env.FEEDBACK) return new Response('Storage is not set up yet (see CLAUDE.md).', { status: 503 });
+      const esc = (t: unknown) =>
+        String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+      const page = (title: string, body: string) =>
+        new Response(
+          `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;margin:24px;color:#232323;max-width:1100px}table{border-collapse:collapse;width:100%}td,th{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid #ddd}.flag{background:#fff3cd}.q{font-weight:600}.muted{color:#666}</style>${body}`,
+          { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } },
+        );
+      const admin = encodeURIComponent(url.searchParams.get('admin') ?? '');
+      const id = url.searchParams.get('id');
+      if (id) {
+        const raw = id.startsWith('exam:') ? await env.FEEDBACK.get(id) : null;
+        if (!raw) return page('Not found', '<p>Not found.</p>');
+        const e = JSON.parse(raw) as ExamStored;
+        const rows = e.turns
+          .map(
+            (t, i) =>
+              `<tr class="${t.flagged ? 'flag' : ''}"><td>${i + 1}</td><td><div class="q">${esc(t.question)}</div><div>${esc(t.answer)}</div>${
+                t.comment ? `<div class="muted">${esc(t.result ?? '')}: ${esc(t.comment)}</div>` : ''
+              }</td><td>${t.thinkMs != null ? Math.round(t.thinkMs / 1000) + ' s' : ''}</td><td>${t.flagged ? 'flagged' : ''}</td></tr>`,
+          )
+          .join('');
+        return page(
+          'Oral exam',
+          `<p><a href="?admin=${admin}">All exams</a></p><h1>Practice oral exam, ${esc(e.at.slice(0, 16).replace('T', ' '))} UTC</h1>
+<p>Practice grade: <b>${esc(e.grade ?? 'n/a')}</b> · Length ${esc(Math.round(e.lengthSec / 60))} min · Left the window ${esc(e.leftWindow)}× · ${esc(e.flagged)} flagged</p>
+<p>${esc(e.verdict ?? '')}</p>
+<table><tr><th>#</th><th>Question and answer</th><th>Time before answering</th><th></th></tr>${rows}</table>`,
+        );
+      }
+      const items: { name: string; meta: ExamMeta }[] = [];
+      let cursor: string | undefined;
+      do {
+        const listed = await env.FEEDBACK.list({ prefix: 'exam:', limit: 1000, cursor });
+        for (const k of listed.keys) if (k.metadata) items.push({ name: k.name, meta: k.metadata as ExamMeta });
+        cursor = listed.list_complete ? undefined : listed.cursor;
+      } while (cursor);
+      items.reverse();
+      const graded = items.filter((i) => typeof i.meta.grade === 'number');
+      const avg = graded.length ? (graded.reduce((n, i) => n + (i.meta.grade ?? 0), 0) / graded.length).toFixed(1) : 'n/a';
+      const dist = [1, 2, 3, 4, 5]
+        .map((g) => `${g}.x: ${graded.filter((i) => Math.floor(i.meta.grade ?? 0) === g).length}`)
+        .join(' · ');
+      const rows = items
+        .map(
+          (i) =>
+            `<tr><td><a href="?admin=${admin}&id=${encodeURIComponent(i.name)}">${esc(i.meta.at.slice(0, 16).replace('T', ' '))}</a></td><td>${esc(i.meta.grade ?? '')}</td><td>${esc(Math.round(i.meta.lengthSec / 60))} min</td><td>${esc(i.meta.right)} · ${esc(i.meta.partly)} · ${esc(i.meta.wrong)}</td><td>${i.meta.avgThinkSec != null ? esc(i.meta.avgThinkSec) + ' s' : ''}</td><td>${esc(i.meta.leftWindow)}</td><td>${i.meta.flagged ? '<b>' + esc(i.meta.flagged) + '</b>' : '0'}</td></tr>`,
+        )
+        .join('');
+      return page(
+        'Practice oral exams',
+        `<h1>Practice oral exams</h1><p>${items.length} exams sent in (anonymous). Average practice grade: <b>${avg}</b> (${dist}). Times are UTC, newest first. Only for you: students never see how they compare.</p>
+<table><tr><th>When</th><th>Grade</th><th>Length</th><th>Right · partly · wrong</th><th>Avg. time before answering</th><th>Left window</th><th>Flagged</th></tr>${rows}</table>`,
+      );
+    }
+
     // GET /api/feedback/list?admin=CODE  what students wrote, newest first, as a simple page.
     // Opened in a browser by Rustam / Prof. Meuer, so it uses its own secret instead of the access header.
     if (path === '/api/feedback/list') {
@@ -453,10 +539,14 @@ export default {
       const wrapUp = body?.wrapUp === true;
       const greeting = typeof body?.greeting === 'string' ? body.greeting.slice(0, 300) : undefined;
       // The timed oral exam: minutes left, and whether time is up.
-      const examIn = body?.exam as { minutesLeft?: unknown; ending?: unknown } | undefined;
+      const examIn = body?.exam as { minutesLeft?: unknown; totalMinutes?: unknown; ending?: unknown } | undefined;
       const exam =
         examIn && typeof examIn === 'object' && Number.isFinite(Number(examIn.minutesLeft))
-          ? { minutesLeft: Math.min(60, Math.max(0, Number(examIn.minutesLeft))), ending: examIn.ending === true }
+          ? {
+              minutesLeft: Math.min(60, Math.max(0, Number(examIn.minutesLeft))),
+              totalMinutes: Math.min(60, Math.max(1, Number(examIn.totalMinutes) || 15)),
+              ending: examIn.ending === true,
+            }
           : undefined;
       if (!(await allow(env, req, 'chat'))) return json({ error: 'daily limit', reason: 'limit', kind: 'chat' }, 429);
       // stream: one JSON line per event, so the voice can start on the first sentence:
@@ -580,6 +670,68 @@ export default {
       return new Response(res.body, {
         headers: { 'content-type': body?.pcm ? 'audio/L16;rate=16000' : 'audio/mpeg', 'cache-control': 'no-store' },
       });
+    }
+
+    // POST /api/exam/grade {turns:[{question, answer}]} -> practice grade (KLU scale) + a comment per answer.
+    if (path === '/api/exam/grade' && req.method === 'POST') {
+      const body = (await req.json().catch(() => null)) as { turns?: unknown } | null;
+      const turns = (Array.isArray(body?.turns) ? body!.turns : [])
+        .filter((t): t is ExamTurnIn => typeof (t as ExamTurnIn)?.question === 'string' && typeof (t as ExamTurnIn)?.answer === 'string')
+        .slice(0, 60);
+      if (turns.length === 0) return json({ error: 'no answers' }, 400);
+      if (!env.ANTHROPIC_API_KEY) return json({ error: 'not set up' }, 503);
+      if (!(await allow(env, req, 'practice', 5))) return json({ error: 'daily limit', reason: 'limit', kind: 'practice' }, 429);
+      try {
+        return json(await gradeExam(turns, qs, env));
+      } catch (err) {
+        console.log('Exam grading failed:', String(err));
+        return json({ error: 'grading failed' }, 502);
+      }
+    }
+
+    // POST /api/exam/submit  the student sends their practice exam to Prof. Meuer (no name), with the
+    // answers they want him to double-check. Stored in KV under "exam:".
+    if (path === '/api/exam/submit' && req.method === 'POST') {
+      const body = (await req.json().catch(() => null)) as Partial<ExamStored> | null;
+      if (!body || !Array.isArray(body.turns) || body.turns.length === 0) return json({ error: 'nothing to send' }, 400);
+      const str = (v: unknown, n: number) => (typeof v === 'string' ? v.slice(0, n) : '');
+      const num = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : null);
+      const turns = body.turns.slice(0, 60).map((t) => ({
+        question: str(t?.question, 1500),
+        answer: str(t?.answer, 3000),
+        result: str(t?.result, 10) || undefined,
+        comment: str(t?.comment, 400) || undefined,
+        thinkMs: num(t?.thinkMs),
+        flagged: t?.flagged === true,
+      }));
+      const stored: ExamStored = {
+        at: new Date().toISOString(),
+        lengthSec: Math.max(0, Math.min(7200, num(body.lengthSec) ?? 0)),
+        grade: num(body.grade) ?? undefined,
+        verdict: str(body.verdict, 800) || undefined,
+        leftWindow: Math.max(0, num(body.leftWindow) ?? 0),
+        flagged: turns.filter((t) => t.flagged).length,
+        turns,
+      };
+      const thinks = turns.map((t) => t.thinkMs).filter((v): v is number => v != null);
+      const meta: ExamMeta = {
+        at: stored.at,
+        lengthSec: stored.lengthSec,
+        grade: stored.grade,
+        right: turns.filter((t) => t.result === 'right').length,
+        partly: turns.filter((t) => t.result === 'partly').length,
+        wrong: turns.filter((t) => t.result === 'wrong').length,
+        avgThinkSec: thinks.length ? Math.round(thinks.reduce((a, b) => a + b, 0) / thinks.length / 1000) : undefined,
+        leftWindow: stored.leftWindow,
+        flagged: stored.flagged,
+      };
+      if (!env.FEEDBACK) {
+        console.log('Exam (no storage):', JSON.stringify(meta));
+        return json({ ok: true, stored: false });
+      }
+      const key = `exam:${stored.at}:${crypto.randomUUID().slice(0, 8)}`;
+      await env.FEEDBACK.put(key, JSON.stringify(stored), { metadata: meta });
+      return json({ ok: true, stored: true });
     }
 
     // GET /api/avatar: is the talking avatar (Simli) set up? POST /api/avatar: a session token for it.

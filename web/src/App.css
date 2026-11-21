@@ -2761,3 +2761,81 @@ h2 {
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
 }
+
+.exam-grade {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.exam-grade-number {
+  display: grid;
+  justify-items: center;
+  min-width: 96px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: var(--steel);
+  color: var(--on-steel);
+}
+
+.exam-grade-number strong {
+  font-size: 2.25rem;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.exam-grade-label {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.exam-verdict {
+  margin: 0 0 4px;
+  font-weight: 560;
+}
+
+.exam-comment {
+  margin: 4px 0 0;
+  font-size: 0.9375rem;
+}
+
+.exam-turns li.is-beyond::marker {
+  color: #3b6fb6;
+}
+
+.exam-flag {
+  margin-top: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.exam-flag.is-on {
+  background: #fff3cd;
+  border-color: #e0b84d;
+  color: #6b4e00;
+  font-weight: 650;
+}
+
+.exam-send {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  padding-top: 4px;
+}
+
+@media (max-width: 560px) {
+  .exam-grade {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

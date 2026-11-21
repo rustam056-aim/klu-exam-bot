@@ -84,11 +84,12 @@ function remembered(key: string, fallback: boolean) {
 export type TalkMode = 'type' | 'talk' | 'video'
 
 // The timed oral exam, as in the real thing.
-// 30 minutes; a link with ?examMinutes=5 makes a shorter one (for trying it out).
+// 15 minutes (Prof. Meuer: "maybe make the trial exam only 15 min"); a link with ?examMinutes=5
+// makes a shorter one, for trying it out.
 const EXAM_MINUTES =
-  (typeof location !== 'undefined' && Number(new URLSearchParams(location.search).get('examMinutes'))) || 30
+  (typeof location !== 'undefined' && Number(new URLSearchParams(location.search).get('examMinutes'))) || 15
 const EXAM_GREETING =
-  'Welcome to your oral exam in Sustainable Logistics. It takes about 30 minutes. I’ll ask you questions, and you just answer out loud, the way you would in the real exam. Let’s begin.'
+  'Welcome to your practice oral exam in Sustainable Logistics. It takes about 15 minutes. I’ll ask you questions, and you just answer out loud, the way you would in the real exam. Let’s begin.'
 
 export function ChatView({
   readAloud,
@@ -275,7 +276,9 @@ export function ChatView({
     const examNow = now.current.examPhase === 'running' && !wrapUp
     const ending = examNow && timeUp.current
     if (ending) setExamPhase('closing')
-    const examInfo = examNow ? { minutesLeft: Math.max(0, (examEndsAt.current - Date.now()) / 60000), ending } : undefined
+    const examInfo = examNow
+      ? { minutesLeft: Math.max(0, (examEndsAt.current - Date.now()) / 60000), totalMinutes: EXAM_MINUTES, ending }
+      : undefined
     setBusy(true)
     setError(null)
     setNote(null)
@@ -630,7 +633,7 @@ export function ChatView({
           <span className="exam-title">Oral exam</span>
           {examOn && (
             <span className={`tag exam-clock ${examLeft !== null && examLeft < 120000 ? 'is-late' : ''}`} aria-live="off">
-              {examLeft === null ? '30:00' : examLeft > 0 ? `${clock(Math.ceil(examLeft / 1000))} left` : 'Time is up'}
+              {examLeft === null ? `${EXAM_MINUTES}:00` : examLeft > 0 ? `${clock(Math.ceil(examLeft / 1000))} left` : 'Time is up'}
             </span>
           )}
           {examPhase === 'running' && (

@@ -37,6 +37,30 @@ export const api = {
     return res.json() as Promise<AnswerResult>
   },
 
+  // After the practice oral exam: a practice grade and a comment per answer.
+  examGrade: async (turns: { question: string; answer: string }[]): Promise<ExamGradeReply> => {
+    const res = await fetch('/api/exam/grade', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...accessHeaders() },
+      body: JSON.stringify({ turns }),
+    })
+    if (res.status === 401) throw new NeedsCode()
+    await checkLimit(res)
+    if (!res.ok) throw new Error(`Request failed (${res.status})`)
+    return res.json() as Promise<ExamGradeReply>
+  },
+
+  // The student sends their exam to Prof. Meuer (no name), with the answers to double-check.
+  examSubmit: async (exam: unknown) => {
+    const res = await fetch('/api/exam/submit', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...accessHeaders() },
+      body: JSON.stringify(exam),
+    })
+    if (res.status === 401) throw new NeedsCode()
+    if (!res.ok) throw new Error(`Request failed (${res.status})`)
+  },
+
   feedback: async (body: { text: string; rating?: number; where: string; answers?: FeedbackAnswers }) => {
     const res = await fetch('/api/feedback', {
       method: 'POST',
@@ -100,3 +124,9 @@ export type ChatReply = {
 
 // The quick questions in the feedback box (each optional).
 export type FeedbackAnswers = Partial<Record<'correct' | 'level' | 'voice' | 'use', string>>
+
+export type ExamGradeReply = {
+  grade: number // KLU scale: 1.0 best, 4.0 pass, 5.0 fail (a practice estimate)
+  verdict: string
+  answers: { result: 'right' | 'partly' | 'wrong' | 'beyond'; comment: string }[]
+}

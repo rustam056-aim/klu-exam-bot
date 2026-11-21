@@ -217,7 +217,7 @@ export function StartScreen({
             </div>
             <button className="talk-exam" type="button" disabled={!sessions} onClick={onExam}>
               <span className="talk-exam-name">Oral exam</span>
-              <span className="talk-exam-text">30 minutes with him, like the real thing. Summary at the end.</span>
+              <span className="talk-exam-text">15 minutes with him, like the real thing. Practice grade at the end.</span>
             </button>
             <span className="mode-stat">
               {talked.answered > 0

@@ -117,7 +117,7 @@ const SOURCE_RE = /^((S\d+|MAN|TEC|FRA|SOV|Elkington 2018) p\d+(, p\d+)*|Video \
 // The whole course in one text block. Built once per Worker instance, and the same for every
 // student, so Claude can cache it (cheaper and faster after the first message).
 let cached: { key: string; text: string } | null = null;
-function knowledge(questions: ChatQuestion[]): string {
+export function knowledge(questions: ChatQuestion[]): string {
   const key = String(questions.length);
   if (cached?.key === key) return cached.text;
   const parts: string[] = ['# COURSE MATERIAL'];
@@ -280,7 +280,7 @@ async function readStream(res: Response, onFirst: (sentence: string) => void): P
 
 // Changes with every message (so it sits after the cached course text): the greeting the student
 // heard, and a few random topics to pick from, so quizzes don't always start with the same question.
-export type ExamInfo = { minutesLeft: number; ending?: boolean };
+export type ExamInfo = { minutesLeft: number; totalMinutes?: number; ending?: boolean };
 
 function turnNotes(questions: ChatQuestion[], greeting?: string, exam?: ExamInfo): string {
   // A random module first, then a random question in it, so small modules come up as often as
@@ -315,7 +315,7 @@ Close the exam now in two short sentences: thank the student, say the exam is ov
   }
   return `
 # ORAL EXAM MODE (this overrides the quiz rules above)
-This is a timed oral exam of about 30 minutes, as in the real exam. Minutes left: ${Math.max(0, Math.round(exam.minutesLeft))}.
+This is a timed practice oral exam of about ${exam.totalMinutes ?? 15} minutes. Minutes left: ${Math.max(0, Math.round(exam.minutesLeft))}.
 - You are the examiner. One question at a time. Cover as many different topics as the time allows, about 3 minutes per topic: a main question, then one or two follow-ups that dig deeper (why, how, an example, a link to another part of the course). Take the topics from NEXT NEW TOPIC and its list, never your own favourites.
 - Don't correct the student, don't tell them the right answer and don't say whether they were right. React neutrally and briefly ("Okay.", "Thank you.", "Mhm."), then ask the next question. If they struggle, give a small hint inside a follow-up question, or say that's fine and move on.
 - If they bring in something that isn't in the course material, say briefly that it goes beyond the lectures and that you'll check it afterwards.
