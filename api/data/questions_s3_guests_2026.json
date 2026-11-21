@@ -59,10 +59,10 @@
       "difficulty": "easy",
       "question": "Which aircraft had the largest payload of the three shown in the warm-up?",
       "options": {
-        "A": "Boeing 777-F (102 t)",
-        "B": "Boeing 747-8F (139 t)",
-        "C": "Antonov 225 (250 t)",
-        "D": "Airbus A380 (180 t)"
+        "A": "Boeing 777-F",
+        "B": "Boeing 747-8F",
+        "C": "Antonov 225",
+        "D": "Airbus A380"
       },
       "correct": "C",
       "key_points": [
@@ -382,10 +382,10 @@
       "difficulty": "medium",
       "question": "In MAN's example TCO for a diesel truck in Germany, which cost item is the largest?",
       "options": {
-        "A": "Driver (29%)",
-        "B": "Diesel incl. AdBlue (37%)",
-        "C": "Toll (17%)",
-        "D": "Vehicle depreciation (13%)"
+        "A": "Driver",
+        "B": "Diesel incl. AdBlue",
+        "C": "Toll",
+        "D": "Vehicle depreciation"
       },
       "correct": "B",
       "key_points": [
@@ -882,9 +882,9 @@
       "difficulty": "medium",
       "question": "Well-to-wheel, which option cuts the most CO2 compared with diesel?",
       "options": {
-        "A": "HVO100 (up to 85%)",
-        "B": "BEV on German grid mix (about 40%)",
-        "C": "BEV on certified green electricity (about 90%)",
+        "A": "HVO100",
+        "B": "BEV on German grid mix",
+        "C": "BEV on certified green electricity",
         "D": "They're all about the same"
       },
       "correct": "C",

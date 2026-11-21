@@ -35,7 +35,7 @@ export interface Env extends UsageEnv {
   ANTHROPIC_API_KEY?: string;
   ELEVENLABS_API_KEY?: string;
   ELEVENLABS_VOICE_ID?: string; // optional: another voice, e.g. the clone of Prof. Meuer
-  ELEVENLABS_SPEED?: string; // optional: reading speed, 0.7 (slow) to 1.2 (fast); default 0.82
+  ELEVENLABS_SPEED?: string; // no longer used: practice reading uses the same voice as the conversation (ELEVENLABS_CHAT_SPEED)
   ELEVENLABS_MODEL?: string; // optional: voice model; default eleven_multilingual_v2 (livelier), or eleven_flash_v2_5 (cheaper)
   ELEVENLABS_CHAT_MODEL?: string;
   SIMLI_API_KEY?: string; // talking avatar (simli.com); with SIMLI_FACE_ID set, the Talk view shows it
@@ -663,7 +663,8 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
       const around = (t: unknown) => (typeof t === 'string' && t.trim() ? sayable(t.trim().slice(-300)) : undefined);
       const voice = env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
       const standard = env.ELEVENLABS_MODEL || 'eleven_multilingual_v2';
-      const model = (body?.chat && env.ELEVENLABS_CHAT_MODEL) || standard;
+      // One voice everywhere: practice questions sound exactly like Talk to Johannes.
+      const model = env.ELEVENLABS_CHAT_MODEL || standard;
       const tts = (payload: Record<string, unknown>) =>
         fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=${body?.pcm ? 'pcm_16000' : 'mp3_44100_128'}`, {
           method: 'POST',
@@ -674,12 +675,9 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
           },
           body: JSON.stringify(payload),
         });
-      // Lower stability + some style = more life in the voice. In the conversation he talks a bit
-      // more freely and at a more natural pace than when he reads a question out
-      // (speed 0.7 to 1.2: ELEVENLABS_SPEED for reading, ELEVENLABS_CHAT_SPEED for talking).
-      const settings = body?.chat
-        ? { stability: 0.3, similarity_boost: 0.8, style: 0.45, use_speaker_boost: true, speed: speedOf(env.ELEVENLABS_CHAT_SPEED, 0.95) }
-        : { stability: 0.35, similarity_boost: 0.8, style: 0.3, use_speaker_boost: true, speed: speedOf(env.ELEVENLABS_SPEED, 0.82) };
+      // Lower stability + some style = more life in the voice. The same for reading a question and for
+      // talking (ELEVENLABS_CHAT_SPEED, 0.7 to 1.2), so he never sounds like two different people.
+      const settings = { stability: 0.3, similarity_boost: 0.8, style: 0.45, use_speaker_boost: true, speed: speedOf(env.ELEVENLABS_CHAT_SPEED, 0.95) };
       const full = (model_id: string) => ({
         text,
         previous_text: around(body?.previous),
