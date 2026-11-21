@@ -144,8 +144,8 @@ export function StartScreen({
               Talk to Johannes <span className="tag">AI tutor</span>
             </span>
             <span className="mode-text">
-              A conversation about the course, out loud or typed. Ask anything, let him quiz you, or do a mock oral
-              exam.
+              A conversation about the course: type, talk out loud, or talk to him on video. Ask anything, let him
+              quiz you, or do a mock oral exam.
             </span>
             <span className="mode-stat">
               {talked.answered > 0
