@@ -135,6 +135,21 @@ const SOURCE_RE = /^((S\d+|MAN|TEC|FRA|SOV|Elkington 2018) p\d+(, p\d+)*|Video \
 // The whole course in one text block. Built once per Worker instance, and the same for every
 // student, so Claude can cache it (cheaper and faster after the first message).
 let cached: { key: string; text: string } | null = null;
+
+// The key points of a question that say something new compared with its model answer (at least
+// 40% of their words aren't in it). Most key points just repeat the answer in other words.
+const STOPWORDS = new Set('the a an of to and or in on for is are be by with as that this it its from at their they which what how why can not more less than'.split(' '));
+function contentWords(text: string): string[] {
+  return (text.toLowerCase().match(/[a-z0-9]+/g) ?? []).filter((w) => !STOPWORDS.has(w));
+}
+function addedPoints(q: ChatQuestion): string[] {
+  if (q.key_points.length <= 1 && q.key_points[0] === q.model_answer) return [];
+  const inAnswer = new Set(contentWords(q.model_answer));
+  return q.key_points.filter((k) => {
+    const words = contentWords(k);
+    return words.length > 0 && words.filter((w) => !inAnswer.has(w)).length / words.length >= 0.4;
+  });
+}
 export function knowledge(questions: ChatQuestion[]): string {
   const key = String(questions.length);
   if (cached?.key === key) return cached.text;
@@ -151,12 +166,18 @@ export function knowledge(questions: ChatQuestion[]): string {
     parts.push(`[Video ${String(v.number).padStart(2, "0")}] ${v.title}: ${v.text}`);
   }
   parts.push('\n## Practice questions with the course answers (cite the code in brackets)');
+  // Grouped by module (the name once, not on every question), and only the key points that add
+  // something the answer doesn't already say. Keeps the whole prompt well under 100,000 tokens,
+  // above which Haiku 5.5 costs five times as much per message.
+  let lastModule = '';
   for (const q of questions) {
     const where = q.session_label ?? `Session ${q.session}`;
-    // Key points only where they add something to the model answer (open questions).
-    const extra = q.key_points.length > 1 || q.key_points[0] !== q.model_answer;
-    const points = extra ? ` Key points: ${q.key_points.join('; ').replace(/\.$/, '')}.` : '';
-    parts.push(`[${q.source_pages}] (${where}, ${q.topic}) Q: ${q.question} A: ${q.model_answer}${points}`);
+    if (where !== lastModule) {
+      parts.push(`### ${where}`);
+      lastModule = where;
+    }
+    const points = addedPoints(q);
+    parts.push(`[${q.source_pages}] (${q.topic}) Q: ${q.question} A: ${q.model_answer}${points.length ? ` Key points: ${points.join('; ').replace(/\.$/, '')}.` : ''}`);
   }
   cached = { key, text: parts.join('\n') };
   return cached.text;
@@ -264,7 +285,9 @@ export function textOf(json: string): string {
 
 function logUsage(usage: Usage | undefined) {
   // Shows in the Cloudflare logs whether the course text came from the cache ("cached" should be
-  // about 60,000 on every message after the first; if it stays 0, each message costs full price).
+  // about 88,000 on every message after the first; if it stays 0, each message costs full price).
+  const total = (usage?.input_tokens ?? 0) + (usage?.cache_read_input_tokens ?? 0) + (usage?.cache_creation_input_tokens ?? 0);
+  if (total > 97000) console.log(`Chat prompt is ${total} tokens: above 100,000 Haiku 5.5 costs 5x, keep the course text shorter`);
   console.log(
     `Chat tokens: new ${usage?.input_tokens ?? '?'}, cached ${usage?.cache_read_input_tokens ?? 0}, ` +
       `cache written ${usage?.cache_creation_input_tokens ?? 0}, out ${usage?.output_tokens ?? '?'}`,
@@ -329,6 +352,31 @@ async function readStream(res: Response, onFirst: (sentence: string) => void): P
 // heard, and a few random topics to pick from, so quizzes don't always start with the same question.
 export type ExamInfo = { minutesLeft: number; totalMinutes?: number; ending?: boolean };
 
+// The little word a reply opens with ("Good,", "No problem.", "Thank you."), if it has one.
+const OPENER_RE =
+  /^(no problem|of course|thank you|thanks|fair enough|spot on|not quite|great|good|right|yes|yeah|okay|ok|alright|exactly|nice|sure|mhm|hmm|close|perfect|absolutely|correct)\s*[,.!:;—–-]+\s*/i;
+const openerKey = (text: string) => text.trim().match(OPENER_RE)?.[1].toLowerCase().replace(/^ok$/, 'okay') ?? null;
+const NEUTRAL_OPENERS = ['Okay.', 'Thank you.', 'Mhm.', 'Alright.', 'I see.'];
+
+// If a reply opens with the same little word as one of his last two replies, change it: in the
+// exam swap it for another neutral word, otherwise just start with what comes after it. (Haiku
+// doesn't reliably keep track of this itself, even when told.)
+export function freshOpening(text: string, recentKeys: (string | null)[], exam: boolean): string {
+  const key = openerKey(text);
+  if (!key || !recentKeys.includes(key)) return text;
+  const m = text.trim().match(OPENER_RE)!;
+  const rest = text.trim().slice(m[0].length);
+  if (exam) {
+    const other = NEUTRAL_OPENERS.find((o) => {
+      const k = openerKey(o + ' x');
+      return k !== key && !recentKeys.includes(k);
+    });
+    return other ? `${other} ${rest}`.trim() : text;
+  }
+  if (rest.split(/\s+/).length < 3) return text;
+  return rest.charAt(0).toUpperCase() + rest.slice(1);
+}
+
 // How his recent replies started ("Good", "No problem"), so he doesn't open the same way again.
 // The model can't reliably keep track of this itself, so the server lists them for it.
 export function recentOpeners(turns: ChatTurn[]): string[] {
@@ -339,12 +387,28 @@ export function recentOpeners(turns: ChatTurn[]): string[] {
   return [...new Set(openers.reverse())].slice(0, 5);
 }
 
-function turnNotes(questions: ChatQuestion[], greeting?: string, exam?: ExamInfo, turns: ChatTurn[] = []): string {
+export function turnNotes(
+  questions: ChatQuestion[],
+  greeting?: string,
+  exam?: ExamInfo,
+  turns: ChatTurn[] = [],
+  recentSources: string[] = [],
+): string {
+  // Which lecture his last replies were about (from the sources the page sends back, newest last),
+  // and how many replies in a row stayed on it.
+  const recentModules = recentSources.map(moduleOf).filter((n): n is number => n !== undefined); // small talk has no source
+  const current = recentModules[recentModules.length - 1];
+  let streak = 0;
+  for (let i = recentModules.length - 1; i >= 0 && current !== undefined && recentModules[i] === current; i--) streak++;
+  const labelOf = (n: number) => {
+    const q = questions.find((x) => x.session === n);
+    return q?.session_label ?? `Session ${n}`;
+  };
   // A random module first, then a random question in it, so small modules come up as often as
-  // big ones and the order is different every time.
+  // big ones and the order is different every time. Never the lecture he's just been on.
   const byModule = new Map<number, ChatQuestion[]>();
   for (const q of questions) byModule.set(q.session, [...(byModule.get(q.session) ?? []), q]);
-  const modules = [...byModule.values()];
+  const modules = [...byModule.entries()].filter(([n]) => n !== current).map(([, qs]) => qs);
   const picks: string[] = [];
   for (let i = 0; i < 6 && modules.length; i++) {
     const m = modules.splice(Math.floor(Math.random() * modules.length), 1)[0];
@@ -353,8 +417,10 @@ function turnNotes(questions: ChatQuestion[], greeting?: string, exam?: ExamInfo
   }
   // Every third question: time for a new topic (a main question plus two follow-ups per topic),
   // so a quiz or exam doesn't get stuck on one topic (Prof. Meuer: "it only asks about the survey").
+  // Time for a new lecture: three replies in a row on the same one (or, if the page sent no
+  // sources, every third reply).
   const asked = turns.filter((t) => t.role === 'assistant').length;
-  const switchNow = asked >= 3 && asked % 3 === 0 && !exam?.ending;
+  const switchNow = !exam?.ending && (recentModules.length ? streak >= 3 : asked >= 3 && asked % 3 === 0);
   const openers = recentOpeners(turns);
   return [
     '# THIS CONVERSATION',
@@ -363,7 +429,7 @@ function turnNotes(questions: ChatQuestion[], greeting?: string, exam?: ExamInfo
     "If that one has already come up in this conversation, take the first of these that hasn't (for a mock exam, go through them in this order):",
     ...picks.slice(1).map((p, n) => `${n + 1}. ${p}`),
     switchNow
-      ? `NEW TOPIC NOW: if you are quizzing or examining the student and they have just answered, react briefly and then ask about this topic in this reply: ${picks[0]}. It must be a different lecture or source from the one you've just been asking about (if it isn't, take the next one in the list above). Not another follow-up on the same lecture. (If they asked you something, asked you to repeat, or want to stay on this topic, do that instead.)`
+      ? `NEW TOPIC NOW: ${current !== undefined ? `your last ${streak} replies were all about ${labelOf(current)}. ` : ''}If you are quizzing or examining the student and they have just answered, react briefly and then ask about this topic in this reply: ${picks[0]}. A different lecture, not another follow-up on the same one. (If they asked you something, asked you to repeat, or want to stay on this lecture, do that instead.)`
       : '',
     openers.length
       ? `Your recent replies started with: ${openers.map((o) => `"${o}"`).join(', ')}. Start this reply differently.`
@@ -404,7 +470,7 @@ export async function chatWithClaude(
   env: { ANTHROPIC_API_KEY?: string; ANTHROPIC_MODEL?: string; ANTHROPIC_CHAT_MODEL?: string },
   wrapUp = false,
   onFirst?: (sentence: string) => void,
-  extra: { greeting?: string; exam?: ExamInfo } = {},
+  extra: { greeting?: string; exam?: ExamInfo; recentSources?: string[] } = {},
 ): Promise<ChatResult> {
   if (wrapUp) {
     turns = turns.map((t, i) => (i === turns.length - 1 ? { ...t, content: `${t.content}\n\n${WRAP_UP}` } : t));
@@ -437,7 +503,13 @@ export async function chatWithClaude(
         messages: turns,
       }),
     });
-  const thisTurn = turnNotes(questions, extra.greeting, extra.exam, turns);
+  const thisTurn = turnNotes(questions, extra.greeting, extra.exam, turns, extra.recentSources);
+  // How his last two replies opened, to keep this one from opening the same way.
+  const lastKeys = turns
+    .filter((t) => t.role === 'assistant')
+    .slice(-2)
+    .map((t) => openerKey(t.content));
+  const fresh = (t: string) => freshOpening(t, lastKeys, !!extra.exam);
   const streaming = !!onFirst;
   let used = chosen;
   // A busy moment at Anthropic (429/5xx/529): wait a little and try again, up to 3 times.
@@ -455,8 +527,8 @@ export async function chatWithClaude(
   let input: ToolInput | undefined;
   if (streaming) {
     const streamed = await readStream(res, (sentence) => {
-      first = sentence;
-      onFirst!(sentence);
+      first = fresh(sentence);
+      onFirst!(first);
     }).catch((err) => {
       console.log('Chat: stream failed', String(err));
       return { input: undefined, json: '' };
@@ -483,7 +555,7 @@ export async function chatWithClaude(
       input = data.content?.find((c) => c.type === 'tool_use')?.input;
     }
   }
-  let reply = spoken(typeof input?.text === 'string' ? input.text : '');
+  let reply = fresh(spoken(typeof input?.text === 'string' ? input.text : ''));
   if (extra.exam?.ending && reply) reply = closingOnly(reply);
   if (!reply) throw new Error(first ? 'Claude stream broke off' : 'Claude returned no reply');
   const sources = (Array.isArray(input?.sources) ? input!.sources : [])

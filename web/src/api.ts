@@ -92,11 +92,12 @@ export const api = {
     onFirst?: (sentence: string) => void,
     greeting?: string,
     exam?: { minutesLeft: number; ending?: boolean }, // the timed oral exam
+    recentSources?: string[], // main source of each of his last replies, newest last
   ): Promise<ChatReply> => {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...accessHeaders() },
-      body: JSON.stringify({ messages, stream: true, greeting, exam, ...(wrapUp ? { wrapUp: true } : {}) }),
+      body: JSON.stringify({ messages, stream: true, greeting, exam, recentSources, ...(wrapUp ? { wrapUp: true } : {}) }),
     })
     if (res.status === 401) throw new NeedsCode()
     await checkLimit(res)

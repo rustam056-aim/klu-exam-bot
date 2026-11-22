@@ -574,7 +574,12 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
     // Conversation with the tutor. It only knows the course material (see chat.ts).
     if (path === '/api/chat' && req.method === 'POST') {
       if (!env.ANTHROPIC_API_KEY) return json({ error: 'chat is not set up' }, 503);
-      const body = (await req.json().catch(() => null)) as { messages?: unknown; wrapUp?: unknown; stream?: unknown; greeting?: unknown; exam?: unknown } | null;
+      const body = (await req.json().catch(() => null)) as { messages?: unknown; wrapUp?: unknown; stream?: unknown; greeting?: unknown; exam?: unknown; recentSources?: unknown } | null;
+      // The main source of each of his last few replies (newest last), so he knows which lecture
+      // he has been on and moves to another one in time.
+      const recentSources = (Array.isArray(body?.recentSources) ? body!.recentSources : [])
+        .slice(-6)
+        .map((x) => (typeof x === 'string' ? x.slice(0, 40) : ''));
       const turns = cleanTurns(body?.messages);
       if (!turns) return json({ error: 'need messages ending with a user message' }, 400);
       const wrapUp = body?.wrapUp === true;
@@ -599,7 +604,7 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
         const line = (obj: unknown) => writer.write(encoder.encode(JSON.stringify(obj) + '\n'));
         const work = (async () => {
           try {
-            const result = await chatWithClaude(turns, qs, env, wrapUp, (text) => void line({ type: 'first', text }), { greeting, exam });
+            const result = await chatWithClaude(turns, qs, env, wrapUp, (text) => void line({ type: 'first', text }), { greeting, exam, recentSources });
             await line({ type: 'done', ...result });
           } catch (err) {
             console.log('Chat failed:', String(err));
@@ -614,7 +619,7 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
         });
       }
       try {
-        return json(await chatWithClaude(turns, qs, env, wrapUp, undefined, { greeting, exam }));
+        return json(await chatWithClaude(turns, qs, env, wrapUp, undefined, { greeting, exam, recentSources }));
       } catch (err) {
         console.log('Chat failed:', String(err));
         // A short reason helps when someone sends a screenshot of the error.

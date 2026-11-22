@@ -309,6 +309,11 @@ export function ChatView({
         },
         history.find((m) => m.local && m.role === 'assistant')?.text, // the greeting he opened with
         examInfo,
+        // Which lecture his last replies were about, so he moves on to another one in time.
+        history
+          .filter((m) => m.role === 'assistant' && !m.local)
+          .slice(-4)
+          .map((m) => m.sources?.[0] ?? ''),
       )
       rest.finish(res.rest ?? '')
       hisWords.current = res.reply
