@@ -2445,6 +2445,7 @@ h2 {
   background: center / cover no-repeat;
   filter: blur(28px) saturate(0.9) brightness(0.75);
   transform: scale(1.1);
+  will-change: transform; /* its own layer: blurred once, not again for every video frame */
 }
 
 /* The video (square) sits in the middle at full height; the blurred photo fills the sides. */
@@ -2507,11 +2508,10 @@ h2 {
   left: 16px;
   padding: 7px 14px;
   border-radius: 999px;
-  background: rgb(20 10 15 / 0.55);
+  background: rgb(20 10 15 / 0.72); /* no backdrop blur: it would be redrawn on every video frame */
   color: #fff;
   font-weight: 650;
   font-size: 0.9375rem;
-  backdrop-filter: blur(6px);
 }
 
 .avatar-listening.vcall-stage .vcall-status {
@@ -2571,9 +2571,8 @@ h2 {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: rgb(20 10 15 / 0.5);
+  background: rgb(20 10 15 / 0.7);
   color: #fff;
-  backdrop-filter: blur(6px);
   transition: background-color 160ms ease, box-shadow 160ms ease;
 }
 
@@ -3052,3 +3051,28 @@ p.exam-flag {
   cursor: default;
 }
 
+
+/* ?debug=1: the video meter on the call */
+.vcall-debug {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 0.65);
+  color: #fff;
+  font: 600 12px/1.4 ui-monospace, Menlo, monospace;
+  max-width: calc(100% - 24px);
+}
+
+/* ?plain=1: the lightest call window (no blurred photo, no rounded clipping of the video) */
+.vcall-stage.is-plain {
+  border-radius: 0;
+  box-shadow: none;
+  background: #1d1418;
+}
+
+.vcall-stage.is-plain.is-live .vcall-backdrop {
+  display: none;
+}

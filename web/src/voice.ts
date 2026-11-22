@@ -1,5 +1,5 @@
 import { accessHeaders, checkLimit } from './access'
-import { avatarLive, clearAvatar, nextAvatarSpeaking, sendToAvatar } from './talkingAvatar'
+import { VIDEO_BUFFER_MS, avatarLive, clearAvatar, nextAvatarSpeaking, sendToAvatar } from './talkingAvatar'
 
 // Voice helpers. All calls go through our backend; the ElevenLabs key never reaches the browser.
 
@@ -86,8 +86,11 @@ export function unlockAudio() {
 // or his own voice coming back through the speakers).
 let pausedAt: number | null = null
 
+// When he goes on after a pause, he goes back a little, so the word he was cut off in isn't lost.
+const RESUME_BACK_S = 0.4
+
 export function pauseSpeaking(): boolean {
-  if (avatarLive()) return false // the avatar can't pause; a real interruption stops him instead
+  if (avatarVoice) return pauseAvatarVoice()
   if (!player || !playing || player.paused) return false
   pausedAt = generation
   player.pause()
@@ -96,9 +99,11 @@ export function pauseSpeaking(): boolean {
 }
 
 export function resumeSpeaking() {
+  if (avatarHeld) return resumeAvatarVoice()
   if (!player || pausedAt === null || pausedAt !== generation) return
   pausedAt = null
   setSpeaking(true)
+  player.currentTime = Math.max(0, player.currentTime - RESUME_BACK_S)
   player.play().catch(() => stopSpeaking())
 }
 
@@ -110,7 +115,14 @@ export function audioContext(): AudioContext | null {
 
 export function stopSpeaking() {
   pausedAt = null
+  avatarVoice = false
+  avatarGoOn = false
+  avatarHeld = null
+  avatarSegments = []
+  const wake = avatarWake
+  avatarWake = null
   generation++
+  wake?.()
   if (avatarLive() && playing) clearAvatar()
   stopVoiceSources()
   if (player && playing) player.pause()
@@ -198,40 +210,160 @@ function pcmToBuffer(ctx: AudioContext, pcm: Uint8Array): AudioBuffer {
   return buffer
 }
 
+// While he talks through the avatar: what's scheduled (to know where he is when paused), and while
+// paused, the audio he still has to say (the rest of the piece he was in, and pieces not yet played).
+type Segment = { pcm: Uint8Array; at: number; src: AudioBufferSourceNode }
+let avatarVoice = false // speakViaAvatar is running
+let avatarSegments: Segment[] = []
+let avatarHeld: Uint8Array[] | null = null // non-null = paused
+let avatarWake: (() => void) | null = null // resolves the wait while paused (resume or stop)
+let avatarGoOn = false // "go on" came before anything was waiting for it
+
+// The student started talking: stop voice and lips right away, but remember where he was.
+function pauseAvatarVoice(): boolean {
+  const ctx = tones
+  if (!ctx || !playing || avatarHeld) return false
+  const now = ctx.currentTime
+  const held: Uint8Array[] = []
+  for (const seg of avatarSegments) {
+    const duration = seg.pcm.length / 2 / 16000
+    if (now < seg.at) held.push(seg.pcm)
+    else if (now < seg.at + duration) {
+      const from = Math.max(0, Math.floor((now - seg.at - RESUME_BACK_S) * 16000)) * 2
+      held.push(seg.pcm.subarray(from))
+    }
+  }
+  avatarHeld = held
+  avatarGoOn = false
+  avatarSegments = []
+  stopVoiceSources()
+  clearAvatar()
+  setSpeaking(false)
+  return true
+}
+
+// It was nothing (a cough, his own echo) or the student said "go on": carry on from there.
+function resumeAvatarVoice() {
+  if (!avatarHeld) return
+  setSpeaking(true)
+  avatarGoOn = true
+  const wake = avatarWake
+  avatarWake = null
+  wake?.() // speakViaAvatar picks the held audio up again
+}
+
+// Plays one piece: sent to Simli for the lips, and played by us once the lips start moving
+// (after a gap) or right after the previous piece.
+async function playPiece(ctx: AudioContext, pcm: Uint8Array, next: number, mine: number): Promise<number | null> {
+  const afterGap = next <= ctx.currentTime // nothing is playing: wait for the lips to start
+  const lipsStart = afterGap ? nextAvatarSpeaking(1500) : null
+  sendToAvatar(pcm)
+  if (lipsStart) {
+    await lipsStart
+    if (mine !== generation || avatarHeld) return null
+  }
+  const src = ctx.createBufferSource()
+  src.buffer = pcmToBuffer(ctx, pcm)
+  src.connect(ctx.destination)
+  // With a smoothing buffer on his video (?buffer=), the lips show up that much later: wait too.
+  const at = Math.max(next, ctx.currentTime + (afterGap ? VIDEO_BUFFER_MS / 1000 : 0))
+  src.start(at)
+  voiceSources.push(src)
+  avatarSegments.push({ pcm, at, src })
+  return at + src.buffer.duration
+}
+
+// (Functions, so TypeScript doesn't assume these can't change while we wait.)
+const heldAudio = (): Uint8Array[] | null => avatarHeld
+const waitWhilePaused = () =>
+  avatarGoOn
+    ? Promise.resolve()
+    : new Promise<void>((resolve) => {
+        avatarWake = resolve
+      })
+
 async function speakViaAvatar(parts: Promise<Uint8Array>[], mine: number): Promise<boolean> {
   const ctx = audioContext()
   if (!ctx) throw new Error('no audio')
   if (ctx.state === 'suspended') await ctx.resume().catch(() => undefined)
+  avatarVoice = true
+  avatarSegments = []
+  avatarHeld = null
   let next = 0 // audio-clock time where the next piece starts
-  let last: Promise<void> = Promise.resolve()
-  for (const part of parts) {
-    const pcm = await part
+
+  // Paused: wait until he may go on (or is stopped), then play what was held back.
+  async function goOnAfterPause(): Promise<boolean> {
+    await waitWhilePaused()
+    avatarGoOn = false
     if (mine !== generation) return false
-    if (pcm.length < 2) continue
-    const afterGap = next <= ctx.currentTime // nothing is playing: wait for the lips to start
-    const lipsStart = afterGap ? nextAvatarSpeaking(1500) : null
-    sendToAvatar(pcm)
-    if (lipsStart) {
-      await lipsStart
+    const held = heldAudio() ?? []
+    avatarHeld = null
+    next = 0
+    for (let i = 0; i < held.length; i++) {
+      if (held[i].length < 2) continue
+      const end = await playPiece(ctx!, held[i], next, mine)
       if (mine !== generation) return false
+      if (end === null) {
+        // Paused again before this piece started: keep it (and the rest) for later.
+        heldAudio()?.unshift(...held.slice(i))
+        break
+      }
+      next = end
     }
-    const src = ctx.createBufferSource()
-    src.buffer = pcmToBuffer(ctx, pcm)
-    src.connect(ctx.destination)
-    const at = Math.max(next, ctx.currentTime)
-    src.start(at)
-    next = at + src.buffer.duration
-    voiceSources.push(src)
-    last = new Promise((resolve) => {
-      src.onended = () => resolve()
-    })
+    return true
   }
-  await new Promise<void>((resolve) => {
-    finishCurrent = resolve
-    void last.then(resolve)
-  })
-  if (mine === generation) voiceSources = []
-  return mine === generation
+
+  try {
+    const queue = [...parts]
+    for (;;) {
+      if (heldAudio()) {
+        if (!(await goOnAfterPause())) return false
+        continue
+      }
+      const part = queue.shift()
+      if (!part) break
+      const pcm = await part
+      if (mine !== generation) return false
+      if (pcm.length < 2) continue
+      const paused = heldAudio()
+      if (paused) {
+        paused.push(pcm) // arrived while paused: say it after going on
+        continue
+      }
+      const end = await playPiece(ctx, pcm, next, mine)
+      if (mine !== generation) return false
+      if (end === null) {
+        heldAudio()?.unshift(pcm) // paused while waiting for the lips: not played yet
+        continue
+      }
+      next = end
+    }
+    // Everything is scheduled: wait until he's done (or paused again, or stopped).
+    for (;;) {
+      if (mine !== generation) return false
+      if (heldAudio()) {
+        if (!(await goOnAfterPause())) return false
+        continue
+      }
+      const left = next - ctx.currentTime
+      if (left <= 0) break
+      await new Promise<void>((resolve) => {
+        const timer = window.setTimeout(resolve, Math.min(250, left * 1000 + 20))
+        finishCurrent = () => {
+          window.clearTimeout(timer)
+          resolve()
+        }
+      })
+    }
+    voiceSources = []
+    return true
+  } finally {
+    if (mine === generation) {
+      avatarVoice = false
+      avatarSegments = []
+      avatarHeld = null
+    }
+  }
 }
 
 function playUrl(url: string): Promise<void> {

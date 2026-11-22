@@ -307,6 +307,16 @@ function toWav(parts: Float32Array[]): Blob {
 // An echo repeats his words in his order, so we look for runs of three words in a row that he
 // also said. A student answering uses the same course terms but not his exact sentences, so a
 // few shared words don't count. Short things like "stop", "wait", "sorry" are always the student.
+// After cutting in: "sorry, go on", "my mistake, keep talking", "never mind, continue". Then he
+// carries on where he stopped instead of answering it.
+export function wantsHimToGoOn(heard: string): boolean {
+  const t = heard.toLowerCase().replace(/[’]/g, "'").replace(/[^a-z' ]+/g, ' ').replace(/\s+/g, ' ').trim()
+  const words = t ? t.split(' ') : []
+  if (!words.length || words.length > 12) return false
+  if (/\b(don't|do not|stop|wait)\b/.test(t)) return false
+  return /\b(keep (going|talking)|go on|go ahead|carry on|continue|never ?mind|my (bad|mistake)|ignore (that|me|it)|as you were|sorry (go|continue|please))\b/.test(t)
+}
+
 export function soundsLikeEcho(heard: string, spoken: string): boolean {
   const words = (t: string) => t.toLowerCase().replace(/[’']/g, "'").match(/[a-z0-9']+/g) ?? []
   const said = words(heard)

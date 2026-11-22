@@ -834,7 +834,7 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
       // call window. SIMLI_SHAPE=square turns this off (Simli's default 768 x 768).
       const asked = (await req.json().catch(() => ({}))) as { shape?: string };
       const size =
-        env.SIMLI_SHAPE === 'square'
+        env.SIMLI_SHAPE === 'square' || asked.shape === 'square'
           ? {}
           : asked.shape === 'tall'
             ? { streaming_width: 720, streaming_height: 1280 }

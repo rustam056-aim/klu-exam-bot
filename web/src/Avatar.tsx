@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { accessQuery } from './access'
-import { avatarEnabled, onAvatarChange, setAvatarActive, startAvatar, stopAvatar } from './talkingAvatar'
+import { VIDEO_BUFFER_MS, avatarEnabled, onAvatarChange, setAvatarActive, startAvatar, stopAvatar, videoPeers } from './talkingAvatar'
 import type { AvatarState } from './talkingAvatar'
 import type { TutorState } from './Tutor'
 
@@ -66,10 +66,11 @@ export function Avatar({
   if (call) {
     const connecting = !showVideo && live !== 'failed'
     return (
-      <div className={`vcall-stage avatar-${state} ${showVideo ? 'is-live' : ''}`}>
+      <div className={`vcall-stage avatar-${state} ${showVideo ? 'is-live' : ''} ${PLAIN ? 'is-plain' : ''}`}>
         <div className="vcall-backdrop" style={{ backgroundImage: `url(${photo})` }} aria-hidden="true" />
         <video ref={video} className={`vcall-video ${showVideo ? 'is-on' : ''}`} autoPlay playsInline aria-hidden="true" />
         <audio ref={audio} autoPlay />
+        {DEBUG && showVideo && <VideoStats video={video} />}
         {!showVideo && (
           <img
             className="vcall-photo is-waiting"
@@ -136,4 +137,71 @@ export function Avatar({
       </span>
     </div>
   )
+}
+
+// ?debug=1: a small live meter on the video (frames per second actually shown, the size Simli
+// sends, dropped frames, the longest freeze in the last 5 seconds), to judge how smooth it is.
+const DEBUG = typeof location !== 'undefined' && new URLSearchParams(location.search).get('debug') === '1'
+// ?plain=1: no blurred photo behind the video and no rounded corners (the lightest possible call
+// window), to test whether the page itself makes the video stutter on a slow computer.
+const PLAIN = typeof location !== 'undefined' && new URLSearchParams(location.search).get('plain') === '1'
+
+type Inbound = { framesReceived?: number; framesDecoded?: number; framesDropped?: number; packetsLost?: number; packetsReceived?: number; jitter?: number }
+async function inboundVideo(): Promise<Inbound | null> {
+  for (const pc of videoPeers) {
+    if (pc.connectionState === 'closed') continue
+    const stats = await pc.getStats().catch(() => null)
+    let found: Inbound | null = null
+    stats?.forEach((r: { type?: string; kind?: string } & Inbound) => {
+      if (r.type === 'inbound-rtp' && r.kind === 'video') found = r
+    })
+    if (found) return found
+  }
+  return null
+}
+
+function VideoStats({ video }: { video: { current: HTMLVideoElement | null } }) {
+  const [text, setText] = useState('measuring…')
+  useEffect(() => {
+    const el = video.current as (HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number }) | null
+    if (!el || !el.requestVideoFrameCallback) return
+    let frames: number[] = []
+    let stopped = false
+    let before: Inbound | null = null
+    const onFrame = () => {
+      if (stopped) return
+      frames.push(performance.now())
+      el.requestVideoFrameCallback!(onFrame)
+    }
+    el.requestVideoFrameCallback(onFrame)
+    const timer = window.setInterval(async () => {
+      const now = performance.now()
+      // From the network, per second: frames received and decoded, lost packets, jitter.
+      const net = await inboundVideo()
+      let network = ''
+      if (net && before) {
+        const d = (k: keyof Inbound) => (net[k] ?? 0) - (before![k] ?? 0)
+        const lost = d('packetsLost'), got = d('packetsReceived')
+        network =
+          ` | network: ${d('framesReceived')} fps in, ${d('framesDecoded')} decoded, ${d('framesDropped')} dropped` +
+          `, lost ${got + lost > 0 ? Math.round((100 * lost) / (got + lost)) : 0}%, jitter ${Math.round((net.jitter ?? 0) * 1000)} ms`
+      }
+      before = net
+      frames = frames.filter((t) => now - t < 5000)
+      const lastSecond = frames.filter((t) => now - t < 1000).length
+      let longest = 0
+      for (let i = 1; i < frames.length; i++) longest = Math.max(longest, frames[i] - frames[i - 1])
+      const q = el.getVideoPlaybackQuality?.()
+      setText(
+        `shown ${lastSecond} fps · ${el.videoWidth}×${el.videoHeight} · buffer ${VIDEO_BUFFER_MS} ms · longest freeze ${Math.round(longest)} ms` +
+          (q ? ` · dropped ${q.droppedVideoFrames}/${q.totalVideoFrames}` : '') +
+          network,
+      )
+    }, 1000)
+    return () => {
+      stopped = true
+      window.clearInterval(timer)
+    }
+  }, [video])
+  return <div className="vcall-debug">{text}</div>
 }

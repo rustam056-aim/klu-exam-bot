@@ -26,6 +26,40 @@ type SimliModule = {
 
 export type AvatarState = 'off' | 'starting' | 'live' | 'failed'
 
+// Smoothing buffer for his video, in ms (link: ?buffer=300 to try another). Simli sends frames in little bursts;
+// with no buffer Chrome shows only the last frame of each burst and drops the others (measured:
+// 25 to 28 frames a second arrive, 17 to 19 are shown). A short buffer lets Chrome show them
+// evenly; his voice is then started the same amount later, so the lips still match.
+// Measured on a MacBook Air: no buffer 17 to 19 shown, 200 ms 25 shown (2% dropped, longest
+// freeze 66 ms), 400 ms no better. So 200 ms by default; ?buffer=0 switches it off.
+export const VIDEO_BUFFER_MS = (() => {
+  if (typeof location === 'undefined') return 200
+  const asked = new URLSearchParams(location.search).get('buffer')
+  const n = asked === null ? 200 : Number(asked)
+  return Number.isFinite(n) ? Math.min(1000, Math.max(0, n)) : 200
+})()
+
+// The video connections (Simli's WebRTC), so we can set that buffer and the ?debug=1 meter can
+// read what arrives from the network.
+export const videoPeers: RTCPeerConnection[] = []
+if (typeof window !== 'undefined' && window.RTCPeerConnection) {
+  const Original = window.RTCPeerConnection
+  const Watched = function (this: unknown, ...args: ConstructorParameters<typeof RTCPeerConnection>) {
+    const pc = new Original(...args)
+    videoPeers.push(pc)
+    if (VIDEO_BUFFER_MS > 0) {
+      pc.addEventListener('track', (e) => {
+        const receiver = e.receiver as RTCRtpReceiver & { jitterBufferTarget?: number | null }
+        if (e.track.kind === 'video' && 'jitterBufferTarget' in receiver) receiver.jitterBufferTarget = VIDEO_BUFFER_MS
+      })
+    }
+    return pc
+  } as unknown as typeof RTCPeerConnection
+  Watched.prototype = Original.prototype
+  Object.assign(Watched, Original)
+  window.RTCPeerConnection = Watched
+}
+
 let session: SimliSession | null = null
 let state: AvatarState = 'off'
 let attempt = 0 // bumps on every start/stop, so a slow start that was cancelled doesn't come alive
@@ -99,7 +133,11 @@ export async function startAvatar(video: HTMLVideoElement, audio: HTMLAudioEleme
   const mine = ++attempt
   setState('starting')
   try {
-    const shape = window.innerWidth >= window.innerHeight ? 'wide' : 'tall' // fill the call window
+    // Simli's default square video (768 x 768): measured smoother than a 1280 x 720 one (19 vs 13
+    // frames a second on a MacBook Air). The blurred photo fills the sides of the call window.
+    // A link with ?video=wide (or tall) still asks for the big video, to compare.
+    const forced = new URLSearchParams(location.search).get('video')
+    const shape = forced === 'wide' || forced === 'tall' ? forced : 'square'
     const res = await fetch('/api/avatar', {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...accessHeaders() },

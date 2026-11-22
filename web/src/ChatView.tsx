@@ -12,7 +12,7 @@ import { Avatar } from './Avatar'
 import { avatarEnabled, readyToGreet } from './talkingAvatar'
 import { Tutor } from './Tutor'
 import { clock, useRecorder } from './useRecorder'
-import { soundsLikeEcho, useLiveMic } from './liveMic'
+import { soundsLikeEcho, useLiveMic, wantsHimToGoOn } from './liveMic'
 import {
   chime,
   onSpeakingChange,
@@ -218,6 +218,12 @@ export function ChatView({
     if (!text || (wasOverHim && soundsLikeEcho(text, his))) {
       // Nothing real: carry on where he was.
       if (wasPaused) resumeSpeaking()
+      liveRef.current.mute(false)
+      return
+    }
+    if (wasPaused && wantsHimToGoOn(text)) {
+      // "Sorry, go on": he picks up exactly where he stopped.
+      resumeSpeaking()
       liveRef.current.mute(false)
       return
     }
