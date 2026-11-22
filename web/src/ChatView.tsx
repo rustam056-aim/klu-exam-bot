@@ -88,8 +88,7 @@ export type TalkMode = 'type' | 'talk' | 'video'
 // makes a shorter one, for trying it out.
 const EXAM_MINUTES =
   (typeof location !== 'undefined' && Number(new URLSearchParams(location.search).get('examMinutes'))) || 15
-const EXAM_GREETING =
-  'Welcome to your practice oral exam in Sustainable Logistics. It takes about 15 minutes. I’ll ask you questions, and you just answer out loud, the way you would in the real exam. Let’s begin.'
+const EXAM_GREETING = `Welcome to your practice oral exam in Sustainable Logistics. It takes about ${EXAM_MINUTES} minutes. I’ll ask you questions, and you just answer out loud, the way you would in the real exam. Let’s begin.`
 
 export function ChatView({
   readAloud,
@@ -109,6 +108,7 @@ export function ChatView({
   const examOn = examPhase === 'running' || examPhase === 'closing'
   const examRecord = useRef<ExamRecord>({ startedAt: 0, endedAt: 0, plannedMs: EXAM_MINUTES * 60000, turns: [], leftWindow: [] })
   const examEndsAt = useRef(0)
+  const endRequested = useRef(false) // the student pressed End exam
   const timeUp = useRef(false)
   const [tick, setTick] = useState(0) // re-renders the exam clock every second
   const [showAvatar, setShowAvatar] = useState(true) // his picture; falls back to the circle if it can't load
@@ -328,10 +328,18 @@ export function ChatView({
         sendPending()
         return
       }
-      if (ending) {
-        // Time is up: he says goodbye, then the summary.
+      if (ending || (examNow && res.examOver)) {
+        // Time is up, or the student asked to stop: he says goodbye, then the summary.
+        if (!ending) setExamPhase('closing')
         if (speakIt) await (voice.current ?? say(res.reply))
         finishExam()
+        return
+      }
+      if (examNow && endRequested.current) {
+        // End exam was pressed while he was writing: skip this question and close right away.
+        rest.finish('')
+        stopSpeaking()
+        void send('I’d like to end the exam here.', true, false, true)
         return
       }
       if (speakIt && (await (voice.current ?? say(res.reply)))) yourTurn()
@@ -341,8 +349,14 @@ export function ChatView({
       setPartial(null)
       if (!mounted.current) return
       const reason = err instanceof Error ? err.message.match(/\((\w+)\)/)?.[1] : undefined
+      // 429 / 5xx / 529 from the AI even after the server's retries: a busy moment, not a bug.
+      const busyNow = reason !== undefined && /^(429|500|502|503|504|529)$/.test(reason)
       setError(
-        err instanceof DailyLimit ? err.message : `That didn’t go through${reason ? ` (code ${reason})` : ''}. Try again.`,
+        err instanceof DailyLimit
+          ? err.message
+          : busyNow
+            ? 'Lots of students are practising right now. Give it a few seconds and try again.'
+            : `That didn’t go through${reason ? ` (code ${reason})` : ''}. Try again.`,
       )
       setBusy(false)
       pending.current = null
@@ -354,8 +368,16 @@ export function ChatView({
     if (!said || busyRef.current) return
     stopSpeaking()
     if (now.current.examPhase === 'running' && !meta) {
-      const last = examRecord.current.turns[examRecord.current.turns.length - 1]
-      if (last && !last.answer) last.answer = said
+      const turns = examRecord.current.turns
+      const asked = [...messagesRef.current].reverse().find((m) => m.role === 'assistant' && !m.local)?.text
+      let last = turns[turns.length - 1]
+      // Cut in before he finished asking: the question still counts (no thinking time then).
+      if (asked && (!last || last.question !== asked)) {
+        last = { question: asked, askedAt: Date.now() }
+        turns.push(last)
+      }
+      // Two things said to one question count as one answer.
+      if (last) last.answer = last.answer ? `${last.answer} ${said}` : said
     }
     const next: ChatMessage[] = [...messagesRef.current, { role: 'user', text: said, meta }]
     messagesRef.current = next
@@ -486,6 +508,7 @@ export function ChatView({
   // "End exam": he closes the exam right away (or after the reply he's writing).
   function endExamNow() {
     timeUp.current = true
+    endRequested.current = true
     stopSpeaking()
     if (!busyRef.current) void send('I’d like to end the exam here.', true, false, true)
   }

@@ -1,5 +1,6 @@
 import { knowledge } from './chat';
 import type { ChatQuestion } from './chat';
+import { withRetry } from './retry';
 
 // After the practice oral exam: a practice grade on the KLU scale (1.0 best, 4.0 pass, 5.0 fail),
 // judged against the course material, with a short comment per answer. Clearly an estimate,
@@ -9,7 +10,7 @@ export type ExamTurnIn = { question: string; answer: string };
 export type ExamGrade = {
   grade: number;
   verdict: string;
-  answers: { result: 'right' | 'partly' | 'wrong' | 'beyond'; comment: string; module: string; topic: string }[];
+  answers: { result: 'right' | 'partly' | 'wrong' | 'beyond' | 'skip'; comment: string; module: string; topic: string }[];
 };
 
 const GRADES = [1.0, 1.3, 1.7, 2.0, 2.3, 2.7, 3.0, 3.3, 3.7, 4.0, 5.0];
@@ -34,8 +35,8 @@ const gradeTool = (modules: string[]) => ({
           properties: {
             result: {
               type: 'string',
-              enum: ['right', 'partly', 'wrong', 'beyond'],
-              description: "Against the course material. 'beyond' = mostly content that isn't in the material (to be checked by the professor).",
+              enum: ['right', 'partly', 'wrong', 'beyond', 'skip'],
+              description: "Against the course material. 'beyond' = mostly content that isn't in the material (to be checked by the professor). 'skip' = not an answer at all (asked to repeat or rephrase, asked something back, noise).",
             },
             comment: { type: 'string', description: 'One short sentence: what was good or what was missing, from the material.' },
             module: { type: 'string', enum: [...modules, 'Other'], description: 'The course module the question is about.' },
@@ -61,6 +62,7 @@ const gradeTool = (modules: string[]) => ({
 const RUBRIC = `You grade a PRACTICE oral exam in the KLU course "Sustainable Logistics" (Prof. Johannes Meuer).
 Judge every answer only against the course material below. Be fair but realistic: students tend to think they know more than they do.
 - right: the key ideas from the material are there and correct. partly: some of it, or vague. wrong: wrong or no real answer ("I don't know" counts as wrong).
+- skip: the student didn't try to answer: they asked to repeat or rephrase the question, asked something back, or it's just noise. Not counted for or against them.
 - beyond: the answer is mostly about things that aren't in the material (they may still be correct; the professor checks them and may give extra credit). Don't count these against the student.
 - The grade (German scale) reflects the whole exam: how many questions were answered well, depth in follow-ups, precision with facts and numbers. Very short exams with few answers can't get a top grade.
 - The verdict is spoken by the professor to the student ("you", first person "my lectures"), clearly a practice estimate.`;
@@ -74,7 +76,7 @@ export async function gradeExam(
   const transcript = turns
     .map((t, i) => `Q${i + 1}: ${t.question.slice(0, 1200)}\nA${i + 1}: ${t.answer.slice(0, 2000)}`)
     .join('\n\n');
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await withRetry(() => fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'x-api-key': env.ANTHROPIC_API_KEY!,
@@ -92,7 +94,7 @@ export async function gradeExam(
       tool_choice: { type: 'tool', name: 'record_exam_grade' },
       messages: [{ role: 'user', content: `The exam (${turns.length} answers):\n\n${transcript}\n\nGrade it.` }],
     }),
-  });
+  }), 'Exam grade: Claude');
   if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const data = (await res.json()) as { content?: { type: string; input?: Partial<ExamGrade> & { answers?: unknown } }[] };
   const input = data.content?.find((c) => c.type === 'tool_use')?.input;
@@ -101,7 +103,7 @@ export async function gradeExam(
   const answers = (Array.isArray(input.answers) ? input.answers : [])
     .slice(0, turns.length)
     .map((a: { result?: unknown; comment?: unknown; module?: unknown; topic?: unknown }) => ({
-      result: (['right', 'partly', 'wrong', 'beyond'].includes(String(a?.result)) ? a.result : 'partly') as ExamGrade['answers'][number]['result'],
+      result: (['right', 'partly', 'wrong', 'beyond', 'skip'].includes(String(a?.result)) ? a.result : 'partly') as ExamGrade['answers'][number]['result'],
       comment: typeof a?.comment === 'string' ? a.comment.slice(0, 400) : '',
       module: modules.includes(String(a?.module)) ? String(a.module) : 'Other',
       topic: typeof a?.topic === 'string' ? a.topic.slice(0, 40) : '',

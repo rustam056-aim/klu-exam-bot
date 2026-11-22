@@ -76,7 +76,7 @@ export function examText(record: ExamRecord, messages: ChatMessage[], grade?: Ex
   return lines.join('\n')
 }
 
-const RESULT_LABEL = { right: 'Right', partly: 'Partly', wrong: 'Not there yet', beyond: 'Beyond the lectures' }
+const RESULT_LABEL = { right: 'Right', partly: 'Partly', wrong: 'Not there yet', beyond: 'Beyond the lectures', skip: 'Not an answer' }
 
 export function ExamReport({
   record,
@@ -133,7 +133,7 @@ export function ExamReport({
         grade: grade?.grade,
         leftWindow: record.leftWindow.length,
         answers: answered.map((t, i) => ({
-          result: grade?.answers[i]?.result ?? t.result ?? 'partly',
+          result: grade?.answers[i]?.result ?? t.result ?? 'partly', // 'skip' ones are left out by the server
           module: grade?.answers[i]?.module,
           topic: grade?.answers[i]?.topic,
           thinkMs: t.firstSpeechAt ? t.firstSpeechAt - t.askedAt : null,
@@ -252,7 +252,7 @@ export function ExamReport({
                       {grade?.answers[i]?.comment}
                     </p>
                   )}
-                  {full && (
+                  {full && r !== 'skip' && (
                     <FlagBox
                       flag={flags[i]}
                       full={flagsSent >= MAX_FLAGS}

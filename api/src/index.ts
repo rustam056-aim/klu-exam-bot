@@ -6,8 +6,9 @@ import readings from '../data/questions_readings_2026.json';
 import s3guests from '../data/questions_s3_guests_2026.json'; // Session 3, guest lectures, GSLS interview
 import videoTimes from '../data/video_times_2026.json'; // where in Alan's lecture each answer comes up (seconds)
 import { chatWithClaude, cleanTurns } from './chat';
-import { allow } from './usage';
+import { allow, everyoneLimited } from './usage';
 import { gradeExam } from './exam';
+import { withRetry } from './retry';
 import type { ExamTurnIn } from './exam';
 import type { UsageEnv } from './usage';
 export { Usage } from './usage'; // "Talk to Johannes" conversation
@@ -253,6 +254,10 @@ const json = (data: unknown, status = 200) =>
     headers: { 'content-type': 'application/json' },
   });
 
+// "Daily limit" answer: the student's own limit, or (everyone) the whole site's for today.
+const limited = (req: Request, kind: string) =>
+  json({ error: 'daily limit', reason: 'limit', kind, everyone: everyoneLimited.has(req) }, 429);
+
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
@@ -481,7 +486,7 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
     if (path === '/api/hint' && req.method === 'GET') {
       const q = qs.find((x) => x.id === url.searchParams.get('id'));
       if (!q) return json({ error: 'unknown question' }, 404);
-      if (!(await allow(env, req, 'practice'))) return json({ error: 'daily limit', reason: 'limit', kind: 'practice' }, 429);
+      if (!(await allow(env, req, 'practice'))) return limited(req, 'practice');
       const level = url.searchParams.get('level') === '2' ? 2 : 1;
       return json({ id: q.id, level, hint: level === 2 ? q.hint2 : q.hint1 });
     }
@@ -491,7 +496,7 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
       const body = (await req.json().catch(() => null)) as { id?: string; answer?: string } | null;
       const q = qs.find((x) => x.id === body?.id);
       if (!q || typeof body?.answer !== 'string') return json({ error: 'need id and answer' }, 400);
-      if (!(await allow(env, req, 'practice'))) return json({ error: 'daily limit', reason: 'limit', kind: 'practice' }, 429);
+      if (!(await allow(env, req, 'practice'))) return limited(req, 'practice');
 
       if (q.type === 'MC') {
         // Multiple choice is checked by code. No AI involved.
@@ -584,7 +589,7 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
               ending: examIn.ending === true,
             }
           : undefined;
-      if (!(await allow(env, req, 'chat'))) return json({ error: 'daily limit', reason: 'limit', kind: 'chat' }, 429);
+      if (!(await allow(env, req, 'chat'))) return limited(req, 'chat');
       // stream: one JSON line per event, so the voice can start on the first sentence:
       //   {"type":"first","text":"..."}  then  {"type":"done", reply, sources, check, rest}  (or {"type":"error","reason"})
       if (body?.stream === true) {
@@ -626,18 +631,22 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
       const audio = await req.arrayBuffer();
       if (audio.byteLength === 0) return json({ error: 'empty recording' }, 400);
       if (audio.byteLength > 6_000_000) return json({ error: 'recording too long' }, 413);
-      if (!(await allow(env, req, 'listen'))) return json({ error: 'daily limit', reason: 'limit', kind: 'listen' }, 429);
+      if (!(await allow(env, req, 'listen'))) return limited(req, 'listen');
       const ext = type.includes('wav') ? 'wav' : type.includes('mp4') ? 'mp4' : type.includes('ogg') ? 'ogg' : 'webm';
       const form = new FormData();
       form.append('file', new Blob([audio], { type }), `answer.${ext}`);
       form.append('model_id', 'scribe_v2');
       form.append('language_code', 'eng');
       form.append('tag_audio_events', 'false');
-      const res = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
-        method: 'POST',
-        headers: { 'xi-api-key': env.ELEVENLABS_API_KEY },
-        body: form,
-      });
+      const res = await withRetry(
+        () =>
+          fetch('https://api.elevenlabs.io/v1/speech-to-text', {
+            method: 'POST',
+            headers: { 'xi-api-key': env.ELEVENLABS_API_KEY! },
+            body: form,
+          }),
+        'Speech to text: ElevenLabs',
+      );
       if (!res.ok) {
         console.log('ElevenLabs speech-to-text failed', res.status, (await res.text()).slice(0, 300));
         return json({ error: 'transcription failed' }, 502);
@@ -659,7 +668,7 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
       } | null;
       const text = sayable(speakable(body?.text?.trim() ?? ''));
       if (!text) return json({ error: 'need text' }, 400);
-      if (!(await allow(env, req, 'voice', text.length))) return json({ error: 'daily limit', reason: 'limit', kind: 'voice' }, 429);
+      if (!(await allow(env, req, 'voice', text.length))) return limited(req, 'voice');
       const around = (t: unknown) => (typeof t === 'string' && t.trim() ? sayable(t.trim().slice(-300)) : undefined);
       const voice = env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
       const standard = env.ELEVENLABS_MODEL || 'eleven_multilingual_v2';
@@ -688,7 +697,8 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
       // Newer voice models don't all take the same settings. So: try the chosen model with everything,
       // then the chosen model with the bare text, and if it still says no, fall back to the standard
       // model. That way trying out a new model can never leave the tutor without a voice.
-      let res = await tts(full(model));
+      // Many students talking at once can hit ElevenLabs' limit of parallel requests (429): retry.
+      let res = await withRetry(() => tts(full(model)), 'Voice: ElevenLabs');
       if (!res.ok && res.status >= 400 && res.status < 500 && res.status !== 401 && res.status !== 429) {
         console.log(`Voice model ${model} refused the settings (${res.status}): ${(await res.text()).slice(0, 200)}`);
         res = await tts({ text, model_id: model });
@@ -714,7 +724,7 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
         .slice(0, 60);
       if (turns.length === 0) return json({ error: 'no answers' }, 400);
       if (!env.ANTHROPIC_API_KEY) return json({ error: 'not set up' }, 503);
-      if (!(await allow(env, req, 'practice', 5))) return json({ error: 'daily limit', reason: 'limit', kind: 'practice' }, 429);
+      if (!(await allow(env, req, 'practice', 5))) return limited(req, 'practice');
       try {
         return json(await gradeExam(turns, qs, env));
       } catch (err) {
@@ -731,7 +741,10 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
         | null;
       const str = (v: unknown, n: number) => (typeof v === 'string' ? v.slice(0, n) : '');
       const num = (v: unknown) => (v !== null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null);
-      const answers = (Array.isArray(body?.answers) ? (body!.answers as Record<string, unknown>[]) : []).slice(0, 60).map((t) => ({
+      const answers = (Array.isArray(body?.answers) ? (body!.answers as Record<string, unknown>[]) : [])
+        .filter((t) => t?.result !== 'skip') // "can you repeat that?" is not an answer
+        .slice(0, 60)
+        .map((t) => ({
         result: ['right', 'partly', 'wrong', 'beyond'].includes(String(t?.result)) ? String(t.result) : 'partly',
         module: str(t?.module, 60) || 'Other',
         topic: str(t?.topic, 40),
@@ -798,7 +811,7 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
         grade: Number.isFinite(Number(body?.grade)) ? Number(body?.grade) : undefined,
       };
       if (!flag.question || !flag.answer || flag.note.length < 5) return json({ error: 'say what he should check' }, 400);
-      if (!(await allow(env, req, 'flag'))) return json({ error: 'daily limit', reason: 'limit', kind: 'flag' }, 429);
+      if (!(await allow(env, req, 'flag'))) return limited(req, 'flag');
       if (!env.FEEDBACK) {
         console.log('Exam flag (no storage):', JSON.stringify(flag));
         return json({ ok: true, stored: false });
@@ -816,7 +829,7 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
     }
     if (path === '/api/avatar' && req.method === 'POST') {
       if (!env.SIMLI_API_KEY || !env.SIMLI_FACE_ID) return json({ error: 'avatar is not set up' }, 503);
-      if (!(await allow(env, req, 'avatar'))) return json({ error: 'daily limit', reason: 'limit', kind: 'avatar' }, 429);
+      if (!(await allow(env, req, 'avatar'))) return limited(req, 'avatar');
       // The video's shape follows the screen: wide on a laptop, tall on a phone, so he fills the
       // call window. SIMLI_SHAPE=square turns this off (Simli's default 768 x 768).
       const asked = (await req.json().catch(() => ({}))) as { shape?: string };

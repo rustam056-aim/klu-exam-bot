@@ -4,6 +4,7 @@
 import notes from '../data/course_notes_2026.json';
 // Alan McKinnon's video transcripts: git-ignored, made by scripts/build-alan-notes.mjs (see CLAUDE.md).
 import alan from '../data/private/alan_transcripts.json';
+import { withRetry } from './retry';
 
 export type ChatQuestion = {
   topic: string;
@@ -31,7 +32,7 @@ Who you are:
 What you may say:
 - Use ONLY the course material below (slides, guest lectures, the GSLS interview, and the practice questions with their answers). Every fact, number, definition and example must come from it.
 - If the student asks about something the material doesn't cover, say plainly that it isn't in the course material you have, and offer the closest topic you can help with. Never fill the gap from general knowledge.
-- Be exact. Take numbers, names, dates and definitions from the material as they are written there. If you are not sure the material supports a detail, leave it out and say what the material does say. When you judge a student's answer, judge it against the material, not against what you would expect in general; if their answer goes beyond the material, say you can't confirm that part from the course.
+- Be exact. Take numbers, names, dates and definitions from the material as they are written there. If you are not sure the material supports a detail, leave it out and say what the material does say. When you judge a student's answer, judge it against the material, not against what you would expect in general; if their answer adds something important that the material doesn't support, say briefly you can't confirm that part from the course; skip small extras that don't change the answer.
 - You may explain, rephrase, compare and give simple everyday analogies, as long as the facts stay with the material.
 - Where the material itself gives two different figures for the same thing, mention both and where each comes from.
 - You don't know what will be in the real exam. If asked, say so ("that's for the real exam, here we practise"), and offer to practise instead.
@@ -42,17 +43,18 @@ How to talk:
 - Short: usually 2 or 3 sentences, about 40 words, never more than 4. Keep the first sentence short and complete on its own: it's read aloud first, while you're still writing the rest. This is spoken, so no lists, no headings, no markdown, no emoji. Write numbers as digits with their unit (37%, 582 kg), and use at most two or three figures in one reply.
 - Write for the ear, the way people really talk, because a voice reads this out:
   - Contractions always (it's, you're, that's, don't). Everyday words. Mostly short sentences, with a longer one now and then so it doesn't sound chopped.
-  - Start the way a person would: "Okay.", "Hmm, not quite.", "Yeah, exactly.", "Good one.", "Ah, interesting." Vary it: never start two replies in one conversation with the same words, use "Right, so" at most once, and often start straight with the point.
+  - Start the way a person would: "Okay.", "Hmm, not quite.", "Good one.", "Ah, interesting.", "Fair enough.", "Close.", "Nice.", "Mhm." Vary it: never start two replies in one conversation with the same word. "Yes" and "Right" are the easiest to overuse: at most once each per conversation. Often start straight with the point.
   - React to what the student just said before you explain ("Ah, the classic mix-up." / "You're close.").
   - Use a comma or a dash for a natural pause, and a question mark when you're really asking. One exclamation mark at most.
   - Don't read out a definition like a textbook. Say it the way you'd explain it across a table, with a tiny example from the material where there is one.
   - No brackets, no abbreviations a voice would trip over (say "for example", not "e.g."), no "firstly / secondly / in conclusion".
 - Answer the question first. Then, most of the time, end with ONE short follow-up: a quick check question, or an offer to go deeper or move to a related topic. Don't do it every single time.
-- If the student's answer is wrong or incomplete, don't lecture and don't give the full answer. Say briefly that it's not quite there ("not quite", "half of it"), give ONE small hint, and ask a narrower follow-up question so they can get there themselves. Only if they miss it a second time, give the right idea in one short sentence and move on. Keep these replies short.
+- If the student's answer is wrong or incomplete, don't lecture and don't give the full answer. Say briefly that it's not quite there ("not quite", "half of it"), give ONE small hint, and ask a narrower follow-up question so they can get there themselves. Only if they miss it a second time, give the right idea in one short sentence and then ask the next question in the same reply. Keep these replies short.
+- When the student's point is right, don't nitpick their wording ("the lecture didn't say it in those words"): only correct real mistakes in facts, numbers or logic.
 - If the student says something that isn't in the course material (for example an ISO standard or a fact from outside the lectures), don't mark it wrong and don't correct it from general knowledge. Say briefly that it goes beyond what's in my lectures and that you'll note it and check it afterwards, and that it can count as a plus if it's right. Judge the rest of the answer against the material.
 - When you pick a NEW topic yourself (starting a quiz or a mock exam, or moving on after the follow-ups), ALWAYS use the NEXT NEW TOPIC given at the end of these instructions (or the next one in its list if it already came up). Never choose a topic on your own, not even a favourite or obvious one like the GSLS survey or carbon accounting, unless it's the one given. The topics are drawn at random for every message, so students who practise many times get different questions in a different order each time. When the student names a topic themselves, follow the student instead.
-- If the student says "quiz me" (or similar), examine like a good oral examiner, not like a list of flashcards. Ask one question, wait, react in a sentence. Then, most of the time, DIG DEEPER on the same point with a follow-up question before changing topic: ask why, how it works, what follows from it, for an example, or how it links to another part of the course. One or two follow-ups per topic, then move on to a new one. Only one question per reply, about one thing (never two questions joined with "and"). Once a quiz is running, EVERY reply ends with the next question, however long the quiz has gone on, until the student says they want to stop or talk about something else.
-- If the student asks for a mock oral exam, behave like a real examiner: cover five topics, a main question each, usually with one follow-up. During the exam don't correct the student and don't tell them the right answer; if they struggle, give a small hint inside a follow-up question, or move on. Every reply ends with the next question until the five topics are done. After the last one, give a short verdict: what was solid, what to review, and a practice estimate (see below).
+- If the student says "quiz me" (or similar), examine like a good oral examiner, not like a list of flashcards. Ask one question, wait, react in a sentence. Then, most of the time, DIG DEEPER on the same point with a follow-up question before changing topic: ask why, how it works, what follows from it, for an example, or how it links to another part of the course. One or two follow-ups per topic, then move on to a new one. Only one question per reply, about one thing (never two questions joined with "and", and never "explain X and give me an example": ask for the example in the next reply). Once a quiz is running, EVERY reply ends with a question mark, however long the quiz has gone on: when you repeat or rephrase the question, when you give a hint, and when you give the answer (then ask the next question right after it). Never end a quiz reply with an explanation or an instruction like "think about it": the student must always know it's their turn. This goes on until the student says they want to stop or talk about something else.
+- If the student asks for a mock oral exam, behave like a real examiner: cover five topics, a main question each, usually with one follow-up. During the exam stay neutral: don't say whether an answer was right ("right", "exactly", "spot on", "correct"), don't correct it, don't add facts or numbers of your own. React with a neutral word ("Okay.", "Thank you.", "Mhm.", "I see.") and ask the next question. If they struggle, give a small hint inside a follow-up question, or move on. Every reply ends with the next question until the five topics are done. After the last one, give a short verdict in at most 4 sentences: what was solid, what to review, and a practice estimate (see below).
 - If the student asks how they did or what grade they would get: give an honest practice estimate in words, one of "solid pass", "pass, with gaps" or "not there yet", say in one sentence what would lift it, and make clear it's a rough practice estimate from this conversation, not an official grade. Never give a numeric grade.
 - If the student brings a practice question they got wrong, give the right idea in a sentence or two, say where their answer went off, then check their understanding with one small follow-up question.
 - Follow the student when they change topic. Don't drag them back.
@@ -87,6 +89,10 @@ const REPLY_TOOL = {
         },
         required: ['result'],
       },
+      end_exam: {
+        type: 'boolean',
+        description: 'Only in the timed oral exam: true when the student explicitly asks to end or stop the whole exam now.',
+      },
     },
     required: ['text', 'sources'],
   },
@@ -111,6 +117,18 @@ export type ChatCheck = { result: 'right' | 'partly' | 'wrong'; session?: number
 
 // Added to the student's last message when they tap "Wrap up".
 const WRAP_UP = `(Please wrap up our conversation now. In 3 or 4 spoken sentences: what we covered, what I seemed unsure about, and what I should look at again. If I answered questions from you, add your practice estimate of how I did. In "sources", list up to four slides or lectures worth rereading.)`;
+
+// Added to the student's last message when the exam time is up.
+const TIME_UP = `(The exam time is up. Close the exam now in two short sentences: thank me, say the exam is over and that my summary is on the screen. Don't ask me anything.)`;
+
+// The closing reply of the timed exam must not ask anything (the summary opens right after it):
+// drop any question and make sure it says the exam is over.
+export function closingOnly(text: string): string {
+  const sentences = text.match(/[^.!?]+[.!?]+["”]?\s*/g) ?? [text];
+  const kept = sentences.filter((x) => !/\?["”]?\s*$/.test(x)).join('').trim();
+  const saysOver = /\b(over|finished|end|done|summary)\b/i.test(kept);
+  return saysOver && kept ? kept : `${kept ? `${kept} ` : ''}That’s the end of the exam. Thank you, your summary is on the screen now.`;
+}
 
 const SOURCE_RE = /^((S\d+|MAN|TEC|FRA|SOV|Elkington 2018) p\d+(, p\d+)*|Video \d+|GSLS interview)$/;
 
@@ -174,7 +192,7 @@ export function cleanTurns(input: unknown): ChatTurn[] | null {
   return turns;
 }
 
-type ToolInput = { text?: unknown; sources?: unknown; check?: { result?: unknown; source?: unknown } };
+type ToolInput = { text?: unknown; sources?: unknown; check?: { result?: unknown; source?: unknown }; end_exam?: unknown };
 type Usage = { input_tokens?: number; cache_read_input_tokens?: number; cache_creation_input_tokens?: number; output_tokens?: number };
 
 // Plain spoken text only: drop any markdown that slipped in.
@@ -216,6 +234,34 @@ export function firstSentence(json: string): string | null {
   return m ? spoken(m[1]) : null;
 }
 
+// The whole "text" field from the tool input, even if the JSON is cut off or slightly broken
+// (e.g. the stream ended early): so a reply that was mostly written still reaches the student.
+export function textOf(json: string): string {
+  const at = json.search(/"text"\s*:\s*"/);
+  if (at < 0) return '';
+  let i = json.indexOf('"', json.indexOf(':', at)) + 1;
+  let out = '';
+  for (; i < json.length; i++) {
+    const c = json[i];
+    if (c === '"') break;
+    if (c !== '\\') {
+      out += c;
+      continue;
+    }
+    const n = json[i + 1];
+    if (n === undefined) break;
+    if (n === 'u') {
+      const code = parseInt(json.slice(i + 2, i + 6), 16);
+      if (Number.isFinite(code)) out += String.fromCharCode(code);
+      i += 5;
+    } else {
+      out += n === 'n' || n === 't' || n === 'r' ? ' ' : n; // \" \\ \/ \' and friends
+      i += 1;
+    }
+  }
+  return out.trim();
+}
+
 function logUsage(usage: Usage | undefined) {
   // Shows in the Cloudflare logs whether the course text came from the cache ("cached" should be
   // about 60,000 on every message after the first; if it stays 0, each message costs full price).
@@ -227,7 +273,7 @@ function logUsage(usage: Usage | undefined) {
 
 // Reads Anthropic's event stream: tells `onFirst` the first sentence as soon as it's there and
 // returns the finished tool input.
-async function readStream(res: Response, onFirst: (sentence: string) => void): Promise<ToolInput | undefined> {
+async function readStream(res: Response, onFirst: (sentence: string) => void): Promise<{ input?: ToolInput; json: string }> {
   const reader = res.body!.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
@@ -272,9 +318,10 @@ async function readStream(res: Response, onFirst: (sentence: string) => void): P
   }
   logUsage(usage);
   try {
-    return json ? (JSON.parse(json) as ToolInput) : undefined;
+    return { input: json ? (JSON.parse(json) as ToolInput) : undefined, json };
   } catch {
-    return undefined;
+    console.log('Chat: reply JSON broken, saving the text');
+    return { input: undefined, json };
   }
 }
 
@@ -282,7 +329,17 @@ async function readStream(res: Response, onFirst: (sentence: string) => void): P
 // heard, and a few random topics to pick from, so quizzes don't always start with the same question.
 export type ExamInfo = { minutesLeft: number; totalMinutes?: number; ending?: boolean };
 
-function turnNotes(questions: ChatQuestion[], greeting?: string, exam?: ExamInfo): string {
+// How his recent replies started ("Good", "No problem"), so he doesn't open the same way again.
+// The model can't reliably keep track of this itself, so the server lists them for it.
+export function recentOpeners(turns: ChatTurn[]): string[] {
+  const openers = turns
+    .filter((t) => t.role === 'assistant')
+    .map((t) => t.content.trim().split(/[,.!?:;—–-]/)[0].split(/\s+/).slice(0, 3).join(' ').trim())
+    .filter((o) => o && o.length < 30);
+  return [...new Set(openers.reverse())].slice(0, 5);
+}
+
+function turnNotes(questions: ChatQuestion[], greeting?: string, exam?: ExamInfo, turns: ChatTurn[] = []): string {
   // A random module first, then a random question in it, so small modules come up as often as
   // big ones and the order is different every time.
   const byModule = new Map<number, ChatQuestion[]>();
@@ -294,37 +351,50 @@ function turnNotes(questions: ChatQuestion[], greeting?: string, exam?: ExamInfo
     const q = m[Math.floor(Math.random() * m.length)];
     picks.push(`${q.topic} (${q.session_label ?? `Session ${q.session}`}, ${q.source_pages})`);
   }
+  // Every third question: time for a new topic (a main question plus two follow-ups per topic),
+  // so a quiz or exam doesn't get stuck on one topic (Prof. Meuer: "it only asks about the survey").
+  const asked = turns.filter((t) => t.role === 'assistant').length;
+  const switchNow = asked >= 3 && asked % 3 === 0 && !exam?.ending;
+  const openers = recentOpeners(turns);
   return [
     '# THIS CONVERSATION',
     greeting ? `The greeting the student heard: "${greeting}"` : '',
     `NEXT NEW TOPIC (use this when you pick a new topic yourself): ${picks[0]}`,
     "If that one has already come up in this conversation, take the first of these that hasn't (for a mock exam, go through them in this order):",
     ...picks.slice(1).map((p, n) => `${n + 1}. ${p}`),
+    switchNow
+      ? `NEW TOPIC NOW: if you are quizzing or examining the student and they have just answered, react briefly and then ask about this topic in this reply: ${picks[0]}. It must be a different lecture or source from the one you've just been asking about (if it isn't, take the next one in the list above). Not another follow-up on the same lecture. (If they asked you something, asked you to repeat, or want to stay on this topic, do that instead.)`
+      : '',
+    openers.length
+      ? `Your recent replies started with: ${openers.map((o) => `"${o}"`).join(', ')}. Start this reply differently.`
+      : '',
     exam ? examNotes(exam) : '',
   ]
     .filter(Boolean)
     .join('\n');
 }
 
-// The timed oral exam (about 30 minutes): he behaves like the examiner in the real oral exam.
+// The timed oral exam (15 minutes): he behaves like the examiner in the real oral exam.
 function examNotes(exam: ExamInfo): string {
   if (exam.ending) {
     return `
 # ORAL EXAM: TIME IS UP
-Close the exam now in two short sentences: thank the student, say the exam is over and that their summary is on the screen. No more questions, no verdict, no right answers. Still fill "check" if their last message answered your question.`;
+This reply ENDS the exam; the summary opens on the student's screen right after it, so they can't answer anything any more. Close the exam in two short sentences: thank the student, say the exam is over and that their summary is on the screen. Don't comment on their last answer ("solid answer" is a verdict too). NO question of any kind (not even "how did that feel?"), no new topic, no verdict, no right answers. Still fill "check" if their last message answered your question.`;
   }
   return `
 # ORAL EXAM MODE (this overrides the quiz rules above)
 This is a timed practice oral exam of about ${exam.totalMinutes ?? 15} minutes. Minutes left: ${Math.max(0, Math.round(exam.minutesLeft))}.
 - You are the examiner. One question at a time. Cover as many different topics as the time allows, about 3 minutes per topic: a main question, then one or two follow-ups that dig deeper (why, how, an example, a link to another part of the course). Take the topics from NEXT NEW TOPIC and its list, never your own favourites.
-- Don't correct the student, don't tell them the right answer and don't say whether they were right. React neutrally and briefly ("Okay.", "Thank you.", "Mhm."), then ask the next question. If they struggle, give a small hint inside a follow-up question, or say that's fine and move on.
+- Stay neutral the whole exam, exactly like a real examiner. Never say whether an answer was right or wrong: no "right", "correct", "exactly", "spot on", "good", "that's the answer", "you're right", "not quite", "I'd push back". Never correct the student, never repeat their answer back, and never add facts, numbers or explanations of your own, not even in passing ("so your trucks fit there", "the slide gives 9 to 10%"). Your reaction is one neutral word or two ("Okay.", "Thank you.", "Mhm.", "I see.", "Alright."), then straight to the next question. This holds when the answer is perfect and when it's wrong.
+- If they struggle, give a small hint inside a follow-up question. If they ask you to repeat or rephrase, do it once, more simply. If they still can't answer after that, say "That's fine, let's move on." and start a new topic.
 - If they bring in something that isn't in the course material, say briefly that it goes beyond the lectures and that you'll check it afterwards.
-- If they ask you to repeat or rephrase, do it.
-- EVERY reply ends with a question. With 2 minutes or less left, finish the current topic but don't start a new one.
-- Fill "check" for every answer to your questions: it's recorded for the summary, the student doesn't see it during the exam.`;
+- EVERY reply ends with a question. With 2 minutes or less left, finish the current topic with follow-ups but don't start a new one.
+- Never end the exam yourself and never give a verdict, a grade or a summary: the app ends the exam when the time is up and shows the summary. There is no fixed number of topics; keep asking until then.
+- Fill "check" for every answer to your questions: it's recorded for the summary, the student doesn't see it during the exam.
+- If the student explicitly asks to end or stop the whole exam now ("can we stop the exam?", "I want to end here"), set "end_exam" to true and close in two short sentences: that's fine, thank them, their summary is on the screen. No question then. "I'm done" or "that's all" right after an answer only means they finished that answer: carry on.`;
 }
 
-export type ChatResult = { reply: string; sources: string[]; check?: ChatCheck; first?: string; rest?: string };
+export type ChatResult = { reply: string; sources: string[]; check?: ChatCheck; first?: string; rest?: string; examOver?: boolean };
 
 // One conversation turn. With `onFirst`, the reply is streamed: the first sentence is handed over
 // as soon as Claude has written it (so the voice can start), and the result says what's left to read.
@@ -338,6 +408,10 @@ export async function chatWithClaude(
 ): Promise<ChatResult> {
   if (wrapUp) {
     turns = turns.map((t, i) => (i === turns.length - 1 ? { ...t, content: `${t.content}\n\n${WRAP_UP}` } : t));
+  }
+  if (extra.exam?.ending) {
+    // Said right next to the student's last words, where the model can't miss it.
+    turns = turns.map((t, i) => (i === turns.length - 1 ? { ...t, content: `${t.content}\n\n${TIME_UP}` } : t));
   }
   const base = env.ANTHROPIC_MODEL || 'claude-haiku-5-5';
   const chosen = env.ANTHROPIC_CHAT_MODEL || base;
@@ -363,39 +437,45 @@ export async function chatWithClaude(
         messages: turns,
       }),
     });
-  const thisTurn = turnNotes(questions, extra.greeting, extra.exam);
+  const thisTurn = turnNotes(questions, extra.greeting, extra.exam, turns);
   const streaming = !!onFirst;
   let used = chosen;
-  let res = await request(used, streaming);
-  // A busy moment at Anthropic (429/5xx): wait a little and try once more.
-  if (res.status === 429 || res.status >= 500) {
-    console.log(`Chat: Claude ${res.status}, trying again`);
-    await new Promise((r) => setTimeout(r, 800));
-    res = await request(used, streaming);
-  }
+  // A busy moment at Anthropic (429/5xx/529): wait a little and try again, up to 3 times.
+  let res = await withRetry(() => request(used, streaming), 'Chat: Claude');
   // A conversation model that this account can't use (wrong name, not enabled): fall back to the
   // grading model, so a test with ANTHROPIC_CHAT_MODEL can never break the conversation.
   if (!res.ok && chosen !== base && [400, 403, 404].includes(res.status)) {
     console.log(`Chat model ${chosen} failed (${res.status}): ${(await res.text()).slice(0, 200)}; using ${base}`);
     used = base;
-    res = await request(used, streaming);
+    res = await withRetry(() => request(used, streaming), 'Chat: Claude');
   }
   if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text()).slice(0, 300)}`);
 
   let first: string | undefined;
   let input: ToolInput | undefined;
   if (streaming) {
-    input = await readStream(res, (sentence) => {
+    const streamed = await readStream(res, (sentence) => {
       first = sentence;
       onFirst!(sentence);
+    }).catch((err) => {
+      console.log('Chat: stream failed', String(err));
+      return { input: undefined, json: '' };
     });
+    input = streamed.input;
+    // Cut off or broken: keep whatever text was written.
+    if (typeof input?.text !== 'string' || !input.text.trim()) {
+      // Only if it got as far as his question (or it's the exam's goodbye); otherwise it's asked
+      // for again below, so the student is never left without a question.
+      const saved = textOf(streamed.json).match(/^[\s\S]*[.!?]["”]?/)?.[0].trim() ?? '';
+      if (saved && (/\?["”]?$/.test(saved) || extra.exam?.ending)) input = { ...(input ?? {}), text: saved };
+    }
   } else {
     const data = (await res.json()) as { content?: { type: string; input?: ToolInput }[]; usage?: Usage };
     logUsage(data.usage);
     input = data.content?.find((c) => c.type === 'tool_use')?.input;
   }
   // Very rarely the reply comes back empty: ask once more (without streaming) before giving up.
-  if (!first && (typeof input?.text !== 'string' || !input.text.trim())) {
+  if (typeof input?.text !== 'string' || !input.text.trim()) {
     console.log('Chat: empty reply, trying again');
     const again = await request(used, false);
     if (again.ok) {
@@ -403,7 +483,8 @@ export async function chatWithClaude(
       input = data.content?.find((c) => c.type === 'tool_use')?.input;
     }
   }
-  const reply = spoken(typeof input?.text === 'string' ? input.text : '');
+  let reply = spoken(typeof input?.text === 'string' ? input.text : '');
+  if (extra.exam?.ending && reply) reply = closingOnly(reply);
   if (!reply) throw new Error(first ? 'Claude stream broke off' : 'Claude returned no reply');
   const sources = (Array.isArray(input?.sources) ? input!.sources : [])
     .filter((s): s is string => typeof s === 'string')
@@ -415,8 +496,10 @@ export async function chatWithClaude(
     !wrapUp && (result === 'right' || result === 'partly' || result === 'wrong')
       ? { result, session: moduleOf(input?.check?.source) ?? moduleOf(sources[0]) }
       : undefined;
-  if (!first) return { reply, sources, check };
+  // The student asked to end the timed exam: the page closes it after this reply.
+  const examOver = extra.exam && !extra.exam.ending && input?.end_exam === true ? true : undefined;
+  if (!first) return { reply, sources, check, examOver };
   // What's left to read after the first sentence (already being spoken).
   const rest = reply.startsWith(first) ? reply.slice(first.length).trim() : reply;
-  return { reply, sources, check, first, rest };
+  return { reply, sources, check, first, rest, examOver };
 }

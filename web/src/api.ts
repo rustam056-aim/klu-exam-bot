@@ -133,6 +133,7 @@ export type ChatReply = {
   check?: { result: 'right' | 'partly' | 'wrong'; session?: number } // he asked, the student answered
   first?: string // already handed to onFirst
   rest?: string // what's left to read after the first sentence
+  examOver?: boolean // timed exam: the student asked to end it, this was his closing
 }
 
 // The quick questions in the feedback box (each optional).
@@ -141,5 +142,5 @@ export type FeedbackAnswers = Partial<Record<'correct' | 'level' | 'voice' | 'us
 export type ExamGradeReply = {
   grade: number // KLU scale: 1.0 best, 4.0 pass, 5.0 fail (a practice estimate)
   verdict: string
-  answers: { result: 'right' | 'partly' | 'wrong' | 'beyond'; comment: string; module?: string; topic?: string }[]
+  answers: { result: 'right' | 'partly' | 'wrong' | 'beyond' | 'skip'; comment: string; module?: string; topic?: string }[]
 }
