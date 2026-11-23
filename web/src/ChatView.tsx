@@ -36,10 +36,9 @@ import type { ChatMessage, ChatSeed } from './types'
 
 // He opens differently each time (a new one per conversation).
 const GREETINGS = [
-  'Hi! Don’t expect to be fed, be hungry. Ask me anything from the course, or say “quiz me”.',
   'Hey, good to see you. Is there a topic you’re stuck on, or shall I quiz you?',
   'Hello! Pick anything from the course, or say “quiz me” and I’ll put you on the spot.',
-  'Hi there. Be hungry today: ask me something tricky, or let me quiz you.',
+  'Hi there. Ask me something tricky, or let me quiz you.',
   'Welcome back! Which topic do you want to tackle, or should I throw a few questions at you?',
   'Hey! Got a question from the slides, or do you want a quick quiz?',
   'Good to have you here. What should we look at today? Or just say “quiz me”.',
@@ -217,6 +216,7 @@ export function ChatView({
     const his = `${hisWords.current} ${[...messagesRef.current].reverse().find((m) => m.role === 'assistant')?.text ?? ''}`
     if (!text || (wasOverHim && soundsLikeEcho(text, his))) {
       // Nothing real: carry on where he was.
+      if (wasOverHim && text) liveRef.current.heardEcho()
       if (wasPaused) resumeSpeaking()
       liveRef.current.mute(false)
       return

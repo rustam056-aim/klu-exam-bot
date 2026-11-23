@@ -38,6 +38,7 @@ export function useLiveMic(callbacks: Callbacks) {
     muted: false, // ignore the mic (while waiting for a reply or turning speech into text)
     strict: false, // Johannes is talking: only clear, sustained speech counts (not his echo)
     floor: 0.01, // the room's background level
+    echoBoost: 1, // grows each time his own voice from the speakers was taken for the student
     calibrated: 0, // ms of room measured so far
     loudMs: 0, // speech in a row
     quietMs: 0, // silence since the last speech
@@ -89,7 +90,9 @@ export function useLiveMic(callbacks: Callbacks) {
     // While Johannes talks (strict), his voice can leak into the mic, so the student has to be a bit
     // louder and longer than usual. The room level is NOT updated then (his voice would raise it
     // until nobody could interrupt him any more).
-    const threshold = e.strict ? Math.max(0.03, e.floor * 3) : Math.max(0.02, e.floor * 2.5)
+    // On laptop speakers his own voice can still trip it; each time that happens (heardEcho) the bar
+    // while he talks goes up a bit, so he doesn't keep stopping and starting.
+    const threshold = e.strict ? Math.max(0.03, e.floor * 3) * e.echoBoost : Math.max(0.02, e.floor * 2.5)
     const needMs = e.strict ? 350 : 220
     const loud = level >= threshold
 
@@ -254,6 +257,10 @@ export function useLiveMic(callbacks: Callbacks) {
     // Johannes is talking: only clear, sustained speech interrupts him.
     strict: (value: boolean) => {
       ear.current.strict = value
+    },
+    // What stopped him was his own voice (echo): be harder to trigger while he talks (up to 3x).
+    heardEcho: () => {
+      ear.current.echoBoost = Math.min(3, ear.current.echoBoost * 1.5)
     },
   }
 }
