@@ -314,6 +314,17 @@ function toWav(parts: Float32Array[]): Blob {
 // An echo repeats his words in his order, so we look for runs of three words in a row that he
 // also said. A student answering uses the same course terms but not his exact sentences, so a
 // few shared words don't count. Short things like "stop", "wait", "sorry" are always the student.
+// "Can you repeat that?", "say it again", "sorry, I didn't catch that": the app replays his exact
+// question (an AI asked to repeat tends to reword it, which quietly changes the question). "I
+// didn't understand" or "can you rephrase" go to him instead, to say it more simply.
+export function wantsRepeat(heard: string): boolean {
+  const t = heard.toLowerCase().replace(/[’]/g, "'").replace(/[^a-z' ]+/g, ' ').replace(/\s+/g, ' ').trim()
+  const words = t ? t.split(' ') : []
+  if (!words.length || words.length > 12) return false
+  if (/\b(understand|rephrase|explain|simpler|other words|what do you mean|meaning)\b/.test(t)) return false
+  return /\b(repeat|say (that|it|this) again|again please|once more|one more time|come again|pardon|what was the question|didn't (hear|catch)|did not (hear|catch))\b/.test(t)
+}
+
 // After cutting in: "sorry, go on", "my mistake, keep talking", "never mind, continue". Then he
 // carries on where he stopped instead of answering it.
 export function wantsHimToGoOn(heard: string): boolean {

@@ -92,6 +92,24 @@ type ExamMeta = {
   mods: Record<string, number[]>;
   miss: string[];
 };
+// One conversation or practice exam, in numbers only (see /api/session).
+type SessionMeta = {
+  at: string;
+  exam: boolean;
+  seconds: number;
+  type: number;
+  talk: number;
+  video: number;
+  replies: number;
+  multiQuestion: number;
+  repeats: number;
+  cutIns: number;
+  stopped: number;
+  echoes: number;
+  videoFallback: number;
+  voiceFails: number;
+  sttFails: number;
+};
 // One answer a student asked Prof. Meuer to check, with their reason.
 type ExamFlag = { at: string; question: string; answer: string; result?: string; comment?: string; note: string; grade?: number };
 
@@ -321,6 +339,7 @@ export default {
       };
       const exams = (await listAll('exam:')).map((k) => k.metadata as ExamMeta).filter((m) => m && m.mods);
       const flagKeys = (await listAll('flag:')).slice(0, 40);
+      const sessions = (await listAll('sess:')).map((k) => k.metadata as SessionMeta).filter((m) => m && typeof m.replies === 'number');
       const flags = (await Promise.all(flagKeys.map((k) => env.FEEDBACK!.get(k.name)))).flatMap((raw) => {
         try {
           return raw ? [JSON.parse(raw) as ExamFlag] : [];
@@ -378,6 +397,26 @@ export default {
 <p class="muted">Only for you. Students never see how they compare. Anonymous: no names and nothing students said, except in answers they chose to flag. Only full exams count (at least half the time and 4 answers). Times are UTC.</p>
 <h2>Answers students asked you to check (${flags.length}${flagKeys.length === 40 ? ', newest 40' : ''})</h2>
 ${flagRows || '<p class="muted">None yet.</p>'}
+${(() => {
+  if (!sessions.length) return '<h2>How students use it</h2><p class="muted">No conversations recorded yet.</p>';
+  const sum = (f: (m: SessionMeta) => number, list = sessions) => list.reduce((a, m) => a + f(m), 0);
+  const mins = (sec: number) => `${Math.round(sec / 60)} min`;
+  const all = sum((m) => m.type + m.talk + m.video) || 1;
+  const share = (k: 'type' | 'talk' | 'video') => `${Math.round((100 * sum((m) => m[k])) / all)}%`;
+  const replies = sum((m) => m.replies) || 1;
+  const cutIns = sum((m) => m.cutIns);
+  const examS = sessions.filter((m) => m.exam);
+  return `<h2>How students use it</h2>
+<p>${sessions.length} conversations (${examS.length} of them practice exams), ${mins(sum((m) => m.seconds))} in total, ${mins(sum((m) => m.seconds) / sessions.length)} on average.</p>
+<table><tr><th>Measure</th><th>Value</th></tr>
+<tr><td>Time by mode: type / talk / video</td><td>${share('type')} / ${share('talk')} / ${share('video')}</td></tr>
+<tr><td>His replies with more than one question</td><td>${Math.round((100 * sum((m) => m.multiQuestion)) / replies)}% of ${sum((m) => m.replies)} (in exams: ${Math.round((100 * sum((m) => m.multiQuestion, examS)) / (sum((m) => m.replies, examS) || 1))}%)</td></tr>
+<tr><td>"Please repeat" (replayed word for word)</td><td>${sum((m) => m.repeats)}</td></tr>
+<tr><td>Students cutting in / he stopped</td><td>${cutIns} / ${sum((m) => m.stopped)}${cutIns ? ` (${Math.round((100 * sum((m) => m.stopped)) / cutIns)}%)` : ''}</td></tr>
+<tr><td>Stops caused by his own voice from the speakers</td><td>${sum((m) => m.echoes)}</td></tr>
+<tr><td>Conversations where the video fell back to voice</td><td>${sessions.filter((m) => m.videoFallback > 0).length}</td></tr>
+<tr><td>Voice not playing / speech not recognised</td><td>${sum((m) => m.voiceFails)} / ${sum((m) => m.sttFails)}</td></tr></table>`;
+})()}
 <h2>Class overview</h2>
 <p>${exams.length} full exams. Average practice grade: <b>${avg}</b> (${dist}).</p>
 <h3>By module, weakest first</h3>
@@ -799,6 +838,40 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
       }
       await env.FEEDBACK.put(`exam:${stats.at}:${crypto.randomUUID().slice(0, 8)}`, JSON.stringify(stats), { metadata: meta });
       return json({ ok: true, counted: true });
+    }
+
+    // POST /api/session  anonymous numbers about one conversation or practice exam, sent when the
+    // student leaves: time per mode, replies with more than one question, repeats, cut-ins,
+    // technical failures. No text, no name. For Prof. Meuer's overview ("How students use it").
+    if (path === '/api/session' && req.method === 'POST') {
+      const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+      const n = (v: unknown, max = 100000) => Math.max(0, Math.min(max, Math.round(Number(v) || 0)));
+      const modes = (body?.modeSeconds ?? {}) as Record<string, unknown>;
+      const meta: SessionMeta = {
+        at: new Date().toISOString(),
+        exam: body?.exam === true,
+        seconds: n(body?.seconds, 86400),
+        type: n(modes.type, 86400),
+        talk: n(modes.talk, 86400),
+        video: n(modes.video, 86400),
+        replies: n(body?.replies, 2000),
+        multiQuestion: n(body?.multiQuestion, 2000),
+        repeats: n(body?.repeats, 2000),
+        cutIns: n(body?.cutIns, 2000),
+        stopped: n(body?.stopped, 2000),
+        echoes: n(body?.echoes, 2000),
+        videoFallback: n(body?.videoFallback, 100),
+        voiceFails: n(body?.voiceFails, 2000),
+        sttFails: n(body?.sttFails, 2000),
+      };
+      if (meta.replies === 0) return json({ ok: true, stored: false });
+      if (!(await allow(env, req, 'session'))) return json({ ok: true, stored: false });
+      if (!env.FEEDBACK) {
+        console.log('Session (no storage):', JSON.stringify(meta));
+        return json({ ok: true, stored: false });
+      }
+      await env.FEEDBACK.put(`sess:${meta.at}:${crypto.randomUUID().slice(0, 8)}`, '1', { metadata: meta });
+      return json({ ok: true, stored: true });
     }
 
     // POST /api/exam/flag  one answer the student wants Prof. Meuer to check, with a reason.

@@ -9,10 +9,11 @@ import { MicHelpBox } from './MicButton'
 import { saveTalkAnswer } from './progress'
 import { ArrowIcon, LectureClip, MicIcon, Slides, SpeakerIcon, StopIcon } from './QuestionView'
 import { Avatar } from './Avatar'
-import { avatarEnabled, readyToGreet } from './talkingAvatar'
+import { avatarEnabled, onAvatarChange, readyToGreet } from './talkingAvatar'
 import { Tutor } from './Tutor'
 import { clock, useRecorder } from './useRecorder'
-import { soundsLikeEcho, useLiveMic, wantsHimToGoOn } from './liveMic'
+import { soundsLikeEcho, useLiveMic, wantsHimToGoOn, wantsRepeat } from './liveMic'
+import { SessionStats } from './sessionStats'
 import {
   chime,
   onSpeakingChange,
@@ -150,6 +151,25 @@ export function ChatView({
   const [slideOpen, setSlideOpen] = useState(false) // Talk view: the slide shows only when asked for
   const messagesRef = useRef(messages)
   messagesRef.current = messages
+  // Anonymous usage numbers for Prof. Meuer's overview (sent once when the student leaves).
+  const stats = useRef(new SessionStats(!!exam))
+  useEffect(() => {
+    stats.current.setMode(inVideo ? 'video' : view === 'call' ? 'talk' : 'type')
+  }, [inVideo, view])
+  useEffect(() => {
+    let wasStarting = false
+    const off = onAvatarChange((state) => {
+      if (state === 'failed' && wasStarting) stats.current.count('videoFallback')
+      wasStarting = state === 'starting'
+    })
+    const leave = () => stats.current.send()
+    window.addEventListener('pagehide', leave)
+    return () => {
+      off()
+      window.removeEventListener('pagehide', leave)
+      leave()
+    }
+  }, [])
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const mounted = useRef(true)
@@ -209,14 +229,20 @@ export function ChatView({
         setTranscribing(false)
         return
       }
+      stats.current.count('sttFails')
       if (mounted.current) setNote('That didn’t come through. Say it again?')
     }
     if (!mounted.current) return
     setTranscribing(false)
     const his = `${hisWords.current} ${[...messagesRef.current].reverse().find((m) => m.role === 'assistant')?.text ?? ''}`
+    if (wasOverHim) stats.current.count('cutIns')
+    if (wasPaused) stats.current.count('stopped')
     if (!text || (wasOverHim && soundsLikeEcho(text, his))) {
       // Nothing real: carry on where he was.
-      if (wasOverHim && text) liveRef.current.heardEcho()
+      if (wasOverHim && text) {
+        liveRef.current.heardEcho()
+        stats.current.count('echoes')
+      }
       if (wasPaused) resumeSpeaking()
       liveRef.current.mute(false)
       return
@@ -225,6 +251,16 @@ export function ChatView({
       // "Sorry, go on": he picks up exactly where he stopped.
       resumeSpeaking()
       liveRef.current.mute(false)
+      return
+    }
+    const lastQuestion = [...messagesRef.current].reverse().find((m) => m.role === 'assistant' && !m.local)?.text
+    if (lastQuestion && !busyRef.current && wantsRepeat(text)) {
+      // "Please repeat": replay his exact words (not sent to the AI, so it can't reword them).
+      stopSpeaking()
+      stats.current.count('repeats')
+      setMessages((m) => [...m, { role: 'user', local: true, text }, { role: 'assistant', local: true, text: lastQuestion }])
+      liveRef.current.mute(false)
+      if (await say(lastQuestion)) yourTurn()
       return
     }
     stopSpeaking()
@@ -249,7 +285,13 @@ export function ChatView({
     if (now.current.examPhase === 'running') {
       // Exam: he has just finished asking; the clock for "time before answering" starts now.
       const question = [...messagesRef.current].reverse().find((m) => m.role === 'assistant' && !m.local)?.text
-      if (question) examRecord.current.turns.push({ question, askedAt: Date.now() })
+      const turns = examRecord.current.turns
+      const last = turns[turns.length - 1]
+      if (question && last && last.question === question && !last.answer) {
+        last.askedAt = Date.now() // repeated: the clock starts again
+        last.firstSpeechAt = undefined // ("please repeat" isn't the answer)
+      }
+      else if (question) turns.push({ question, askedAt: Date.now() })
     }
     if (liveRef.current.on) chime()
   }
@@ -275,6 +317,7 @@ export function ChatView({
       setView('chat')
       return
     }
+    stats.current.count('voiceFails')
     setNote('The sound didn’t start. Tap “Listen” to hear it.')
   }
 
@@ -317,6 +360,7 @@ export function ChatView({
       )
       rest.finish(res.rest ?? '')
       hisWords.current = res.reply
+      stats.current.reply(res.reply)
       setPartial(null)
       if (!mounted.current) return
       if (res.check && examNow) {
