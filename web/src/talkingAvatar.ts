@@ -1,4 +1,5 @@
 import { accessHeaders } from './access'
+import { HeygenCall } from './heygenAvatar'
 
 // The talking avatar (Simli, simli.com): a live video of Prof. Meuer whose lips move with his voice.
 // We send Simli his voice (from ElevenLabs, as raw 16 kHz audio) and it streams back video and
@@ -26,6 +27,21 @@ type SimliModule = {
 
 export type AvatarState = 'off' | 'starting' | 'live' | 'failed'
 
+// Which talking avatar: Simli (the default) or HeyGen (LiveAvatar, being compared). HeyGen only
+// shows up with a test link: ?avatar=heygen adds a "Video · HeyGen" way on the home screen and
+// uses HeyGen for the oral exam too. The student trial stays on Simli.
+export type AvatarKind = 'simli' | 'heygen'
+export const HEYGEN_TEST = typeof location !== 'undefined' && new URLSearchParams(location.search).get('avatar') === 'heygen'
+let kind: AvatarKind = 'simli'
+export function avatarKind(): AvatarKind {
+  return kind
+}
+export function setAvatarKind(next: AvatarKind) {
+  if (next === kind) return
+  stopAvatar()
+  kind = next
+}
+
 // Smoothing buffer for his video, in ms (link: ?buffer=300 to try another). Simli sends frames in little bursts;
 // with no buffer Chrome shows only the last frame of each burst and drops the others (measured:
 // 25 to 28 frames a second arrive, 17 to 19 are shown). A short buffer lets Chrome show them
@@ -49,6 +65,9 @@ if (typeof window !== 'undefined' && window.RTCPeerConnection) {
     videoPeers.push(pc)
     if (VIDEO_BUFFER_MS > 0) {
       pc.addEventListener('track', (e) => {
+        // Only for Simli. HeyGen sends voice and video as two tracks: delaying just the video
+        // would put the lips behind the voice.
+        if (kind !== 'simli') return
         const receiver = e.receiver as RTCRtpReceiver & { jitterBufferTarget?: number | null }
         if (e.track.kind === 'video' && 'jitterBufferTarget' in receiver) receiver.jitterBufferTarget = VIDEO_BUFFER_MS
       })
@@ -61,6 +80,10 @@ if (typeof window !== 'undefined' && window.RTCPeerConnection) {
 }
 
 let session: SimliSession | null = null
+let heygen: HeygenCall | null = null
+export function heygenCall(): HeygenCall | null {
+  return heygen
+}
 let state: AvatarState = 'off'
 let attempt = 0 // bumps on every start/stop, so a slow start that was cancelled doesn't come alive
 const listeners = new Set<(s: AvatarState) => void>()
@@ -81,30 +104,46 @@ export function onAvatarChange(listener: (s: AvatarState) => void): () => void {
 // Is the call on screen? While it's hidden (Talk or Type tab), the connection stays but his voice
 // plays through the normal speakers.
 let active = false
+let hiddenTimer = 0
 export function setAvatarActive(on: boolean) {
   active = on
+  window.clearTimeout(hiddenTimer)
+  // HeyGen costs per minute while open: hang up when the call has been hidden for 30 s.
+  if (!on && heygen) hiddenTimer = window.setTimeout(() => !active && heygen && stopAvatar(), 30_000)
 }
 
 export function avatarLive(): boolean {
-  return active && state === 'live' && session !== null
+  return active && state === 'live' && (kind === 'heygen' ? heygen !== null : session !== null)
 }
 
-// Is the avatar set up on the server (key and face id)? Asked once per visit.
-let enabled: Promise<boolean> | null = null
-export function avatarEnabled(): Promise<boolean> {
-  if (enabled) return enabled
+// Which avatars are set up on the server (keys and face ids)? Asked once per visit.
+type Setup = { simli: boolean; heygen: boolean }
+let setup: Promise<Setup> | null = null
+function avatarSetup(): Promise<Setup> {
+  if (setup) return setup
   const asking = fetch('/api/avatar', { headers: accessHeaders() })
     .then((r) => {
-      if (r.status === 401) enabled = null // no access code yet: ask again later
-      return r.ok ? r.json() : { enabled: false }
+      if (r.status === 401) setup = null // no access code yet: ask again later
+      return r.ok ? r.json() : {}
     })
-    .then((d: { enabled?: boolean }) => d.enabled === true)
+    .then((d: { enabled?: boolean; heygen?: boolean }) => ({ simli: d.enabled === true, heygen: d.heygen === true }))
     .catch(() => {
-      enabled = null
-      return false
+      setup = null
+      return { simli: false, heygen: false }
     })
-  enabled = asking
+  setup = asking
   return asking
+}
+
+// Is the avatar in use (Simli or HeyGen) set up?
+export function avatarEnabled(): Promise<boolean> {
+  const asked = kind
+  return avatarSetup().then((s) => s[asked])
+}
+
+// Is HeyGen set up (for the test button)?
+export function heygenEnabled(): Promise<boolean> {
+  return avatarSetup().then((s) => s.heygen)
 }
 
 // Before his first words: wait (at most a few seconds) for the avatar to connect, if it's set up.
@@ -126,9 +165,39 @@ export async function readyToGreet(maxMs = 4000): Promise<void> {
 // Load the Simli code ahead of time (on the home screen), so the video connects faster.
 export function prefetchAvatar() {
   void import('simli-client').catch(() => undefined)
+  if (HEYGEN_TEST) void import('livekit-client').catch(() => undefined)
+}
+
+async function startHeygen(video: HTMLVideoElement, audio: HTMLAudioElement): Promise<boolean> {
+  if (heygen) return true
+  const mine = ++attempt
+  setState('starting')
+  const call = new HeygenCall()
+  call.onClose = () => {
+    if (heygen === call) {
+      heygen = null
+      setState('off')
+    }
+  }
+  try {
+    await call.start(video, audio, () => mine !== attempt)
+    if (mine !== attempt) {
+      call.stop()
+      return false
+    }
+    heygen = call
+    setState('live')
+    return true
+  } catch (err) {
+    call.stop()
+    console.warn('HeyGen avatar could not start, showing the photo instead:', err)
+    if (mine === attempt) setState('failed')
+    return false
+  }
 }
 
 export async function startAvatar(video: HTMLVideoElement, audio: HTMLAudioElement): Promise<boolean> {
+  if (kind === 'heygen') return startHeygen(video, audio)
   if (session) return true
   const mine = ++attempt
   setState('starting')
@@ -184,8 +253,14 @@ export function stopAvatar() {
   session = null
   endsAt = 0
   if (s) void s.stop().catch(() => undefined)
+  const h = heygen
+  heygen = null
+  h?.stop()
   setState('off')
 }
+
+// Closing the tab: hang up HeyGen too (it bills while open).
+if (typeof window !== 'undefined') window.addEventListener('pagehide', () => heygen && stopAvatar())
 
 // Resolves when Simli starts moving his lips to what we just sent (or after `maxMs`, whatever comes
 // first), so his voice can start at exactly that moment.
@@ -226,6 +301,7 @@ export function avatarEndsAt(): number {
 // Stop him mid-sentence: throw away everything he hasn't said yet.
 export function clearAvatar() {
   endsAt = 0
+  heygen?.interrupt()
   try {
     session?.ClearBuffer()
   } catch {

@@ -1,5 +1,5 @@
 import { accessHeaders, checkLimit } from './access'
-import { VIDEO_BUFFER_MS, avatarLive, clearAvatar, nextAvatarSpeaking, sendToAvatar } from './talkingAvatar'
+import { VIDEO_BUFFER_MS, avatarKind, avatarLive, clearAvatar, heygenCall, nextAvatarSpeaking, sendToAvatar } from './talkingAvatar'
 
 // Voice helpers. All calls go through our backend; the ElevenLabs key never reaches the browser.
 
@@ -90,6 +90,7 @@ let pausedAt: number | null = null
 const RESUME_BACK_S = 0.4
 
 export function pauseSpeaking(): boolean {
+  if (hgVoice) return pauseHeygenVoice()
   if (avatarVoice) return pauseAvatarVoice()
   if (!player || !playing || player.paused) return false
   pausedAt = generation
@@ -99,6 +100,7 @@ export function pauseSpeaking(): boolean {
 }
 
 export function resumeSpeaking() {
+  if (hgHeld) return resumeHeygenVoice()
   if (avatarHeld) return resumeAvatarVoice()
   if (!player || pausedAt === null || pausedAt !== generation) return
   pausedAt = null
@@ -119,10 +121,17 @@ export function stopSpeaking() {
   avatarGoOn = false
   avatarHeld = null
   avatarSegments = []
+  hgVoice = false
+  hgSent = []
+  hgHeld = null
+  hgGoOn = false
   const wake = avatarWake
   avatarWake = null
+  const hgWaking = hgWake
+  hgWake = null
   generation++
   wake?.()
+  hgWaking?.()
   if (avatarLive() && playing) clearAvatar()
   stopVoiceSources()
   if (player && playing) player.pause()
@@ -165,8 +174,9 @@ export function splitForSpeech(text: string): string[] {
 // ---- Through the talking avatar: raw audio goes to Simli, which plays it with moving lips ----
 const pcmCache = new Map<string, Promise<Uint8Array>>()
 
-function pcmFor(text: string, extra: { chat?: boolean; previous?: string; next?: string }): Promise<Uint8Array> {
-  const key = JSON.stringify([text, extra.chat ?? false, extra.previous ?? '', extra.next ?? ''])
+// rate: 16000 for Simli, 24000 for HeyGen.
+function pcmFor(text: string, extra: { chat?: boolean; previous?: string; next?: string; rate?: number }): Promise<Uint8Array> {
+  const key = JSON.stringify([text, extra.chat ?? false, extra.previous ?? '', extra.next ?? '', extra.rate ?? 16000])
   let pcm = pcmCache.get(key)
   if (!pcm) {
     pcm = fetch('/api/speak', {
@@ -366,6 +376,108 @@ async function speakViaAvatar(parts: Promise<Uint8Array>[], mine: number): Promi
   }
 }
 
+// ---- Through the HeyGen avatar: it plays his voice itself, in sync with the lips ----
+// We send the audio and wait until HeyGen says he's done. When the student cuts in, we cut him off
+// (interrupt) and keep what he hadn't said yet (from about where he was, minus 0.4 s), so "go on"
+// continues from there, like with Simli.
+let hgVoice = false // speakViaHeygen is running
+let hgSent: Uint8Array[] = [] // the audio of what he's saying now
+let hgHeld: Uint8Array[] | null = null // non-null = paused: what's still to say
+let hgGoOn = false
+let hgWake: (() => void) | null = null
+const HG_RATE = 24000
+
+function pauseHeygenVoice(): boolean {
+  const call = heygenCall()
+  if (!call || !playing || hgHeld) return false
+  const all = new Uint8Array(hgSent.reduce((n, p) => n + p.length, 0))
+  let at = 0
+  for (const p of hgSent) {
+    all.set(p, at)
+    at += p.length
+  }
+  const said = call.startedAt === null ? 0 : (performance.now() - call.startedAt) / 1000
+  const from = Math.max(0, Math.floor((said - RESUME_BACK_S) * HG_RATE)) * 2
+  hgHeld = from < all.length ? [all.subarray(from)] : []
+  hgSent = []
+  hgGoOn = false
+  call.interrupt()
+  setSpeaking(false)
+  return true
+}
+
+function resumeHeygenVoice() {
+  if (!hgHeld) return
+  setSpeaking(true)
+  hgGoOn = true
+  const wake = hgWake
+  hgWake = null
+  wake?.()
+}
+
+const heygenHeld = (): Uint8Array[] | null => hgHeld
+const heygenGoOn = (): boolean => hgGoOn
+const waitHeygenGoOn = () =>
+  hgGoOn
+    ? Promise.resolve()
+    : new Promise<void>((resolve) => {
+        hgWake = resolve
+      })
+
+async function speakViaHeygen(parts: Promise<Uint8Array>[], mine: number): Promise<boolean> {
+  const call = heygenCall()
+  if (!call) throw new Error('no avatar')
+  hgVoice = true
+  hgSent = []
+  hgHeld = null
+  hgGoOn = false
+  const send = (pcm: Uint8Array) => {
+    call.say(pcm)
+    hgSent.push(pcm)
+  }
+  const sendHeld = () => {
+    const held = heygenHeld() ?? []
+    hgHeld = null
+    hgGoOn = false
+    hgSent = []
+    for (const p of held) if (p.length > 1) send(p)
+  }
+  try {
+    for (const part of parts) {
+      const pcm = await part
+      if (mine !== generation) return false
+      if (heygenHeld() && heygenGoOn()) sendHeld()
+      if (pcm.length < 2) continue
+      const held = heygenHeld()
+      if (held) held.push(pcm) // paused: say it after going on
+      else send(pcm)
+    }
+    for (;;) {
+      if (mine !== generation) return false
+      if (heygenHeld()) {
+        await waitHeygenGoOn()
+        if (mine !== generation) return false
+        sendHeld()
+      }
+      if (hgSent.length === 0) return true // nothing (left) to say
+      const seconds = hgSent.reduce((n, p) => n + p.length, 0) / (HG_RATE * 2)
+      const outcome = await Promise.race([
+        call.finishSaying(),
+        new Promise<'timeout'>((resolve) => window.setTimeout(() => resolve('timeout'), (seconds + 10) * 1000)),
+      ])
+      if (mine !== generation) return false
+      if (outcome === 'interrupted' && heygenHeld()) continue // the student cut in: wait, maybe go on
+      return outcome !== 'interrupted'
+    }
+  } finally {
+    if (mine === generation) {
+      hgVoice = false
+      hgSent = []
+      hgHeld = null
+    }
+  }
+}
+
 function playUrl(url: string): Promise<void> {
   return new Promise((resolve, reject) => {
     if (!player) return reject(new Error('no audio'))
@@ -388,6 +500,11 @@ export async function speak(text: string, options: SpeakOptions = {}): Promise<b
   const parts = options.chat ? splitForSpeech(text) : [text]
   if (options.chat && avatarLive()) {
     try {
+      if (avatarKind() === 'heygen')
+        return await speakViaHeygen(
+          parts.map((part, i) => pcmFor(part, { chat: true, previous: parts[i - 1], next: parts[i + 1], rate: HG_RATE })),
+          mine,
+        )
       return await speakViaAvatar(
         parts.map((part, i) => pcmFor(part, { chat: true, previous: parts[i - 1], next: parts[i + 1] })),
         mine,
@@ -431,6 +548,21 @@ export async function speakInParts(first: string, rest: Promise<string>): Promis
   const mine = generation
   setSpeaking(true)
   playing = true
+  if (avatarLive() && avatarKind() === 'heygen') {
+    try {
+      const firstPcm = pcmFor(first, { chat: true, rate: HG_RATE })
+      const restPcm = rest.then((r) =>
+        r.trim() ? pcmFor(r.trim(), { chat: true, previous: first, rate: HG_RATE }) : new Uint8Array(),
+      )
+      return await speakViaHeygen([firstPcm, restPcm], mine)
+    } finally {
+      if (mine === generation) {
+        playing = false
+        finishCurrent = null
+        setSpeaking(false)
+      }
+    }
+  }
   if (avatarLive()) {
     try {
       const firstPcm = pcmFor(first, { chat: true })

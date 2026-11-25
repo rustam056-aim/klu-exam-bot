@@ -434,14 +434,14 @@ export function turnNotes(
     openers.length
       ? `Your recent replies started with: ${openers.map((o) => `"${o}"`).join(', ')}. Start this reply differently.`
       : '',
-    exam ? examNotes(exam) : '',
+    exam ? examNotes(exam, asked === 0) : '',
   ]
     .filter(Boolean)
     .join('\n');
 }
 
 // The timed oral exam (15 minutes): he behaves like the examiner in the real oral exam.
-function examNotes(exam: ExamInfo): string {
+function examNotes(exam: ExamInfo, first = false): string {
   if (exam.ending) {
     return `
 # ORAL EXAM: TIME IS UP
@@ -458,7 +458,11 @@ This is a timed practice oral exam of about ${exam.totalMinutes ?? 15} minutes. 
 - EVERY reply ends with a question. With 2 minutes or less left, finish the current topic with follow-ups but don't start a new one.
 - Never end the exam yourself and never give a verdict, a grade or a summary: the app ends the exam when the time is up and shows the summary. There is no fixed number of topics; keep asking until then.
 - Fill "check" for every answer to your questions: it's recorded for the summary, the student doesn't see it during the exam.
-- If the student explicitly asks to end or stop the whole exam now ("can we stop the exam?", "I want to end here"), set "end_exam" to true and close in two short sentences: that's fine, thank them, their summary is on the screen. No question then. "I'm done" or "that's all" right after an answer only means they finished that answer: carry on.`;
+${
+    first
+      ? `- THIS IS YOUR FIRST REPLY. The student has heard the welcome (how long it takes, that you ask about the lecture material with follow-ups, that they can skip a topic) and was asked how they feel and whether they have questions; their message is their answer (or just "ready"). Don't welcome them again and don't say "let's begin" or "let's get started". If they asked something about how the exam works, answer it in one short sentence. If they say they don't feel well, say in one sentence that that's fine and they can end the exam any time and come back later, then go on. Then ask the first question: broad and easy, a big idea of the course that gets them talking (e.g. what makes logistics sustainable, or the main ways to cut its emissions), taken from or close to NEXT NEW TOPIC, not a narrow detail or a number from one slide. Get more specific with the follow-ups.\n`
+      : ''
+  }- If the student explicitly asks to end or stop the whole exam now ("can we stop the exam?", "I want to end here"), set "end_exam" to true and close in two short sentences: that's fine, thank them, their summary is on the screen. No question then. "I'm done" or "that's all" right after an answer only means they finished that answer: carry on.`;
 }
 
 export type ChatResult = { reply: string; sources: string[]; check?: ChatCheck; first?: string; rest?: string; examOver?: boolean };

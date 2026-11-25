@@ -42,6 +42,11 @@ export interface Env extends UsageEnv {
   SIMLI_API_KEY?: string; // talking avatar (simli.com); with SIMLI_FACE_ID set, the Talk view shows it
   SIMLI_FACE_ID?: string;
   SIMLI_SHAPE?: string; // 'square' = always Simli's default square video // optional: another voice model just for the conversation (falls back to the standard one if it fails)
+  // HeyGen talking avatar (LiveAvatar, app.liveavatar.com), to compare with Simli; test link ?avatar=heygen.
+  LIVEAVATAR_API_KEY?: string;
+  LIVEAVATAR_AVATAR_ID?: string; // the custom avatar of Prof. Meuer (Custom Avatars in LiveAvatar)
+  LIVEAVATAR_SANDBOX?: string; // "true" = free 1-minute test sessions with HeyGen's sample avatar (no credits)
+  LIVEAVATAR_QUALITY?: string; // very_high | high (default) | medium | low
   ELEVENLABS_CHAT_SPEED?: string; // optional: talking speed in the conversation, 0.7 to 1.2; default 0.95
   ANTHROPIC_MODEL?: string; // optional: override the grading model
   ANTHROPIC_CHAT_MODEL?: string; // optional: a different model for the conversation mode
@@ -708,8 +713,10 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
         chat?: boolean; // conversation mode: may use the faster voice model
         previous?: string; // the sentence before / after, so a reply split in two still sounds like one
         next?: string;
-        pcm?: boolean; // for the talking avatar: raw 16 kHz 16-bit mono audio instead of mp3
+        pcm?: boolean; // for the talking avatar: raw 16-bit mono audio instead of mp3
+        rate?: number; // with pcm: 16000 (Simli, default) or 24000 (HeyGen)
       } | null;
+      const rate = body?.rate === 24000 ? 24000 : 16000;
       const text = sayable(speakable(body?.text?.trim() ?? ''));
       if (!text) return json({ error: 'need text' }, 400);
       if (!(await allow(env, req, 'voice', text.length))) return limited(req, 'voice');
@@ -719,7 +726,7 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
       // One voice everywhere: practice questions sound exactly like Talk to Johannes.
       const model = env.ELEVENLABS_CHAT_MODEL || standard;
       const tts = (payload: Record<string, unknown>) =>
-        fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=${body?.pcm ? 'pcm_16000' : 'mp3_44100_128'}`, {
+        fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=${body?.pcm ? `pcm_${rate}` : 'mp3_44100_128'}`, {
           method: 'POST',
           headers: {
             'xi-api-key': env.ELEVENLABS_API_KEY!,
@@ -756,7 +763,7 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
         return json({ error: 'speech failed' }, 502);
       }
       return new Response(res.body, {
-        headers: { 'content-type': body?.pcm ? 'audio/L16;rate=16000' : 'audio/mpeg', 'cache-control': 'no-store' },
+        headers: { 'content-type': body?.pcm ? `audio/L16;rate=${rate}` : 'audio/mpeg', 'cache-control': 'no-store' },
       });
     }
 
@@ -903,14 +910,33 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
     // GET /api/avatar: is the talking avatar (Simli) set up? POST /api/avatar: a session token for it.
     // The Simli key stays here; the browser only gets a short-lived token for one session.
     if (path === '/api/avatar' && req.method === 'GET') {
-      return json({ enabled: !!(env.SIMLI_API_KEY && env.SIMLI_FACE_ID) });
+      return json({ enabled: !!(env.SIMLI_API_KEY && env.SIMLI_FACE_ID), heygen: heygenReady(env) });
+    }
+    // HeyGen (LiveAvatar, LITE mode): we bring the voice, HeyGen makes the video. The key stays here;
+    // the browser gets the LiveKit room (his video and voice) and the WebSocket (where it sends his
+    // voice) for this one session.
+    if (path === '/api/avatar/stop' && req.method === 'POST') {
+      const body = (await req.json().catch(() => ({}))) as { session_id?: string };
+      if (!env.LIVEAVATAR_API_KEY || !/^[0-9a-f-]{36}$/i.test(body.session_id ?? '')) return json({ ok: false });
+      const res = await fetch('https://api.liveavatar.com/v1/sessions/stop', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-api-key': env.LIVEAVATAR_API_KEY },
+        body: JSON.stringify({ session_id: body.session_id, reason: 'USER_CLOSED' }),
+      });
+      if (!res.ok) console.log('HeyGen stop failed', res.status, (await res.text()).slice(0, 200));
+      return json({ ok: res.ok });
     }
     if (path === '/api/avatar' && req.method === 'POST') {
+      const asked = (await req.json().catch(() => ({}))) as { shape?: string; provider?: string };
+      if (asked.provider === 'heygen') {
+        if (!heygenReady(env)) return json({ error: 'HeyGen is not set up' }, 503);
+        if (!(await allow(env, req, 'avatar'))) return limited(req, 'avatar');
+        return startHeygen(env);
+      }
       if (!env.SIMLI_API_KEY || !env.SIMLI_FACE_ID) return json({ error: 'avatar is not set up' }, 503);
       if (!(await allow(env, req, 'avatar'))) return limited(req, 'avatar');
       // The video's shape follows the screen: wide on a laptop, tall on a phone, so he fills the
       // call window. SIMLI_SHAPE=square turns this off (Simli's default 768 x 768).
-      const asked = (await req.json().catch(() => ({}))) as { shape?: string };
       const size =
         env.SIMLI_SHAPE === 'square' || asked.shape === 'square'
           ? {}
@@ -941,3 +967,46 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
     return json({ error: 'not found' }, 404);
   },
 } satisfies ExportedHandler<Env>;
+
+// ---- HeyGen (LiveAvatar) ----
+// Sandbox: HeyGen's free test avatar "Wayne", sessions end after about a minute, no credits used.
+const HEYGEN_SANDBOX_AVATAR = 'dd73ea75-1218-4ef3-92ce-606d5f7fbc0a';
+
+function heygenReady(env: Env): boolean {
+  return !!env.LIVEAVATAR_API_KEY && (env.LIVEAVATAR_SANDBOX === 'true' || !!env.LIVEAVATAR_AVATAR_ID);
+}
+
+async function startHeygen(env: Env): Promise<Response> {
+  const sandbox = env.LIVEAVATAR_SANDBOX === 'true';
+  const quality = ['very_high', 'high', 'medium', 'low'].includes(env.LIVEAVATAR_QUALITY ?? '') ? env.LIVEAVATAR_QUALITY : 'high';
+  // 1. A session token (needs our key) ...
+  const tokenRes = await fetch('https://api.liveavatar.com/v1/sessions/token', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', accept: 'application/json', 'x-api-key': env.LIVEAVATAR_API_KEY! },
+    body: JSON.stringify({
+      mode: 'LITE',
+      avatar_id: sandbox ? HEYGEN_SANDBOX_AVATAR : env.LIVEAVATAR_AVATAR_ID,
+      is_sandbox: sandbox,
+      video_settings: { quality, encoding: 'H264' },
+    }),
+  });
+  const token = (await tokenRes.json().catch(() => ({}))) as { data?: { session_token?: string }; message?: string };
+  if (!tokenRes.ok || !token.data?.session_token) {
+    console.log('HeyGen token failed', tokenRes.status, JSON.stringify(token).slice(0, 300));
+    return json({ error: 'avatar failed' }, 502);
+  }
+  // 2. ... then start it: HeyGen opens the LiveKit room and the WebSocket.
+  const startRes = await fetch('https://api.liveavatar.com/v1/sessions/start', {
+    method: 'POST',
+    headers: { accept: 'application/json', authorization: `Bearer ${token.data.session_token}` },
+  });
+  const started = (await startRes.json().catch(() => ({}))) as {
+    data?: { session_id?: string; livekit_url?: string; livekit_client_token?: string; ws_url?: string };
+  };
+  const d = started.data;
+  if (!startRes.ok || !d?.livekit_url || !d.livekit_client_token || !d.ws_url) {
+    console.log('HeyGen start failed', startRes.status, JSON.stringify(started).slice(0, 300));
+    return json({ error: 'avatar failed' }, 502);
+  }
+  return json({ session_id: d.session_id, livekit_url: d.livekit_url, livekit_client_token: d.livekit_client_token, ws_url: d.ws_url });
+}

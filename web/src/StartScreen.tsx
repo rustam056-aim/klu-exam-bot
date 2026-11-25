@@ -6,7 +6,7 @@ import { FeedbackBox } from './FeedbackBox'
 import { loadProgress, loadTalk, missedIds, resetProgress, sessionStats, talkStats } from './progress'
 import type { SessionInfo, Settings } from './types'
 import type { TalkMode } from './ChatView'
-import { avatarEnabled, prefetchAvatar } from './talkingAvatar'
+import { HEYGEN_TEST, avatarEnabled, heygenEnabled, prefetchAvatar, setAvatarKind } from './talkingAvatar'
 
 // The three ways to talk to Johannes, shown as buttons on the home screen.
 const stroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const
@@ -104,12 +104,16 @@ export function StartScreen({
   const [codeError, setCodeError] = useState<string | null>(null)
   // The Video way only shows up when the talking avatar is set up (asked once the code is in).
   const [videoAvailable, setVideoAvailable] = useState(false)
+  // Test link ?avatar=heygen: a second video way with the HeyGen avatar, to compare with Simli.
+  const [heygenAvailable, setHeygenAvailable] = useState(false)
   useEffect(() => {
-    if (sessions)
-      void avatarEnabled().then((on) => {
-        setVideoAvailable(on)
-        if (on) prefetchAvatar()
-      })
+    if (!sessions) return
+    setAvatarKind('simli')
+    void avatarEnabled().then((on) => {
+      setVideoAvailable(on)
+      if (on) prefetchAvatar()
+    })
+    if (HEYGEN_TEST) void heygenEnabled().then(setHeygenAvailable)
   }, [sessions])
 
   function load(afterCodeEntry = false) {
@@ -214,7 +218,10 @@ export function StartScreen({
                   className="talk-way"
                   type="button"
                   disabled={!sessions}
-                  onClick={() => onChat(w.mode)}
+                  onClick={() => {
+                    setAvatarKind('simli')
+                    onChat(w.mode)
+                  }}
                 >
                   <span className="talk-way-icon" aria-hidden="true">
                     {w.icon}
@@ -223,8 +230,33 @@ export function StartScreen({
                   <span className="talk-way-text">{w.text}</span>
                 </button>
               ))}
+              {heygenAvailable && (
+                <button
+                  className="talk-way"
+                  type="button"
+                  disabled={!sessions}
+                  onClick={() => {
+                    setAvatarKind('heygen')
+                    onChat('video')
+                  }}
+                >
+                  <span className="talk-way-icon" aria-hidden="true">
+                    {TALK_WAYS[2].icon}
+                  </span>
+                  <span className="talk-way-name">Video · HeyGen</span>
+                  <span className="talk-way-text">The new video, to compare</span>
+                </button>
+              )}
             </div>
-            <button className="talk-exam" type="button" disabled={!sessions} onClick={onExam}>
+            <button
+              className="talk-exam"
+              type="button"
+              disabled={!sessions}
+              onClick={() => {
+                setAvatarKind(heygenAvailable ? 'heygen' : 'simli')
+                onExam()
+              }}
+            >
               <span className="talk-exam-name">Oral exam</span>
               <span className="talk-exam-text">15 minutes with him, like the real thing. Practice grade at the end.</span>
             </button>
