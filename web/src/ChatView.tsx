@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { DailyLimit } from './access'
+import { DailyLimit, accessQuery } from './access'
 import { ExamReport } from './ExamReport'
 import type { ExamRecord } from './ExamReport'
 import { api } from './api'
@@ -88,6 +88,10 @@ export type TalkMode = 'type' | 'talk' | 'video'
 // makes a shorter one, for trying it out.
 const EXAM_MINUTES =
   (typeof location !== 'undefined' && Number(new URLSearchParams(location.search).get('examMinutes'))) || 15
+// The welcome as a recorded HeyGen video (playIntro): off. Tried 25 Nov, but switching from the
+// HeyGen face to the Simli face looked odd. Back on only if the live avatar is HeyGen too.
+const EXAM_INTRO_VIDEO = false
+
 // Prof. Meuer (24 Nov): say how it works and ask how they feel and if they have questions, before
 // the first question. The clock starts when the student answers this (or after 25 s of silence).
 const EXAM_GREETING = `Welcome to your practice oral exam in Sustainable Logistics. It takes about ${EXAM_MINUTES} minutes. I’ll ask you questions about the lecture material, with some follow-up questions, and you just answer out loud, like in the real exam. If you feel you can’t answer a topic, just tell me and we’ll move on. Before we start: how are you feeling today, and do you have any questions?`
@@ -197,6 +201,7 @@ export function ChatView({
   const pending = useRef<string | null>(null) // said while his reply was still being written
   const live = useLiveMic({
     onSpeechStart: () => {
+      if (introPlaying.current) return // that's the welcome video, not the student
       setNote(null)
       // Exam: how long the student took before starting to answer.
       const last = examRecord.current.turns[examRecord.current.turns.length - 1]
@@ -210,7 +215,9 @@ export function ChatView({
       if (pausedForStudent.current) resumeSpeaking()
       pausedForStudent.current = false
     },
-    onUtterance: (wav) => void heard(wav),
+    onUtterance: (wav) => {
+      if (!introPlaying.current) void heard(wav)
+    },
   })
   const liveRef = useRef(live)
   liveRef.current = live
@@ -420,6 +427,35 @@ export function ChatView({
     }
   }
 
+  // The exam welcome as a recorded video (made with HeyGen, web/public/avatar/intro.mp4, never on
+  // GitHub). If it's missing or can't play, he says the welcome with the live voice instead.
+  const [introSrc, setIntroSrc] = useState<string | null>(null)
+  const introPlaying = useRef(false)
+  const introDone = useRef<((played: boolean) => void) | null>(null)
+  function playIntro(): Promise<boolean> {
+    if (!EXAM_INTRO_VIDEO) return Promise.resolve(false)
+    return new Promise((resolve) => {
+      introPlaying.current = true
+      introDone.current = resolve
+      setIntroSrc(`/avatar/intro.mp4${accessQuery()}`)
+      window.setTimeout(() => introEnded(true), 60_000) // safety net: never wait forever
+    })
+  }
+  function introEnded(played: boolean) {
+    if (!introDone.current) return
+    introPlaying.current = false
+    setIntroSrc(null)
+    const done = introDone.current
+    introDone.current = null
+    done(played)
+  }
+
+  // His photo couldn't load (so no picture to play the welcome in): say it with the voice.
+  useEffect(() => {
+    if (!showAvatar) introEnded(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showAvatar])
+
   // The exam starts (clock running) once the student has answered the welcome.
   const examIntro = useRef(false)
   function startExamClock() {
@@ -465,8 +501,14 @@ export function ChatView({
       // The oral exam: he welcomes the student and asks how they feel; their answer starts the exam.
       // If they say nothing for 25 s, he starts anyway.
       examIntro.current = true
-      void (now.current.wantsVideo ? readyToGreet(9000) : Promise.resolve())
-        .then(() => (mounted.current ? say(EXAM_GREETING) : false))
+      void playIntro()
+        .then((played) =>
+          played || !mounted.current
+            ? played
+            : (now.current.wantsVideo ? readyToGreet(9000) : Promise.resolve()).then(() =>
+                mounted.current ? say(EXAM_GREETING) : false,
+              ),
+        )
         .then(() => {
           if (!mounted.current || !examIntro.current) return
           yourTurn()
@@ -843,6 +885,8 @@ export function ChatView({
             live={inVideo}
             call
             onFail={() => setWithVideo(false)}
+            intro={inVideo ? introSrc : null}
+            onIntroEnd={introEnded}
           >
             {speaking ? (
               <button className="vcall-stop" type="button" onClick={stopSpeaking} aria-label="Stop him">
@@ -861,7 +905,14 @@ export function ChatView({
       {inVideo || examPhase === 'done' ? null : view === 'call' ? (
         <div className="call">
           {showAvatar ? (
-            <Avatar state={tutorState} label={tutorLabels[tutorState]} live={false} onFail={() => setShowAvatar(false)} />
+            <Avatar
+              state={tutorState}
+              label={tutorLabels[tutorState]}
+              live={false}
+              onFail={() => setShowAvatar(false)}
+              intro={introSrc}
+              onIntroEnd={introEnded}
+            />
           ) : (
             <Tutor big state={tutorState} labels={tutorLabels} />
           )}

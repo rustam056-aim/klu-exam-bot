@@ -20,6 +20,8 @@ export function Avatar({
   live: wantVideo,
   call = false,
   onFail,
+  intro,
+  onIntroEnd,
   children,
 }: {
   state: TutorState
@@ -27,6 +29,8 @@ export function Avatar({
   live: boolean // connect the talking avatar; otherwise just the photo
   call?: boolean // Video: full-screen video call layout
   onFail: () => void
+  intro?: string | null // a recorded video to play first (the exam welcome, made with HeyGen)
+  onIntroEnd?: (played: boolean) => void // false = it couldn't play
   children?: ReactNode
 }) {
   const [loaded, setLoaded] = useState(false)
@@ -36,6 +40,30 @@ export function Avatar({
   const audio = useRef<HTMLAudioElement>(null)
 
   useEffect(() => onAvatarChange(setLive), [])
+
+  // The recorded welcome: plays with sound; if the browser or the file says no, tell the page
+  // (it then says the welcome with the live voice instead).
+  const introVideo = useRef<HTMLVideoElement>(null)
+  const introEnd = useRef(onIntroEnd)
+  introEnd.current = onIntroEnd
+  useEffect(() => {
+    const el = introVideo.current
+    if (!intro || !el) return
+    el.muted = false
+    el.play().catch(() => introEnd.current?.(false))
+  }, [intro])
+  const introEl = intro ? (
+    <video
+      ref={introVideo}
+      key={intro}
+      className={call ? 'vcall-video is-on' : 'avatar-live is-on'}
+      src={intro}
+      playsInline
+      preload="auto"
+      onEnded={() => introEnd.current?.(true)}
+      onError={() => introEnd.current?.(false)}
+    />
+  ) : null
 
   // The call (Video): connect when it's shown, and reconnect if the connection was closed meanwhile
   // (Simli hangs up after 2 quiet minutes). Hidden = his voice goes back to the normal speakers,
@@ -64,12 +92,13 @@ export function Avatar({
   const photo = `/avatar/photo.jpg${accessQuery()}`
 
   if (call) {
-    const connecting = !showVideo && live !== 'failed'
+    const connecting = !showVideo && live !== 'failed' && !intro
     return (
       <div className={`vcall-stage avatar-${state} ${showVideo ? 'is-live' : ''} ${PLAIN ? 'is-plain' : ''}`}>
         <div className="vcall-backdrop" style={{ backgroundImage: `url(${photo})` }} aria-hidden="true" />
         <video ref={video} className={`vcall-video ${showVideo ? 'is-on' : ''}`} autoPlay playsInline aria-hidden="true" />
         <audio ref={audio} autoPlay />
+        {introEl}
         {DEBUG && showVideo && <VideoStats video={video} />}
         {!showVideo && (
           <img
@@ -86,7 +115,7 @@ export function Avatar({
             Connecting to Johannes…
           </div>
         )}
-        {live === 'failed' && (
+        {live === 'failed' && !intro && (
           <div className="vcall-connecting" role="alert">
             The video couldn’t start, so it’s voice only for now.
             <button className="btn secondary sm" type="button" onClick={() => setRetry((n) => n + 1)}>
@@ -124,6 +153,7 @@ export function Avatar({
         />
         <video ref={video} className={`avatar-live ${showVideo ? 'is-on' : ''}`} autoPlay playsInline aria-hidden="true" />
         <audio ref={audio} autoPlay />
+        {introEl}
         {state === 'thinking' && (
           <span className="avatar-dots" aria-hidden="true">
             <span />
