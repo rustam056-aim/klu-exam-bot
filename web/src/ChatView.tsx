@@ -94,7 +94,7 @@ const EXAM_INTRO_VIDEO = false
 
 // Prof. Meuer (24 Nov): say how it works and ask how they feel and if they have questions, before
 // the first question. The clock starts when the student answers this (or after 25 s of silence).
-const EXAM_GREETING = `Welcome to your practice oral exam in Sustainable Logistics. It takes about ${EXAM_MINUTES} minutes. I’ll ask you questions about the lecture material, with some follow-up questions, and you just answer out loud, like in the real exam. If you feel you can’t answer a topic, just tell me and we’ll move on. Before we start: how are you feeling today, and do you have any questions?`
+const EXAM_GREETING = `Welcome to your practice oral exam in Sustainable Logistics. It takes about ${EXAM_MINUTES} minutes. I’ll ask you questions about the lecture material, with some follow-up questions, and you just answer out loud, like in the real exam. If you feel you can’t answer a topic, just tell me and we’ll move on. And if you start to feel unwell at any point, tell me and we’ll stop. Before we start: how are you feeling today, and do you have any questions?`
 
 export function ChatView({
   readAloud,

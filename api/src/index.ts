@@ -12,6 +12,7 @@ import { withRetry } from './retry';
 import type { ExamTurnIn } from './exam';
 import type { UsageEnv } from './usage';
 export { Usage } from './usage'; // "Talk to Johannes" conversation
+import { cleanTrial, saveTrial, trialPage } from './trial';
 
 type Question = {
   id: string;
@@ -583,6 +584,21 @@ ${misses ? `<ul>${misses}</ul>` : '<p class="muted">None yet.</p>'}
         source: q.source_pages,
         sourceTime: timeOf(q),
       });
+    }
+
+    // The trial feedback form (16 questions, after a practice exam): POST /api/trial, and the
+    // overview page for Prof. Meuer at GET /api/trial/list?admin=CODE (see trial.ts).
+    if (path === '/api/trial' && req.method === 'POST') {
+      const answers = cleanTrial(await req.json().catch(() => null));
+      if (!answers) return json({ error: 'nothing answered' }, 400);
+      if (!(await allow(env, req, 'trial'))) return limited(req, 'trial');
+      await saveTrial(env.FEEDBACK, answers).catch((err) => console.log('Trial feedback not saved:', String(err)));
+      return json({ ok: true });
+    }
+    if (path === '/api/trial/list') {
+      if (!env.ADMIN_CODE || url.searchParams.get('admin') !== env.ADMIN_CODE) return json({ error: 'not found' }, 404);
+      if (!env.FEEDBACK) return new Response('Storage is not set up yet (see CLAUDE.md).', { status: 503 });
+      return new Response(await trialPage(env.FEEDBACK), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
     }
 
     // POST /api/feedback  { "text": "...", "rating"?: 1-5, "where"?: "talk" } -> { ok: true }

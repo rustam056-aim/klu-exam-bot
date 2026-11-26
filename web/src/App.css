@@ -3076,3 +3076,46 @@ p.exam-flag {
 .vcall-stage.is-plain.is-live .vcall-backdrop {
   display: none;
 }
+
+
+/* ---------- Trial feedback form (after a practice exam) ---------- */
+.trial-form {
+  width: 100%;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.fb-part {
+  margin: 10px 0 0;
+  font-size: 1rem;
+  color: var(--steel);
+}
+
+.fb-item {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+}
+
+.fb-scale {
+  display: flex;
+  gap: 6px;
+}
+
+.fb-num {
+  min-width: 46px;
+  padding: 0;
+}
+
+.fb-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 330px;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.fb-sub {
+  font-weight: 500;
+}

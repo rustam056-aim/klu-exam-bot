@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from './api'
 import type { ExamGradeReply } from './api'
 import type { ChatMessage } from './types'
+import { TrialForm } from './TrialForm'
 
 // What happened in one oral exam question: when he finished asking, when the student started
 // to answer, what they said, and how it went (as judged against the course material).
@@ -276,6 +277,9 @@ export function ExamReport({
             : 'Full exams go into Prof. Meuer’s anonymous class overview: only the practice grade and which topics went well. Never your name, never what you said.'}
         </p>
       )}
+
+      {/* The trial feedback form (the plan's 16 questions), while the exam is fresh. */}
+      <TrialForm />
 
       <div className="actions">
         <button className="btn secondary" type="button" onClick={onFeedback}>

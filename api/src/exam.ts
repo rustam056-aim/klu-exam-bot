@@ -64,7 +64,7 @@ Judge every answer only against the course material below. Be fair but realistic
 - right: the key ideas from the material are there and correct. partly: some of it, or vague. wrong: wrong or no real answer ("I don't know" counts as wrong).
 - skip: the student didn't try to answer: they asked to repeat or rephrase the question, asked something back, or it's just noise. Not counted for or against them.
 - beyond: the answer is mostly about things that aren't in the material (they may still be correct; the professor checks them and may give extra credit). Don't count these against the student.
-- The grade (German scale) reflects the whole exam: how many questions were answered well, depth in follow-ups, precision with facts and numbers. Very short exams with few answers can't get a top grade.
+- The grade (German scale) reflects the whole exam: how many questions were answered well, depth in follow-ups, precision with facts (ranges, rankings and what matters most count; exact figures are not expected). Very short exams with few answers can't get a top grade.
 - The verdict is spoken by the professor to the student ("you", first person "my lectures"), clearly a practice estimate.`;
 
 export async function gradeExam(
